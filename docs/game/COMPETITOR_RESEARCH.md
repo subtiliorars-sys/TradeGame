@@ -155,3 +155,78 @@ numbers verified live 2026-06-07/08.
 - https://store.steampowered.com/news/app/628200/view/3019070055346700913
 - Secondary: vaporlens.app/app/1539140, thegamecrater.com, pcgamer.com,
   checkpointgaming.net, opencritic.com, gamingtrend.com, steambase.io
+
+---
+
+# Follow-up: Trade Bots Mixed-63% autopsy (2026-06-08)
+
+Negative-review deep-dive (Steam reviews API corpus + community discussions +
+itch.io devlogs + GitHub). Why the only education-first trading game on Steam
+is stuck at Mixed — ranked by helpfulness-vote weight:
+
+## The three compounding failures
+
+**1. Progression is structurally anti-learning (top complaint).** TA tools —
+including zoom/pan and timeframe controls — are locked behind in-game PROFIT.
+Players must "trade blind" to unlock the instruments that were supposed to
+teach them, and roguelike run-resets erase unlocked tools on bust. The
+headline features (sandbox, bot builder) sit at the END of the grind — "8
+hours without gaining access." The dev shipped an email-for-unlock-codes
+workaround, conceding the problem, but never fixed the structure.
+Top-voted quotes: "It feels more like an arcade racing game than a sim"
+[47 votes]; "I'M NOT GOING TO SPEND 3 DAYS GRINDING TO GET 5 GRAND TO UNLOCK
+THE BOTS!" [13]; "would be a thumbs up if progression was optional" [14].
+
+**2. Bug density + abandonment signals.** "Crashes constantly" [25 votes];
+the in-game FEEDBACK BUTTON itself was broken ("I hit the report bug button
+and I get a blank grey screen. Are we being trolled?" [8]); a non-closing
+process burned players' refund windows; Mac build won't launch (2026); dev
+unresponsive on GitHub/Discord after open-sourcing. Solo dev, health hiatus
+(concussion, v1.3 devlog), ~6-9-month update cadence. CCU peaked at 48,
+now ~3 — long-tail decline.
+
+**3. Education quality gap — promise vs delivery.** The most credentialed
+reviewers bounced hardest: quizzes with developer-headcanon answers not
+covered by the material [41 votes]; curriculum outsourced to third-party
+YouTube videos (some went PRIVATE) — fixed only in v2.0, 2+ years post-launch;
+$100 starting capital that forces over-leveraged habits; "useless indicators
+which don't work in real life"; no earnings/news/volume context, so TA
+appears to simply not work; 1 day/sec sim speed with NO speed control
+(27 real minutes per 27-year chart); no stop-loss/position-size controls.
+"It's mostly a gambling simulator where you just throw yourself at a bull
+market until you progress" [15].
+
+**What its positive reviewers value (keep-list):** the real-historic-data sim
+core; the visual bot-builder concept; visible iterative dev effort;
+"more enlightening than any YouTube series" — for committed learners.
+
+## Mistake catalog → TradeGame status (verified against the current build)
+
+| # | Trade Bots mistake | TradeGame status |
+|---|---|---|
+| 1 | Analytical tools gated behind profit | **AVOIDED — structurally.** Process XP only; **standing guardrail: no future unlock may ever gate an analytical tool behind XP/score**, only scenarios/cosmetics |
+| 2 | Run-resets strip earned capabilities | **AVOIDED.** Scenario failure strips nothing; ProgressStore only accumulates |
+| 3 | Curriculum outsourced to third-party videos | **AVOIDED.** Lessons + debriefs are self-contained authored content |
+| 4 | Quiz gates w/ developer-headcanon answers | **LIVE RISK — flagged for the drill system.** Drill/quiz questions must be scoped to shown material + externally reviewed |
+| 5 | Tiny capital forces bad habits | **AVOIDED.** $10k sim account; size_compliance grades vs the player's declared risk rule |
+| 6 | No market context → "TA doesn't work" | **AVOIDED by architecture.** Every scenario is an authored event (depeg, earnings gap, inclusion flow, news whipsaw) and the debrief explains exactly what drove the move |
+| 7 | Broken feedback path at launch | **NOTED for launch QA** — smoke-test every feedback path live, or ship none |
+| 8 | Headline feature unreachable before refund window | **MOSTLY AVOIDED.** SCN-001–003 playable immediately; only V1 scenarios gate on completing their V0 counterpart (~1 session each). Keep it that way |
+| 9 | No sim speed control | **AVOIDED.** 1x/4x/16x compression shipped; pause is the default at session start |
+| 10 | No stops / position sizing | **AVOIDED.** Real protective stop orders (required field), Risk % declaration, stop/size process metrics |
+
+**Net: 7 of 10 mistakes structurally avoided, 1 mostly avoided, 1 live risk
+(drill-system quiz quality — recorded for that design brief), 1 launch-ops
+note.** The autopsy also confirms the strategic read: Trade Bots failed not
+because education-first can't sell, but because its mechanics betrayed its
+own promise — the exact contradiction process-scoring exists to prevent.
+
+**Unknowns:** post-v2.0 review split not isolatable; Mac-launch failure
+unacknowledged; open-sourcing may be wind-down (GitHub stale, Discord
+unresponsive); zero Reddit footprint found — the game never escaped Steam.
+
+Sources: Steam appreviews API (negative + all batches), store page,
+top-rated community reviews, discussions hub + sandbox-unlock thread,
+steambase.io, steamspy, itch.io devlogs v1.3/v1.5/v2.0,
+github.com/cinqmarsmedia/Trade-Bots-Algorithmic-Trading-Game,
+cinqmarsmedia.com/tradebots.
