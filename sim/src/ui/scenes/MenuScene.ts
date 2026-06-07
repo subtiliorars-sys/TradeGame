@@ -99,6 +99,19 @@ export class MenuScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private drawHeader(g: Phaser.GameObjects.Graphics, width: number): void {
+    // DRILLS entry — risk drills feed rank gates + scenario prerequisites.
+    const db = button(
+      this,
+      width - PAD - 150,
+      PAD,
+      150,
+      34,
+      "RISK DRILLS",
+      () => this.scene.start("DrillScene"),
+      { fillColor: C.SURFACE, textColor: CSS.AMBER, fontSize: "12px" }
+    );
+    void db;
+
     // Title
     const title = label(this, PAD, PAD, "TRADEGAME", {
       fontSize: "28px",
