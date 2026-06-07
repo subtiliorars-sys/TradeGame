@@ -37,7 +37,7 @@ import {
   hline,
 } from "../engine/draw.js";
 import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
-import { currentRank } from "../../engine/rank.js";
+import { currentRank, ladderViewModel } from "../../engine/rank.js";
 import * as ProgressStore from "../../engine/progress.js";
 import { scenarioLockState } from "../engine/gating.js";
 
@@ -90,6 +90,7 @@ export class MenuScene extends Phaser.Scene {
     this.drawHeader(g, width);
     this.drawScenarioGrid(g, width, height);
     this.drawProgressBar(g, width, height);
+    this.drawRankLadder(g, width);
     this.drawFooter(g, width, height);
   }
 
@@ -307,6 +308,82 @@ export class MenuScene extends Phaser.Scene {
         fontStyle: "italic",
       });
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Rank ladder strip — full §4.5 ladder (Governor wave-E candidate (b))
+  // -------------------------------------------------------------------------
+
+  /**
+   * Six-rung horizontal ladder under the progress bar: achieved rungs filled,
+   * current rung highlighted, future rungs dimmed, drill-gated rungs marked
+   * explicitly. Thresholds are TUNABLE economy numbers displayed verbatim.
+   * §4.4: process XP and drill data only — no outcome component.
+   */
+  private drawRankLadder(g: Phaser.GameObjects.Graphics, width: number): void {
+    const rows = Math.ceil(allScenarios().length / 3);
+    const y = PAD + 96 + rows * (CARD_H + PAD) + 64;
+
+    const rungs = ladderViewModel(
+      ProgressStore.xpTotal(),
+      ProgressStore.completedDrillIds()
+    );
+
+    label(this, PAD, y, "RANK LADDER", {
+      fontSize: "10px",
+      color: CSS.DIM,
+      fontStyle: "bold",
+    });
+    label(this, PAD + 92, y, "(thresholds TUNABLE — process XP + drill gates only)", {
+      fontSize: "9px",
+      color: CSS.DIM,
+      fontStyle: "italic",
+    });
+
+    const stripY = y + 16;
+    const segW = Math.floor((width - PAD * 2 - (rungs.length - 1) * 6) / rungs.length);
+    const segH = 34;
+
+    rungs.forEach((rung, i) => {
+      const sx = PAD + i * (segW + 6);
+      const isCurrent = rung.state === "current";
+      const isAchieved = rung.state === "achieved";
+      const isGated = rung.state === "gated";
+
+      fillRect(g, sx, stripY, segW, segH, isCurrent || isAchieved ? C.AMBER : C.SURFACE, 3);
+      strokeRect(g, sx, stripY, segW, segH, isCurrent ? C.AMBER : C.BORDER, isCurrent ? 2 : 1, 3);
+      if (isAchieved) {
+        // Achieved rungs: amber at reduced presence vs the current rung.
+        fillRect(g, sx, stripY, segW, segH, C.SURFACE, 3);
+        strokeRect(g, sx, stripY, segW, segH, C.AMBER, 1, 3);
+      }
+
+      const labelColor = isCurrent ? CSS.BG : isAchieved ? CSS.AMBER : CSS.DIM;
+      label(this, sx + 6, stripY + 6, rung.displayLabel, {
+        fontSize: "10px",
+        color: labelColor,
+        fontStyle: isCurrent ? "bold" : "normal",
+      });
+      label(
+        this,
+        sx + 6,
+        stripY + 20,
+        isGated
+          ? `${rung.xpRequired} XP · drill gate`
+          : `${rung.xpRequired} XP`,
+        { fontSize: "9px", color: isCurrent ? CSS.BG : CSS.DIM }
+      );
+    });
+
+    // Drill-gate slots are authored-but-empty until the drill system ships —
+    // say so explicitly rather than implying ranks are XP-only.
+    label(
+      this,
+      PAD,
+      stripY + segH + 6,
+      "Drill gates per rank arrive with the drill system — XP alone will not advance past them (GDD §7).",
+      { fontSize: "9px", color: CSS.DIM, fontStyle: "italic" }
+    );
   }
 
   // -------------------------------------------------------------------------

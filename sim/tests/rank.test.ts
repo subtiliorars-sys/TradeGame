@@ -271,3 +271,49 @@ describe("ProgressStore", () => {
     expect(r.rank.rankId).toBe("trainee");
   });
 });
+
+// ---------------------------------------------------------------------------
+// ladderViewModel — full-ladder display data (wave E)
+// ---------------------------------------------------------------------------
+
+import { ladderViewModel } from "../src/engine/rank.js";
+
+describe("ladderViewModel — §4.5 rank-ladder display", () => {
+  it("marks achieved / current / future across the canonical ladder", () => {
+    const rungs = ladderViewModel(850, []); // practitioner (800), trainee+observer achieved
+    expect(rungs.map((r) => r.state)).toEqual([
+      "achieved", // observer
+      "achieved", // trainee
+      "current",  // practitioner
+      "future",   // journeyman
+      "future",   // strategist
+      "future",   // senior_strategist
+    ]);
+  });
+
+  it("fresh player: observer current, everything else future", () => {
+    const rungs = ladderViewModel(0, []);
+    expect(rungs[0]?.state).toBe("current");
+    expect(rungs.slice(1).every((r) => r.state === "future")).toBe(true);
+  });
+
+  it("top rank: last rung current, all others achieved", () => {
+    const rungs = ladderViewModel(10_000, []);
+    expect(rungs[rungs.length - 1]?.state).toBe("current");
+    expect(rungs.slice(0, -1).every((r) => r.state === "achieved")).toBe(true);
+  });
+
+  it("drill-gated rung shows 'gated' with the missing drills listed", () => {
+    const rungs = ladderViewModel(300, [], SYNTH_LADDER); // beta needs drill-A
+    const beta = rungs.find((r) => r.rankId === "beta");
+    expect(beta?.state).toBe("gated");
+    expect(beta?.drillsMissing).toEqual(["drill-A"]);
+    // gamma's XP is met but the chain is blocked at beta → shown as future.
+    expect(rungs.find((r) => r.rankId === "gamma")?.state).toBe("future");
+  });
+
+  it("thresholds pass through verbatim (TUNABLE display contract)", () => {
+    const rungs = ladderViewModel(0, []);
+    expect(rungs.map((r) => r.xpRequired)).toEqual([0, 200, 800, 2000, 4500, 8000]);
+  });
+});

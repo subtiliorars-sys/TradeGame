@@ -129,3 +129,58 @@ export function currentRank(
 
   return { rank, nextRank, xpIntoRank, xpToNextRank, drillsMissing };
 }
+
+// ---------------------------------------------------------------------------
+// ladderViewModel — full-ladder display data (§4.5 rank-ladder UI)
+// ---------------------------------------------------------------------------
+
+export interface LadderRungView {
+  rankId: string;
+  displayLabel: string;
+  /** Cumulative XP threshold — TUNABLE economy number, display verbatim. */
+  xpRequired: number;
+  /**
+   * achieved — below the player's current rank;
+   * current  — the player's rank;
+   * gated    — XP threshold met but this rung's drill gate is unmet
+   *            (the explicit-gate state — never a silent stall);
+   * future   — not yet reached.
+   */
+  state: "achieved" | "current" | "gated" | "future";
+  /** Drill IDs this rung requires (empty until the drill system ships). */
+  drillsRequired: string[];
+  /** Of those, the ones the player has not completed. */
+  drillsMissing: string[];
+}
+
+/**
+ * Build the full-ladder view for the Main Menu rank-ladder display.
+ * Pure — same inputs as currentRank(); §4.4 applies: XP and drill data only,
+ * no outcome inputs.
+ */
+export function ladderViewModel(
+  xpTotal: number,
+  completedDrillIds: string[],
+  ladder: readonly RankThreshold[] = CANONICAL_LADDER
+): LadderRungView[] {
+  const { rank } = currentRank(xpTotal, completedDrillIds, ladder);
+  const currentIdx = ladder.findIndex((r) => r.rankId === rank.rankId);
+  const drillSet = new Set(completedDrillIds);
+
+  return ladder.map((rung, i) => {
+    const drillsMissing = rung.drillsRequired.filter((id) => !drillSet.has(id));
+    let state: LadderRungView["state"];
+    if (i < currentIdx) state = "achieved";
+    else if (i === currentIdx) state = "current";
+    else if (xpTotal >= rung.xpRequired && drillsMissing.length > 0) state = "gated";
+    else state = "future";
+    return {
+      rankId: rung.rankId,
+      displayLabel: rung.displayLabel,
+      xpRequired: rung.xpRequired,
+      state,
+      drillsRequired: [...rung.drillsRequired],
+      drillsMissing,
+    };
+  });
+}
