@@ -362,15 +362,10 @@ COMMUNITY.md §2, docs/templates/COACH_AGREEMENT.md.*
 - **HBD shorthand** — RETIRED. Always write "HarborUSD" in full. Real-ticker
   collision with Hive Backed Dollar is the reason; see FICTIONAL_CANON.md entry.
 
-**Decision:** Three naming calls in `docs/game/FICTIONAL_CANON.md`:
-- **KORVA** — new fictional forex base currency (replaced the SOLU placeholder,
-  which was one letter off SOL/Solana). Keep or rename.
-- **CALD / Calder Utilities** — new fictional defensive dividend equity (replaced
-  a miscast VRXC usage). Keep or rename.
-- **HBD** — HarborUSD's shorthand collides with a real ticker (Hive Backed
-  Dollar). Content mostly says "HarborUSD" in full; decide whether to retire the
-  HBD shorthand entirely (small sweep) or accept the collision with the canon's
-  always-use-full-name rule.
+*(Background, for the record: KORVA replaced the SOLU placeholder, one letter off
+SOL/Solana; CALD/Calder Utilities replaced a miscast VRXC usage; HBD was HarborUSD's
+shorthand colliding with Hive Backed Dollar's real ticker. All three calls are
+decided above — no owner action remains on this item.)*
 
 ### P-7. Forex stop-out convention (added 2026-06-07, Phase 2 build)
 

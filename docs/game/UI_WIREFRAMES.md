@@ -319,9 +319,10 @@ scenarios after backport). The mode is set in the scenario config.
   inline fields (e.g., "[___] price level" for SCN-002) or removes the inline field
   entirely if the scenario does not require a numerical assumption.
 
-SPEC GAP (SG-04, CLOSED 2026-06-07): the `policy_match` metric is now defined in
-SIM_ENGINE_SPEC §4.2's metric table (deterministic EventLog extraction, A/B/C
-behavior predicates, +25 XP on match per SCN-006 rubric).
+SPEC GAP (SG-04, CLOSED 2026-06-07): The policy_match metric was specified in SCENARIOS_V1.md
+SCN-006's scoring rubric but missing from SIM_ENGINE_SPEC §4.2's metric table. RESOLVED —
+`policy_match` is now defined in SIM_ENGINE_SPEC §4.2 (+25 XP, EventLog-deterministic).
+See SG-04 in the Spec Gaps Summary.
 
 ---
 
@@ -616,11 +617,13 @@ Phase 2: player can view their own replay and see any pre-authored scenario anno
   choice: the replay is shareable format, and journal text is sensitive even to
   the player in a shareable context (SIM_ENGINE_SPEC §5.1 journal text privacy).
 
-SPEC GAP (SG-06, CLOSED 2026-06-07): SIM_ENGINE_SPEC §5.3 now defines the
-`annotationType: 'scenario_authored' | 'coach'` discriminator — scenario-authored
-annotations are pre-vetted at authoring time and skip the runtime content filter;
-coach annotations always pass through it; the replay viewer renders the two in
-visually distinct lanes (`[Scenario]` vs `[Coach]`).
+SPEC GAP (SG-06, CLOSED 2026-06-07): SIM_ENGINE_SPEC §5.3 originally did not distinguish
+pre-authored scenario annotations from user-generated coach annotations. RESOLVED —
+§5.3 now defines `annotationType: 'scenario_authored' | 'coach'` on `CoachAnnotation`:
+`scenario_authored` entries are pre-vetted at authoring time and bypass the runtime
+content filter; `coach` entries always pass through it. The replay viewer renders the
+two as the distinct "[Scenario]" / "[Coach]" lanes shown above. See SG-06 in the
+Spec Gaps Summary.
 
 ---
 

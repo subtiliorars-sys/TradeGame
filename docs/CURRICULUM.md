@@ -77,7 +77,7 @@ exist; entries note "(scenario catalog)" where a matching scenario should be aut
 | # | Lesson | Objective | Paired Drill / Scenario | Process Check |
 |---|--------|-----------|-------------------------|---------------|
 | C-I01 | Stablecoin depegs — mechanics | How an algo-stable loses its peg; liquidity cascade anatomy | Scenario replay — stablecoin depeg (GDD §5.2) | Can you describe the sequence of events without referencing a specific coin? |
-| C-I02 | Flash crash anatomy | Liquidation cascade, thin order books, bid vacuum | Scenario replay — BTC flash crash scenario (GDD §5.2) | What is the one action you would take before a volatile period, not during? |
+| C-I02 | Flash crash anatomy | Liquidation cascade, thin order books, bid vacuum | Scenario replay — GLIMMER flash crash scenario (GDD §5.2) | What is the one action you would take before a volatile period, not during? |
 | C-I03 | Liquidity pools and impermanent loss | AMM pricing math, when LP is capital-efficient, when it isn't | Strategy sandbox — (scenario catalog: LP simulation TODO) | Can you calculate approximate impermanent loss for a 2× price move? |
 | C-I04 | Volatility regimes | Mean-reverting vs. trending environments; how to identify which you're in | Paper sandbox — compare two synthetic periods: range vs. trend | Are you adjusting strategy type to market regime, or forcing one approach everywhere? |
 
