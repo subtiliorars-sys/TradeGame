@@ -139,7 +139,7 @@ journal, did you follow your stated rule?
 
 The game is still in development. This is what the early builds look like.
 
-[Attach: development screenshot or sketch]
+[Attach: design sketch or spec excerpt — must be clearly labeled as design-stage material, not gameplay]
 
 Education, not financial advice. Trading involves risk of significant loss. Simulated
 results are not real trading. No signals, ever.
@@ -167,15 +167,16 @@ results are not real trading. No signals, ever.
 
 **Draft W2-B — Wednesday, Game Devlog**
 
+**HOLD — DO NOT POST until a playable vertical-slice build has shipped and owner confirms (ROADMAP Phase 2).**
+
 Community feature sneak peek: the replay-review system.
 
 One of the things that separates TradeGame from a generic sim: every session generates
 a replay. You can go back, annotate your decision points, and share them with a coach
 or the community for review. No PnL required — the review is about process, not outcome.
 
-We are building this feature now. Here is an early look at the interface.
-
-[Attach: wireframe or screenshot]
+This feature is part of the game design — here is how we are thinking about it and
+why the process-over-outcome framing shapes every design decision.
 
 Education, not financial advice. Trading involves risk of significant loss. Simulated
 results are not real trading. No signals, ever.
@@ -201,15 +202,18 @@ results are not real trading. No signals, ever.
 
 **Draft W3-B — Friday, Replay Friday**
 
+**HOLD — DO NOT POST until a playable vertical-slice build has shipped and owner confirms (ROADMAP Phase 2).**
+
 Community learning moment: what one bad entry taught us about patience.
 
-[Summary of a game scenario replay — describe the decision point, what information was
-available, what choice was made, and what the debrief revealed about process. Do NOT
-reference real markets, real tickers, or real outcomes. Keep framing entirely within
-the sim.]
+[Summary of a Process-Concept replay — describe a trading decision point, what
+information was available, what choice was made, and what the debrief revealed about
+process. Do NOT reference real markets, real tickers, or real outcomes. Keep framing
+entirely within the sim. Until the game ships, use the Process-Concept variant of this
+slot — the scenario is a described concept, not a recorded game replay.]
 
-Owner note before posting: fill in the scenario detail from an actual game replay.
-The bracket text above is a placeholder.
+Owner note before posting: this slot uses the Process-Concept variant until the game
+vertical slice ships and real replay data is available.
 
 Education, not financial advice. Trading involves risk of significant loss. Simulated
 results are not real trading. No signals, ever.
@@ -234,12 +238,14 @@ results are not real trading. No signals, ever.
 
 **Draft W4-B — Wednesday, Game Devlog**
 
+**HOLD — DO NOT POST until a playable vertical-slice build has shipped and owner confirms (ROADMAP Phase 2).**
+
 What we are building next — and how the community shapes it.
 
 The current development priority list includes [two or three items from GDD]. We share
 these early because the people who care most about trading education should have a voice
-in what the game teaches. If you have played the early build or are on the Discord, you
-already know how to submit feedback.
+in what the game teaches. If you are on the Discord, you can submit feedback and shape
+what gets built.
 
 [Attach: current dev roadmap screenshot or short list]
 

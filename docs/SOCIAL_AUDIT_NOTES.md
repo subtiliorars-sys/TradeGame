@@ -2,6 +2,8 @@
 
 Internal audit notes — sensitive; never publish; mark attorney work product if counsel engages.
 
+This file must never appear in TradeGame---Preview or any public surface. The Facebook URL below and all Telegram invite links are the confidential items. Mark this file attorney work product upon counsel engagement.
+
 ---
 
 ## Facebook Page

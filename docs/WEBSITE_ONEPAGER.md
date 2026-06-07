@@ -86,8 +86,8 @@ lesson. A lucky outcome with bad process earns you nothing.
 *Layout: short intro paragraph + three horizontal stat/feature tiles; coach-ladder visual below (learner → helper → coach).*
 
 TradeGame runs on Discord. Channels are organized by market pillar — learn,
-analysis, strategy, and wins-AND-losses journals. Losses get posted here too.
-That is not optional; it is the culture.
+analysis, strategy, and process journals — where losses are posted alongside
+everything else. That is not optional; it is the culture.
 
 **Coaching ladder — earned, not bought**
 The ladder goes: Learner → Helper → Coach. You move up by completing game

@@ -33,7 +33,7 @@ market where speed, panic, and uncertainty are the structural hazards.
 
 **Market:** Crypto (spot)
 **Event type:** Stablecoin depeg
-**Archetype:** May-2022-style algorithmic stablecoin collapse
+**Archetype:** Algorithmic stablecoin depeg cascade (historical archetype — no specific protocol or date named)
 **Data source:** Synthetic generator (regime-switching, depeg event hook)
 **Time window:** 40 minutes sim time (compressible to 10 min at 4x)
 **Pair displayed:** HBD/USVC (USVC = a second fictional stable used as quote currency)

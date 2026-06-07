@@ -592,3 +592,6 @@ This is a hard gate, not a suggestion. The blueprint assumes entity formation is
 - [ ] Coach Agreement (docs/templates/COACH_AGREEMENT.md) collected for any Coach-role holder before launch
 - [ ] THE GAME category created with placeholder message
 - [ ] Owner account has 2FA enabled (RISK_REGISTER §11 — operational security)
+- [ ] FB winning-trades review complete (SOCIAL_REVIVAL_PLAN §1a gate cleared) and Telegram public channels cleaned BEFORE any Discord invite link is inserted into Telegram pin texts or the FB page.
+- [ ] Opening THE GAME category (leaderboard/journal/progression data) also triggers the Phase 2 Compliance Gate (SIM_ENGINE_SPEC §8): COPPA analysis must be complete before any game account or session data is collected from real users, even informally (RISK_REGISTER §10/§14).
+- [ ] Confirm GDPR controller/processor posture under Discord's DPA for EU/UK member data before public launch (RISK_REGISTER §14 watch item).

@@ -31,7 +31,9 @@ as severity H regardless of how few accounts are involved.
 3. Check whether the pushed asset got ANY organic traction in our channels;
    if members engaged, post a mod notice in the affected channel naming the
    pattern (not the asset): "coordinated promotion was removed; reminder —
-   nobody here tells you what to buy."
+   nobody here tells you what to buy." Do NOT name the specific asset or token
+   in any public post — generic pattern description only; naming it amplifies
+   it even in a warning context.
 4. Search server-wide for the same asset/handle (Discord search) and sweep.
 5. If our BRAND was used off-platform to legitimize a pump (screenshots,
    fake "TradeGame coach" accounts): document everything, post a disavowal in

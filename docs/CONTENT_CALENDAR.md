@@ -16,7 +16,7 @@ Pillars rotate across a three-market cycle (Crypto → Stocks → Forex → repe
 |---|---|---|---|---|---|
 | Monday | Market Monday | One concept post: theory, market mechanics, or a risk idea. No current-market commentary, no calls. | Crypto → Stocks → Forex → repeat | #crypto-learn / #stocks-learn / #forex-learn (match the pillar week) | FB page (if revival passes audit) |
 | Wednesday | Game Wednesday | Game devlog, scenario release, sim challenge announcement, or leaderboard update. | Game (no pillar rotation) | #sim-runs or #announcements | FB page |
-| Friday | Replay Friday | Community replay-review clip or written breakdown from a game scenario replay. Process-focused. Sourced from member replays (with permission) or coach-run scenarios. | Rotates with Monday pillar | #replay-review or #scenario-replays | YouTube (short clip or write-up); FB |
+| Friday | Replay Friday | Community replay-review clip or written breakdown from a game scenario replay. Process-focused. Sourced from member replays (with permission) or coach-run scenarios. GATED — live-replay variant inactive until the game vertical slice ships (Phase 2); until then use the Process-Concept variant (no game replay required), as in the Week 1–2 drafts. | Rotates with Monday pillar | #replay-review or #scenario-replays | YouTube (short clip or write-up); FB |
 
 No slot is skipped without a written reason in the calendar notes. If cadence cannot be maintained, drop the short-form surface (TikTok/Reels) before dropping Discord or YouTube (COMMUNITY.md content-debt rule).
 
@@ -247,7 +247,7 @@ What "completing a cohort" means here: members showed up, did the work, logged t
 [Member handle] shared: "[quote about process, learning, or what they found hard — never about profit or returns]"
 
 [Required disclosure if member received any benefit — coaching role, early access, cosmetics:]
-[Member handle] is a TradeGame community member. Their experience is their own and is not typical or guaranteed — most people who trade lose money. TradeGame is education, not financial advice, and showcases learning progress, not trading profits. [Member handle] [received / did not receive] [specify any benefit].
+[Member handle] is a TradeGame community member. Their experience is their own and is not typical or guaranteed — most people who trade lose money. TradeGame is education, not financial advice, and showcases learning progress, not trading profits. [If the member received ANY benefit — coach role, early access, cosmetics, recognition, or any non-monetary benefit — state it verbatim per DISCLOSURE_BLOCK §A. If genuinely no benefit of any kind exists, omit this sentence entirely — never write "did not receive".]
 
 ---
 Education, not financial advice. Trading involves risk of significant loss. Simulated results are not real trading. No signals, ever.
