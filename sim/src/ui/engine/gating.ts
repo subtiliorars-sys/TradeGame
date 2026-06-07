@@ -20,6 +20,10 @@
 
 import type { ScenarioManifest } from "../../scenarios/types.js";
 import { CANONICAL_LADDER, type RankThreshold } from "../../engine/rank.js";
+import { DRILL_CATALOG } from "../../drills/catalog.js";
+
+/** IDs of drills that actually exist (shipped-drills-only flip rule). */
+const SHIPPED_DRILL_IDS = new Set(DRILL_CATALOG.map((d) => d.id));
 
 export interface ScenarioLockState {
   /** True when the card must not be startable. */
@@ -39,7 +43,8 @@ export function scenarioLockState(
   manifest: ScenarioManifest,
   playerRankId: string,
   completedScenarioIds: readonly string[],
-  ladder: readonly RankThreshold[] = CANONICAL_LADDER
+  ladder: readonly RankThreshold[] = CANONICAL_LADDER,
+  completedDrillIds: readonly string[] = []
 ): ScenarioLockState {
   const reasons: string[] = [];
   const advisories: string[] = [];
@@ -52,6 +57,15 @@ export function scenarioLockState(
         reasons.push(`Complete ${neededId} first`);
       }
     }
+    // HARD (drill flip, brief §6): drill prereqs lock once the drill EXISTS
+    // in the live catalog — the on-ramp is open at zero state (RISK DRILLS
+    // from the menu), so the gate is explicit and immediately satisfiable.
+    // Unshipped drill IDs stay advisory (counted below) — never a dead end.
+    if (prereq.startsWith("drill:") && SHIPPED_DRILL_IDS.has(prereq)) {
+      if (!completedDrillIds.includes(prereq)) {
+        reasons.push(`Complete the ${prereqDrillLabel(prereq)} drill first`);
+      }
+    }
   }
 
   // ADVISORY: rank requirement (see module header for why not enforced yet).
@@ -61,9 +75,11 @@ export function scenarioLockState(
     advisories.push(`Designed for ${manifest.minRank}+`);
   }
 
-  // ADVISORY: drill/lesson prereqs — systems not shipped; informational only.
+  // ADVISORY: lessons (system not shipped) + any UNSHIPPED drill prereqs.
   const supportCount = manifest.prereqs.filter(
-    (p) => p.startsWith("drill:") || p.startsWith("lesson:")
+    (p) =>
+      p.startsWith("lesson:") ||
+      (p.startsWith("drill:") && !SHIPPED_DRILL_IDS.has(p))
   ).length;
   if (supportCount > 0) {
     advisories.push(
@@ -72,4 +88,12 @@ export function scenarioLockState(
   }
 
   return { locked: reasons.length > 0, reasons, advisories };
+}
+
+/** Short player-facing label for a drill prereq ID. */
+function prereqDrillLabel(id: string): string {
+  return id
+    .replace(/^drill:/, "")
+    .replace(/-v\d+$/, "")
+    .replace(/-/g, " ");
 }

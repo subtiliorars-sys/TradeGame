@@ -222,7 +222,9 @@ export class MenuScene extends Phaser.Scene {
     const lockState = scenarioLockState(
       manifest,
       currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId,
-      ProgressStore.completedScenarioIds()
+      ProgressStore.completedScenarioIds(),
+      undefined,
+      ProgressStore.completedDrillIds()
     );
 
     const bw = CARD_W - 24;

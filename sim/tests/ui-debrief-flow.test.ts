@@ -112,6 +112,13 @@ describe("replay re-review flow — session_reviewed earned by the replay sessio
 
 describe("ProgressStore rank-up marker (§4.5 congratulation card hook)", () => {
   it("crossing a threshold records lastRankUp; clearRankUp consumes it", () => {
+    // Satisfy Trainee's drill gate so the XP crossing is the only variable.
+    for (const id of [
+      "drill:position-sizing-crypto",
+      "drill:position-sizing-stocks",
+      "drill:position-sizing-forex",
+      "drill:stop-placement-v1",
+    ]) ProgressStore.markDrillCompleted(id);
     expect(ProgressStore.lastRankUp()).toBeNull();
     ProgressStore.addXp(150); // Observer (0) → still Observer (trainee at 200)
     expect(ProgressStore.lastRankUp()).toBeNull();
@@ -124,6 +131,12 @@ describe("ProgressStore rank-up marker (§4.5 congratulation card hook)", () => 
   });
 
   it("additions within the same rank do not set the marker", () => {
+    for (const id of [
+      "drill:position-sizing-crypto",
+      "drill:position-sizing-stocks",
+      "drill:position-sizing-forex",
+      "drill:stop-placement-v1",
+    ]) ProgressStore.markDrillCompleted(id);
     ProgressStore.addXp(250); // → trainee
     ProgressStore.clearRankUp();
     ProgressStore.addXp(50); // 300 — still trainee (practitioner at 800)
@@ -131,6 +144,12 @@ describe("ProgressStore rank-up marker (§4.5 congratulation card hook)", () => 
   });
 
   it("a single large addition records the boundary crossing once", () => {
+    for (const id of [
+      "drill:position-sizing-crypto",
+      "drill:position-sizing-stocks",
+      "drill:position-sizing-forex",
+      "drill:stop-placement-v1",
+    ]) ProgressStore.markDrillCompleted(id);
     ProgressStore.addXp(900); // observer → practitioner in one add
     const up = ProgressStore.lastRankUp();
     expect(up?.from.rankId).toBe("observer");
