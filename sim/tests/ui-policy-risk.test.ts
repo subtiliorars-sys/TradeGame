@@ -133,3 +133,35 @@ describe("News Policy Card event path — policy metrics live in the UI adapter"
     expect(debrief?.policyMismatchNote).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Wave C red-team regressions
+// ---------------------------------------------------------------------------
+
+describe("F2: declaredRiskPct is frozen at first order (no retro-fit)", () => {
+  it("editing Risk % after the fill does not change the grading basis", () => {
+    const adapter = makeAdapter("SCN-001");
+    adapter.declaredRiskPct = 1;
+    adapter.clock.advance(5);
+    // ~10% notional under a 1% declaration — must FAIL size_compliance.
+    adapter.submitOrder({ side: "buy", quantity: 1000, stopPrice: 0.95 });
+    adapter.clock.advance(2);
+    // Retro-fit attempt: declare 10% AFTER the fill.
+    adapter.declaredRiskPct = 10;
+    const debrief = adapter.endSession();
+    const row = debrief?.rubricRows.find((r) => r.metricId === "size_compliance");
+    expect(row?.status, "post-fill Risk % edits must not re-grade the trade").toBe("fail");
+  });
+
+  it("declaring 10% BEFORE the order still grades against 10%", () => {
+    const adapter = makeAdapter("SCN-001");
+    adapter.declaredRiskPct = 10;
+    adapter.clock.advance(5);
+    adapter.submitOrder({ side: "buy", quantity: 1000, stopPrice: 0.95 });
+    adapter.clock.advance(2);
+    adapter.declaredRiskPct = 1; // post-fill edit the other direction
+    const debrief = adapter.endSession();
+    const row = debrief?.rubricRows.find((r) => r.metricId === "size_compliance");
+    expect(row?.status).toBe("pass");
+  });
+});

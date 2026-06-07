@@ -148,7 +148,6 @@ export interface MetricResult {
  * committed capital."
  */
 export function journal_before_trade(input: MetricInput): MetricResult {
-  const firstJournal = firstEventIndexOf(input.events, "journal_entry");
   const firstOrder = firstEventIndexOf(input.events, "order_submit");
 
   if (firstOrder === -1) {
@@ -156,9 +155,23 @@ export function journal_before_trade(input: MetricInput): MetricResult {
     return { metricId: "journal_before_trade", passed: false, xpOnPass: 20, applicable: false };
   }
 
-  const passed = firstJournal !== -1 && firstJournal < firstOrder;
+  // Quality floor (red-team F6): an empty/near-empty entry is a click, not a
+  // journal — it must not buy process XP. MIN_JOURNAL_WORDS is TUNABLE.
+  const passed = input.events.some(
+    (e, i): boolean =>
+      e.type === "journal_entry" &&
+      (e as JournalEntryEvent).wordCount >= MIN_JOURNAL_WORDS &&
+      i < firstOrder
+  );
   return { metricId: "journal_before_trade", passed, xpOnPass: 20, applicable: true };
 }
+
+/**
+ * Minimum words for a journal entry to count toward journal-driven metrics
+ * (journal_before_trade, patience_observation). TUNABLE; the lowest authored
+ * fixture journal is 12 words, scenario UI beats ask for ≥20 characters.
+ */
+const MIN_JOURNAL_WORDS = 5;
 
 /** stop_before_entry: stop order submitted before or at the same tick as entry fill. */
 export function stop_before_entry(input: MetricInput): MetricResult {
@@ -302,13 +315,16 @@ export function exit_journal(input: MetricInput): MetricResult {
   return { metricId: "exit_journal", passed, xpOnPass: 15, applicable };
 }
 
-/** patience_observation: journaled without trading (no fills). */
+/** patience_observation: journaled without trading (no fills).
+ *  Quality floor (F6): at least one journal of MIN_JOURNAL_WORDS+ words —
+ *  saving an empty entry is not observation. */
 export function patience_observation(input: MetricInput): MetricResult {
-  const journalCount = input.events.filter(
-    (e) => e.type === "journal_entry"
+  const qualityJournals = input.events.filter(
+    (e): e is JournalEntryEvent =>
+      e.type === "journal_entry" && e.wordCount >= MIN_JOURNAL_WORDS
   ).length;
   const fillCount = input.events.filter((e) => e.type === "order_fill").length;
-  const passed = journalCount >= 1 && fillCount === 0;
+  const passed = qualityJournals >= 1 && fillCount === 0;
   return { metricId: "patience_observation", passed, xpOnPass: 40, applicable: true };
 }
 

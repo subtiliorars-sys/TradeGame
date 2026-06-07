@@ -655,6 +655,17 @@ Rules:
 
 ScoreTracker emits XP events (not PnL data) to the progression system.
 
+**Emission timing — session end vs. debrief completion:** scoring runs once
+at session end (all metrics except `debrief_completed` resolve there) and once
+more when the player reaches the debrief screen, which appends the
+`debrief_complete` event and re-scores. The re-score appends ONLY XP events
+for metrics that have not already emitted one — one XP event per metric per
+session across both passes. This makes the debrief's flat reward earnable in
+the session being debriefed (the rubric's intent), while `session_reviewed`
+is earned by a REPLAY session, which carries a `replay_started` marker from
+its first tick. The UI accounts the session's XP total to the progression
+store exactly once, after the debrief-completion re-score.
+
 ```typescript
 interface XpEvent {
   sessionId:   string;

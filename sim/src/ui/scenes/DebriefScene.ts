@@ -312,7 +312,9 @@ export class DebriefScene extends Phaser.Scene {
     y += 8;
 
     const xpTotal = this.debriefData?.xpTotal ?? 0;
-    const xpMax = 200; // upper display cap — not a rank gate
+    // Display scale never overflows (F11: a fixed 200 cap clipped SCN-006's
+    // 285-point rubric). Upper bound only — not a rank gate.
+    const xpMax = Math.max(200, xpTotal);
     const barW = RIGHT_W;
     const barH = 10;
 
@@ -468,6 +470,10 @@ export class DebriefScene extends Phaser.Scene {
   private drawRankUpCard(): void {
     const rankUp = ProgressStore.lastRankUp();
     if (rankUp === null) return;
+    // Consume the marker immediately (F8): the card is one-time per §4.5 —
+    // navigating away without clicking CONTINUE must not re-show a stale
+    // "RANK UP" on every later debrief.
+    ProgressStore.clearRankUp();
 
     const { width, height } = this.scale;
     const cw = 480;
@@ -519,7 +525,6 @@ export class DebriefScene extends Phaser.Scene {
       32,
       "CONTINUE",
       () => {
-        ProgressStore.clearRankUp();
         g.destroy();
         cardG.destroy();
         for (const o of objs) o.destroy();

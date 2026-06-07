@@ -40,6 +40,10 @@ import {
 // Spec UI beat: minimum 30 characters for the rationale. TUNABLE pending
 // playtests (SCENARIOS_V1 "News Policy Card" TUNABLE note).
 const MIN_RATIONALE_CHARS = 30;
+// Must match scoring.ts MIN_POLICY_JOURNAL_WORDS — the UI gate and the
+// policy_declared_card metric gate may not disagree (red-team F5: a 35-char/
+// 5-word rationale passed the card but silently failed the metric).
+const MIN_RATIONALE_WORDS = 6;
 
 export type PolicyOption = "A_flat" | "B_hold_with_stop" | "C_observe_only";
 
@@ -249,23 +253,32 @@ export class PolicyCardScene extends Phaser.Scene {
       wordWrap: { width: pw - 44 },
       lineSpacing: 3,
     }));
+    const charsOk = this.rationale.trim().length >= MIN_RATIONALE_CHARS;
+    const wordsOk =
+      (this.rationale.trim() ? this.rationale.trim().split(/\s+/).length : 0) >=
+      MIN_RATIONALE_WORDS;
     add(label(
       this,
       px + 16,
       taY + 12 + taH + 6,
-      `${this.rationale.trim().length}/${MIN_RATIONALE_CHARS} characters`,
+      `${this.rationale.trim().length}/${MIN_RATIONALE_CHARS} characters · ` +
+        `${this.rationale.trim() ? this.rationale.trim().split(/\s+/).length : 0}/${MIN_RATIONALE_WORDS} words`,
       {
         fontSize: "10px",
-        color:
-          this.rationale.trim().length >= MIN_RATIONALE_CHARS ? CSS.DIM : CSS.RED,
+        color: charsOk && wordsOk ? CSS.DIM : CSS.RED,
         fontStyle: "italic",
       }
     ));
 
-    // DECLARE button — enabled only with an option + sufficient rationale.
+    // DECLARE button — enabled only with an option + sufficient rationale
+    // (both the char gate and the scoring metric's word gate, F5).
+    const wordCount = this.rationale.trim()
+      ? this.rationale.trim().split(/\s+/).length
+      : 0;
     const canDeclare =
       this.selected !== null &&
-      this.rationale.trim().length >= MIN_RATIONALE_CHARS;
+      this.rationale.trim().length >= MIN_RATIONALE_CHARS &&
+      wordCount >= MIN_RATIONALE_WORDS;
     const btn = button(
       this,
       cx - 130,

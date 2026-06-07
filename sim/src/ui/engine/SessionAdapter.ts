@@ -203,6 +203,15 @@ export class SessionAdapter {
   declaredRiskPct = 1;
 
   /**
+   * The declaration in force at the FIRST order submit — what scoring grades
+   * against. Snapshotting at commit time (mirroring the harness's fixed
+   * per-run declaredRiskPct) closes the retro-fit exploit: editing Risk %
+   * AFTER the fill to match whatever was traded would otherwise suppress the
+   * reckless-winner coaching (red-team finding F2). Null until first order.
+   */
+  private declaredRiskPctAtFirstOrder: number | null = null;
+
+  /**
    * Construct a SessionAdapter for the given scenario and seed.
    *
    * The market adapter (crypto / stocks / forex) is selected from
@@ -325,6 +334,12 @@ export class SessionAdapter {
     const { tickIndex, simTimeMs } = this.clock.state;
     const orderId = `ui-ord-${++this.orderSeq}`;
     const orderType = spec.orderType ?? "market";
+
+    // Freeze the risk declaration at the first order — pre-commitment is
+    // what size_compliance certifies (F2; see declaredRiskPctAtFirstOrder).
+    if (this.declaredRiskPctAtFirstOrder === null) {
+      this.declaredRiskPctAtFirstOrder = this.declaredRiskPct;
+    }
 
     const submitEv: OrderSubmitEvent = {
       type: "order_submit",
@@ -545,12 +560,12 @@ export class SessionAdapter {
       {
         events: allEvents,
         sessionHasWin: this.sessionHasWin,
-        declaredRiskPct:
-          Number.isFinite(this.declaredRiskPct) &&
-          this.declaredRiskPct > 0 &&
-          this.declaredRiskPct <= 100
-            ? this.declaredRiskPct
-            : 1,
+        // Grade against the declaration frozen at first order (F2);
+        // sessions with no orders fall back to the live field.
+        declaredRiskPct: (() => {
+          const pct = this.declaredRiskPctAtFirstOrder ?? this.declaredRiskPct;
+          return Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : 1;
+        })(),
         sessionStartEquity: 10_000,
         // Applicability gate for scenario-specific metrics (rubric-authored only).
         rubricMetricIds: (this.manifest?.xpRubric ?? []).map((r) => r.metricId),

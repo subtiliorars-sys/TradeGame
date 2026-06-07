@@ -329,3 +329,45 @@ describe("policy_declared_card", () => {
     expect(policy_declared_card(input).passed).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Wave C red-team regression — F6 journal quality floor
+// ---------------------------------------------------------------------------
+
+import {
+  patience_observation,
+  journal_before_trade,
+} from "../src/engine/scoring.js";
+
+describe("F6: journal quality floor — empty saves buy no process XP", () => {
+  it("patience_observation fails on a zero-word journal", () => {
+    const input = makeInput([journalWords(0, 100)]);
+    expect(patience_observation(input).passed).toBe(false);
+  });
+
+  it("patience_observation passes at the 5-word floor", () => {
+    const input = makeInput([journalWords(5, 100)]);
+    expect(patience_observation(input).passed).toBe(true);
+  });
+
+  it("journal_before_trade ignores a 2-word pre-trade note", () => {
+    const input = makeInput([journalWords(2, 50), submit(100), fill(110)]);
+    expect(journal_before_trade(input).passed).toBe(false);
+  });
+
+  it("journal_before_trade passes with a real pre-trade entry", () => {
+    const input = makeInput([journalWords(12, 50), submit(100), fill(110)]);
+    expect(journal_before_trade(input).passed).toBe(true);
+  });
+});
+
+function journalWords(wordCount: number, timestamp: number): SimEvent {
+  return {
+    type: "journal_entry",
+    entryId: `jw-${timestamp}`,
+    tags: ["observation"],
+    wordCount,
+    tickIndex: 0,
+    timestamp,
+  };
+}

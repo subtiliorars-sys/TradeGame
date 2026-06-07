@@ -152,6 +152,9 @@ export class TradingScene extends Phaser.Scene {
   /** Non-null when this session is a replay (set from DebriefScene init data). */
   private replayOfSessionId: string | null = null;
 
+  /** Protective-stop orderId → entry orderId (stop-out bookkeeping, F1). */
+  private stopIdToEntryId: Map<string, string> = new Map();
+
   // Position state
   private positions: OpenPosition[] = [];
   /** Order ID of a pending market order awaiting its fill event. */
@@ -262,6 +265,7 @@ export class TradingScene extends Phaser.Scene {
     this.journalText = "";
     this.journalTags = new Set();
     this.journalEntries = [];
+    this.stopIdToEntryId = new Map();
     this.fillOverlay = null;
     this.fillTimer = null;
     this.sessionEndFired = false;
@@ -481,6 +485,8 @@ export class TradingScene extends Phaser.Scene {
     // (simplistic: captures all char keys when journal is open and stop/qty
     // fields are not focused)
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      // F7: the policy card overlay owns the keyboard while active.
+      if (this.scene.isActive("PolicyCardScene")) return;
       if (!this.journalOpen) return;
       if (this.focusedField !== null) return;
       if (e.key === "Backspace") {
@@ -496,6 +502,8 @@ export class TradingScene extends Phaser.Scene {
     // Backspace deletes, Enter/Escape blurs. Registered ONCE per scene create
     // (same listener-compounding rule as the journal handler above).
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      // F7: the policy card overlay owns the keyboard while active.
+      if (this.scene.isActive("PolicyCardScene")) return;
       if (this.focusedField === null) return;
       if (e.key === "Enter" || e.key === "Escape") {
         this.focusedField = null;
@@ -953,21 +961,31 @@ export class TradingScene extends Phaser.Scene {
     this.drawOrderTicket();
   }
 
+  /**
+   * True while trade entry is frozen for the news print: from the policy
+   * deadline (T-01) until the report window opens. The freeze end derives
+   * from the scenario's first no-entry window (the report time) rather than
+   * a hardcoded offset (F10); 60s fallback when no window is authored.
+   */
+  private inNewsFreeze(): boolean {
+    const deadline = this.def.manifest.policyDeadlineMs;
+    if (deadline === undefined) return false;
+    const freezeEnd =
+      this.def.manifest.noEntryWindows?.[0]?.startMs ?? deadline + 60_000;
+    const now = this.adapter.clock.state.simTimeMs;
+    return now >= deadline && now < freezeEnd;
+  }
+
   private submitOrder(): void {
     const qty = parseFloat(this.orderQuantity);
     const stop = parseFloat(this.orderStopPrice);
     if (!qty || !stop) return;
 
     // News-freeze window (SCENARIOS_V1 SCN-006 UI beat): trade entry is
-    // disabled from the policy deadline (T-01) until the report prints
-    // 60 seconds later. Scenarios without a policy deadline are unaffected.
-    const deadline = this.def.manifest.policyDeadlineMs;
-    if (deadline !== undefined) {
-      const now = this.adapter.clock.state.simTimeMs;
-      if (now >= deadline && now < deadline + 60_000) {
-        this.showRejectNotice("news_freeze");
-        return;
-      }
+    // disabled from the policy deadline (T-01) until the report prints.
+    if (this.inNewsFreeze()) {
+      this.showRejectNotice("news_freeze");
+      return;
     }
 
     // Forex gate (SIM_ENGINE_SPEC §3.4 / wireframe Screen 2a): the blocking
@@ -985,8 +1003,37 @@ export class TradingScene extends Phaser.Scene {
 
   /** Actually route the order to the engine (after any forex ack gate). */
   private doSubmitOrder(qty: number, stop: number): void {
+    // News-freeze re-check (F3): the leverage-modal ack path re-enters here
+    // directly, and sim time keeps advancing under the modal — an order that
+    // passed the gate in submitOrder() can land inside the freeze by the
+    // time the player clicks "I UNDERSTAND".
+    if (this.inNewsFreeze()) {
+      this.showRejectNotice("news_freeze");
+      return;
+    }
+
     // Block speed changes during confirm (§1.3 — disabled until fill arrives).
     this.adapter.clock.beginOrderConfirm();
+
+    // PROTECTIVE STOP IS A REAL ORDER (F1): the ticket's stop price becomes a
+    // companion opposite-side stop order in the engine book, submitted BEFORE
+    // the entry — the same shape the harness scripts use. This is what makes
+    // stop_before_entry / stop_honored / no_stop_widen / policy option B
+    // earnable in live play, lets the stop actually execute, and keeps the
+    // reckless-winner stop leg alive.
+    const stopSide = this.orderSide === "buy" ? "sell" : "buy";
+    const stopOutcome = this.adapter.submitOrder({
+      side: stopSide,
+      quantity: qty,
+      stopPrice: stop,
+      orderType: "stop",
+      leverageAckReceived: this.leverageAcked,
+    });
+    if (stopOutcome.rejectReason !== null) {
+      this.adapter.clock.endOrderConfirm();
+      this.showRejectNotice(stopOutcome.rejectReason);
+      return;
+    }
 
     // Route through the engine OrderBook — fill math happens inside
     // computeMarketFillCosts (same path as the harness runner).
@@ -995,13 +1042,15 @@ export class TradingScene extends Phaser.Scene {
     const outcome = this.adapter.submitOrder({
       side: this.orderSide,
       quantity: qty,
-      stopPrice: stop,
+      stopPrice: null,
       orderType: this.orderType === "limit" ? "limit" : "market",
       limitPrice: this.orderType === "limit"
         ? (parseFloat(this.orderLimitPrice) || null)
         : null,
       leverageAckReceived: this.leverageAcked,
     });
+    // Map the protective stop to this entry for stop-out bookkeeping.
+    this.stopIdToEntryId.set(stopOutcome.orderId, outcome.orderId);
 
     if (outcome.rejectReason !== null) {
       // Order rejected at submit time (session closed, insufficient balance…).
@@ -1033,8 +1082,20 @@ export class TradingScene extends Phaser.Scene {
    * controls, mirroring the session-start convention.
    */
   private showPolicyCard(): void {
-    this.adapter.setCompression("paused");
+    // F4: a live fill-confirm overlay holds orderConfirmPending, which makes
+    // setCompression("paused") silently fail — dismiss it (ends the confirm
+    // lock) so the pause is guaranteed before the card opens.
+    this.dismissFillOverlay();
+    const paused = this.adapter.setCompression("paused");
+    if (!paused) {
+      // Defensive: release any stray confirm lock and retry.
+      this.adapter.clock.endOrderConfirm();
+      this.adapter.setCompression("paused");
+    }
     this.updateSpeedButtonHighlight("paused");
+    // F7: blur the order ticket so card rationale keystrokes don't edit the
+    // quantity/stop/risk fields underneath.
+    this.focusedField = null;
     const data: PolicyCardData = {
       scenarioId: this.def.manifest.id,
       hasOpenPosition: this.positions.length > 0,
@@ -1113,6 +1174,28 @@ export class TradingScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private onEngineFill = (fill: OrderFillEvent): void => {
+    // Protective stop executed (F1): close the matching position and show a
+    // distinct confirmation — the stop doing its job is a teaching moment,
+    // not an error.
+    const entryForStop = this.stopIdToEntryId.get(fill.orderId);
+    if (entryForStop !== undefined) {
+      this.stopIdToEntryId.delete(fill.orderId);
+      const pos = this.positions.find((p) => p.orderId === entryForStop);
+      this.positions = this.positions.filter((p) => p.orderId !== entryForStop);
+      this.drawPositionPanel();
+      this.showFillConfirm({
+        orderId: fill.orderId,
+        side: `STOP ${pos?.side === "buy" ? "SELL" : "BUY"}`,
+        qty: pos?.quantity ?? 0,
+        estimatedFill: fill.fillPrice,
+        actualFill: fill.fillPrice,
+        slippage: fill.slippage,
+        spreadCost: fill.spreadCost,
+        feeCost: fill.feeCost,
+      });
+      return;
+    }
+
     // Only handle the most-recently submitted order from this UI session.
     if (this.pendingFillOrderId !== fill.orderId) return;
     this.pendingFillOrderId = null;
@@ -1395,6 +1478,8 @@ export class TradingScene extends Phaser.Scene {
   private saveJournalEntry(): void {
     const text = this.journalText.trim();
     const words = text ? text.split(/\s+/).length : 0;
+    // F6: an empty save is a click, not a journal — emit nothing.
+    if (words === 0) return;
     const tags = [...this.journalTags];
 
     // EventLog emission: wordCount + tags only.
