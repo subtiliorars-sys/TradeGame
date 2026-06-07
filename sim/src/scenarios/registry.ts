@@ -12,11 +12,17 @@ import type { ScenarioDef } from "./types.js";
 import { scn001 } from "./scn001.js";
 import { scn002 } from "./scn002.js";
 import { scn003 } from "./scn003.js";
+import { scn004 } from "./scn004.js";
+import { scn005 } from "./scn005.js";
+import { scn006 } from "./scn006.js";
 
 const _registry: Record<string, ScenarioDef> = {
   "SCN-001": scn001,
   "SCN-002": scn002,
   "SCN-003": scn003,
+  "SCN-004": scn004,
+  "SCN-005": scn005,
+  "SCN-006": scn006,
 };
 
 /**
@@ -30,6 +36,9 @@ const CANONICAL_SEEDS: Record<string, number> = {
   "SCN-001": 42_001,
   "SCN-002": 42_002,
   "SCN-003": 42_003,
+  "SCN-004": 42_004,
+  "SCN-005": 42_005,
+  "SCN-006": 42_006,
 };
 
 /**

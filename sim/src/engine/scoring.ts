@@ -46,7 +46,11 @@ export type MetricId =
   | "session_reviewed"
   | "plan_declared"
   | "plan_declared_late"
-  | "policy_match";
+  | "policy_match"
+  | "il_estimate_written"
+  | "trigger_updated"
+  | "no_entry_window"
+  | "policy_declared_card";
 
 // ---------------------------------------------------------------------------
 // MetricInput — the only view of the EventLog that scoring functions receive.
@@ -77,6 +81,28 @@ export interface MetricInput {
   readonly declaredRiskPct: number;
   /** Account equity at session start (needed for size_compliance ratio only). */
   readonly sessionStartEquity: number;
+  /**
+   * Metric IDs listed in the running scenario's xpRubric (manifest.xpRubric).
+   *
+   * Scenario-specific metrics (il_estimate_written, trigger_updated,
+   * no_entry_window, policy_declared_card) use membership here as their
+   * applicability gate so they stay inert — no XP, no fail row — on scenarios
+   * that do not author them.  Omitted/undefined → all four are inert
+   * (backward-compatible with V0 fixtures and sandbox sessions).
+   *
+   * NOT a PnL field: this is authoring metadata, not outcome data.
+   */
+  readonly rubricMetricIds?: readonly string[];
+  /**
+   * Scenario-authored no-entry windows (sim-ms ranges) for no_entry_window —
+   * e.g. SCN-005's first-15-minutes-of-D1-open, SCN-006's whipsaw window.
+   */
+  readonly noEntryWindows?: readonly { startMs: number; endMs: number }[];
+  /**
+   * Deadline (sim-ms) by which the News Policy Card must be declared for
+   * policy_declared_card to pass (SCN-006: T-01).  Undefined → no deadline.
+   */
+  readonly policyDeadlineMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,7 +148,6 @@ export interface MetricResult {
  * committed capital."
  */
 export function journal_before_trade(input: MetricInput): MetricResult {
-  const firstJournal = firstEventIndexOf(input.events, "journal_entry");
   const firstOrder = firstEventIndexOf(input.events, "order_submit");
 
   if (firstOrder === -1) {
@@ -130,9 +155,23 @@ export function journal_before_trade(input: MetricInput): MetricResult {
     return { metricId: "journal_before_trade", passed: false, xpOnPass: 20, applicable: false };
   }
 
-  const passed = firstJournal !== -1 && firstJournal < firstOrder;
+  // Quality floor (red-team F6): an empty/near-empty entry is a click, not a
+  // journal — it must not buy process XP. MIN_JOURNAL_WORDS is TUNABLE.
+  const passed = input.events.some(
+    (e, i): boolean =>
+      e.type === "journal_entry" &&
+      (e as JournalEntryEvent).wordCount >= MIN_JOURNAL_WORDS &&
+      i < firstOrder
+  );
   return { metricId: "journal_before_trade", passed, xpOnPass: 20, applicable: true };
 }
+
+/**
+ * Minimum words for a journal entry to count toward journal-driven metrics
+ * (journal_before_trade, patience_observation). TUNABLE; the lowest authored
+ * fixture journal is 12 words, scenario UI beats ask for ≥20 characters.
+ */
+const MIN_JOURNAL_WORDS = 5;
 
 /** stop_before_entry: stop order submitted before or at the same tick as entry fill. */
 export function stop_before_entry(input: MetricInput): MetricResult {
@@ -186,11 +225,23 @@ export function stop_honored(input: MetricInput): MetricResult {
   }
 
   // After the entry fill, was the stop manually cancelled?
+  //
+  // The harness auto-cancels all pending orders at scenario end with
+  // reason "session_end" — engine housekeeping, not a player action.
+  // §4.2 defines this metric as "stop not MANUALLY cancelled", so the
+  // session-end cancel is exempt: a stop that rode untriggered to the end
+  // of the session was honored, not abandoned.  (Without this exemption a
+  // stop that never triggers — e.g. SCN-004's withdrawal trigger on the
+  // up-divergence path — could never pass.)
+  // ">=" not ">": a manual cancel logged at the same simTimeMs as the entry
+  // fill (same-tick cancel-then-enter) is still abandoning the stop
+  // (red-team finding R2-7).
   const stopCancelledAfterEntry = input.events.some(
     (e): e is OrderCancelEvent =>
       e.type === "order_cancel" &&
       e.orderId === stopSubmit.orderId &&
-      e.timestamp > entryFill.timestamp
+      e.reason !== "session_end" &&
+      e.timestamp >= entryFill.timestamp
   );
 
   return {
@@ -264,13 +315,16 @@ export function exit_journal(input: MetricInput): MetricResult {
   return { metricId: "exit_journal", passed, xpOnPass: 15, applicable };
 }
 
-/** patience_observation: journaled without trading (no fills). */
+/** patience_observation: journaled without trading (no fills).
+ *  Quality floor (F6): at least one journal of MIN_JOURNAL_WORDS+ words —
+ *  saving an empty entry is not observation. */
 export function patience_observation(input: MetricInput): MetricResult {
-  const journalCount = input.events.filter(
-    (e) => e.type === "journal_entry"
+  const qualityJournals = input.events.filter(
+    (e): e is JournalEntryEvent =>
+      e.type === "journal_entry" && e.wordCount >= MIN_JOURNAL_WORDS
   ).length;
   const fillCount = input.events.filter((e) => e.type === "order_fill").length;
-  const passed = journalCount >= 1 && fillCount === 0;
+  const passed = qualityJournals >= 1 && fillCount === 0;
   return { metricId: "patience_observation", passed, xpOnPass: 40, applicable: true };
 }
 
@@ -405,13 +459,38 @@ export function policy_match(input: MetricInput): MetricResult {
     return { metricId: "policy_match", passed: false, xpOnPass: 0, applicable: false };
   }
 
+  // A declaration made AFTER the card deadline carries no predictive
+  // content — adherence to a retroactive "policy" is not process
+  // (red-team finding R2-5a).  No deadline configured → no gate.
+  if (
+    input.policyDeadlineMs !== undefined &&
+    declaration.timestamp > input.policyDeadlineMs
+  ) {
+    return { metricId: "policy_match", passed: false, xpOnPass: 0, applicable: true };
+  }
+
   const declarationTick = declaration.tickIndex;
   const declaredOption = declaration.option;
 
-  // Events after the declaration tick (the "event window").
+  // The adherence window runs from the declaration to the end of the last
+  // scenario-authored no-entry window (the event itself).  Behaviour after
+  // the event — e.g. option A's planned re-entry on confirmation — is not a
+  // policy violation.  Without authored windows, the window extends to the
+  // end of the session (conservative).
+  const windowEndMs =
+    input.noEntryWindows !== undefined && input.noEntryWindows.length > 0
+      ? Math.max(...input.noEntryWindows.map((w) => w.endMs))
+      : Number.POSITIVE_INFINITY;
+
+  // Order submits between the declaration and the end of the event window.
+  // ">=" on timestamp: an action fired on the SAME tick as the declaration
+  // (pause → declare → act) is inside the adherence window, not before it
+  // (red-team finding NEW-1).
   const windowSubmits = input.events.filter(
     (e): e is OrderSubmitEvent =>
-      e.type === "order_submit" && e.tickIndex > declarationTick
+      e.type === "order_submit" &&
+      e.timestamp >= declaration.timestamp &&
+      e.timestamp <= windowEndMs
   );
 
   // Events at or before the declaration tick.
@@ -429,19 +508,199 @@ export function policy_match(input: MetricInput): MetricResult {
   let passed = false;
 
   if (declaredOption === "A_flat") {
-    // A_flat: no order_submit events in the window after declaration.
+    // A_flat: no order_submit events between declaration and event-window end.
     passed = windowSubmits.length === 0;
   } else if (declaredOption === "B_hold_with_stop") {
-    // B_hold_with_stop: position was held (at least one fill before declaration)
-    // AND a stop order was present at or before the declaration tick.
+    // B_hold_with_stop: position was held (at least one fill before declaration),
+    // a stop order was present at or before the declaration tick, the stop was
+    // not manually cancelled through the event window, and no new orders were
+    // fired into the event window.  "Declare B, then dump your stop and trade
+    // the whipsaw" is a mismatch, not adherence (red-team finding R2-5b).
+    const stopIds = new Set(preDeclarationStopSubmits.map((s) => s.orderId));
+    const stopAbandonedInWindow = input.events.some(
+      (e): e is OrderCancelEvent =>
+        e.type === "order_cancel" &&
+        stopIds.has(e.orderId) &&
+        e.reason !== "session_end" &&
+        e.timestamp <= windowEndMs &&
+        // ">=": a same-tick declare-then-cancel is abandonment (NEW-1).
+        e.timestamp >= declaration.timestamp
+    );
     passed =
-      preDeclarationFills.length > 0 && preDeclarationStopSubmits.length > 0;
+      preDeclarationFills.length > 0 &&
+      preDeclarationStopSubmits.length > 0 &&
+      !stopAbandonedInWindow &&
+      windowSubmits.length === 0;
   } else if (declaredOption === "C_observe_only") {
-    // C_observe_only: no order_submit events in the window after declaration.
+    // C_observe_only: no order_submit events between declaration and
+    // event-window end.
     passed = windowSubmits.length === 0;
   }
 
   return { metricId: "policy_match", passed, xpOnPass: passed ? 25 : 0, applicable: true };
+}
+
+// ---------------------------------------------------------------------------
+// Scenario-specific metrics (SCENARIOS_V1) — rubric-gated.
+//
+// Applicability rule shared by all four: the metric applies ONLY when the
+// running scenario lists it in manifest.xpRubric (via MetricInput.rubricMetricIds).
+// On every other scenario the metric is inert: applicable=false, no XP event,
+// no fail row, no digest change for V0 golden fixtures.
+// ---------------------------------------------------------------------------
+
+/** True when the scenario's rubric authors this metric. */
+function rubricAuthors(input: MetricInput, metricId: MetricId): boolean {
+  return input.rubricMetricIds?.includes(metricId) ?? false;
+}
+
+/**
+ * il_estimate_written (SCN-004) — LP Position Panel consulted and an IL
+ * estimate written at the major-divergence checkpoint.
+ *
+ * Pass: a journal_entry tagged "il_estimate" exists after the first fill
+ * (the deposit).  Applicable only when rubric-authored AND a deposit (fill)
+ * occurred — an IL estimate is meaningless on an observation-only run, whose
+ * journal XP flows through patience_observation instead.
+ */
+export function il_estimate_written(input: MetricInput): MetricResult {
+  const firstFillIdx = firstEventIndexOf(input.events, "order_fill");
+  const applicable =
+    rubricAuthors(input, "il_estimate_written") && firstFillIdx !== -1;
+  const passed =
+    applicable &&
+    input.events.some(
+      (e, i): boolean =>
+        e.type === "journal_entry" &&
+        (e as JournalEntryEvent).tags.includes("il_estimate") &&
+        i > firstFillIdx
+    );
+  return { metricId: "il_estimate_written", passed, xpOnPass: 25, applicable };
+}
+
+/**
+ * trigger_updated (SCN-004) — withdrawal trigger updated after a decision to
+ * hold (active management vs. passive neglect).
+ *
+ * Pass: a journal_entry tagged "trigger_update" exists after the first fill.
+ * Applicable only when rubric-authored AND a position was opened.
+ */
+export function trigger_updated(input: MetricInput): MetricResult {
+  const firstFillIdx = firstEventIndexOf(input.events, "order_fill");
+  const applicable =
+    rubricAuthors(input, "trigger_updated") && firstFillIdx !== -1;
+  const passed =
+    applicable &&
+    input.events.some(
+      (e, i): boolean =>
+        e.type === "journal_entry" &&
+        (e as JournalEntryEvent).tags.includes("trigger_update") &&
+        i > firstFillIdx
+    );
+  return { metricId: "trigger_updated", passed, xpOnPass: 15, applicable };
+}
+
+/**
+ * no_entry_window (SCN-005 D1-open, SCN-006 whipsaw) — discipline around a
+ * scenario-authored no-entry window.
+ *
+ * Pass requires BOTH (per the SCENARIOS_V1 rubrics — "only if pre-stated"):
+ *   1. No order_submit whose timestamp falls inside any authored window.
+ *   2. The discipline was pre-stated: a plan/hypothesis journal entry OR a
+ *      policy_declared event exists BEFORE the earliest window opens.
+ *
+ * Applicable only when rubric-authored AND windows were supplied.
+ */
+export function no_entry_window(input: MetricInput): MetricResult {
+  const windows = input.noEntryWindows ?? [];
+  const applicable =
+    rubricAuthors(input, "no_entry_window") && windows.length > 0;
+  if (!applicable) {
+    return { metricId: "no_entry_window", passed: false, xpOnPass: 15, applicable: false };
+  }
+
+  // Both submits AND fills are checked: a stop-entry placed before the
+  // window that fills inside it is still an entry during the window
+  // (red-team finding R2-6).
+  //
+  // EXCEPTION (red-team finding NEW-2): a protective stop EXIT that triggers
+  // inside the window is not an entry — punishing it would punish exactly
+  // the pre-stated-stop discipline this metric exists to reward (e.g.
+  // SCN-006 option B stopped out during the whipsaw).  A stop fill is
+  // treated as protective iff the stop was submitted before the earliest
+  // window opens AND an opposite-side non-stop fill precedes it (it closes
+  // an existing position).  A pre-placed stop ENTRY has no prior opposite
+  // fill and still fails the metric.
+  const inAnyWindow = (ts: number): boolean =>
+    windows.some((w) => ts >= w.startMs && ts <= w.endMs);
+  const earliestWindowStart = Math.min(...windows.map((w) => w.startMs));
+
+  const submitByOrderId = new Map<string, OrderSubmitEvent>();
+  for (const e of input.events) {
+    if (e.type === "order_submit" && !submitByOrderId.has(e.orderId)) {
+      submitByOrderId.set(e.orderId, e);
+    }
+  }
+
+  const isProtectiveStopFill = (fill: OrderFillEvent, fillIdx: number): boolean => {
+    const submit = submitByOrderId.get(fill.orderId);
+    if (submit === undefined || submit.orderType !== "stop") return false;
+    if (submit.timestamp >= earliestWindowStart) return false;
+    // Closes an existing position: an earlier opposite-side non-stop fill.
+    return input.events.some((e, i): boolean => {
+      if (i >= fillIdx || e.type !== "order_fill") return false;
+      const s = submitByOrderId.get((e as OrderFillEvent).orderId);
+      return s !== undefined && s.orderType !== "stop" && s.side !== submit.side;
+    });
+  };
+
+  const enteredInWindow = input.events.some((e, i): boolean => {
+    if (e.type === "order_submit") return inAnyWindow(e.timestamp);
+    if (e.type === "order_fill") {
+      return inAnyWindow(e.timestamp) && !isProtectiveStopFill(e, i);
+    }
+    return false;
+  });
+
+  const earliestStart = Math.min(...windows.map((w) => w.startMs));
+  const preStated = input.events.some(
+    (e): boolean =>
+      (e.type === "journal_entry" &&
+        ((e as JournalEntryEvent).tags.includes("plan") ||
+          (e as JournalEntryEvent).tags.includes("hypothesis")) &&
+        e.timestamp < earliestStart) ||
+      (e.type === "policy_declared" && e.timestamp < earliestStart)
+  );
+
+  const passed = !enteredInWindow && preStated;
+  return { metricId: "no_entry_window", passed, xpOnPass: 15, applicable: true };
+}
+
+/**
+ * policy_declared_card (SCN-006) — News Policy Card completed with journal
+ * rationale before the deadline (T-01).  The behaviour-match half of the card
+ * is the separate policy_match metric.
+ *
+ * Pass: a policy_declared event exists with a non-trivial journal rationale
+ * (>= MIN_POLICY_JOURNAL_WORDS words ≈ the spec's 30-character minimum,
+ * TUNABLE) at or before MetricInput.policyDeadlineMs (when supplied).
+ */
+const MIN_POLICY_JOURNAL_WORDS = 6;
+
+export function policy_declared_card(input: MetricInput): MetricResult {
+  const applicable = rubricAuthors(input, "policy_declared_card");
+  if (!applicable) {
+    return { metricId: "policy_declared_card", passed: false, xpOnPass: 30, applicable: false };
+  }
+
+  const deadline = input.policyDeadlineMs;
+  const passed = input.events.some(
+    (e): e is PolicyDeclaredEvent =>
+      e.type === "policy_declared" &&
+      e.journalWordCount >= MIN_POLICY_JOURNAL_WORDS &&
+      (deadline === undefined || e.timestamp <= deadline)
+  );
+  return { metricId: "policy_declared_card", passed, xpOnPass: 30, applicable: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -464,6 +723,10 @@ export const METRIC_REGISTRY: Record<MetricId, MetricFn> = {
   plan_declared,
   plan_declared_late,
   policy_match,
+  il_estimate_written,
+  trigger_updated,
+  no_entry_window,
+  policy_declared_card,
 };
 
 // ---------------------------------------------------------------------------
@@ -507,8 +770,22 @@ export function runScoreTracker(
 
   // XP emission — one event per metric that is applicable, passed, and has xpOnPass > 0.
   // Metrics with applicable === false emit no XP event (not a failure — just no opportunity).
+  //
+  // RUBRIC GATE (red-team finding R2-1): when the caller supplies
+  // rubricMetricIds, only metrics the scenario AUTHORS in its xpRubric emit
+  // XP.  This keeps the harness XP summary, the debrief xpTotal, and the
+  // ProgressStore rank economy on one set of books — a scenario pays exactly
+  // what it authors, nothing more.  Callers that pass no rubric (sandbox
+  // sessions) keep the emit-all behavior.
+  //
+  // FOOTGUN: an EMPTY array is not "no rubric" — it authors zero XP and
+  // silently zeroes the economy.  Pass undefined (not `xpRubric ?? []`)
+  // for rubric-less sessions.
+  const rubricGate = (metricId: MetricId): boolean =>
+    input.rubricMetricIds === undefined ||
+    input.rubricMetricIds.includes(metricId);
   const xpEvents: XpEvent[] = results
-    .filter((r) => r.applicable && r.passed && r.xpOnPass > 0)
+    .filter((r) => r.applicable && r.passed && r.xpOnPass > 0 && rubricGate(r.metricId))
     .map((r) => ({
       type: "xp" as const,
       sessionId,
@@ -539,13 +816,20 @@ export function runScoreTracker(
   }
 
   // policy_mismatch flag — emitted when declaration was present but behaviour
-  // did not match. Inert (no declaration) → no flag.
+  // did not match. Inert (no declaration) → no flag.  A declaration that
+  // missed the card deadline is a LATENESS failure (policy_declared_card's
+  // fail row), not a behaviour mismatch — no mismatch flag for it
+  // (red-team finding NEW-4).
   const policyResult = results.find((r) => r.metricId === "policy_match");
   const declaration = input.events.find(
     (e): e is PolicyDeclaredEvent => e.type === "policy_declared"
   );
+  const declarationOnTime =
+    declaration !== undefined &&
+    (input.policyDeadlineMs === undefined ||
+      declaration.timestamp <= input.policyDeadlineMs);
   let policyMismatchFlag: PolicyMismatchFlag | null = null;
-  if (declaration && policyResult && !policyResult.passed) {
+  if (declaration && declarationOnTime && policyResult && !policyResult.passed) {
     policyMismatchFlag = {
       type: "policy_mismatch",
       declaredOption: declaration.option,

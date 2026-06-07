@@ -1,0 +1,63 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-010",
+  "scenarioId": "SCN-005",
+  "seed": 3235794949,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "hypothesis"
+        ],
+        "wordCount": 30
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 700,
+      "payload": {
+        "tags": [
+          "observation"
+        ],
+        "wordCount": 16
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 1604
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "68fe599fbf80d65af3bb614419f375e52423b331e8a4ccb8ae96d7f03645b31a",
+  "expectedXpEvents": [
+    {
+      "metricId": "patience_observation",
+      "xpAmount": 40
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "plan_declared",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "no_entry_window",
+      "xpAmount": 15
+    }
+  ],
+  "notes": "SCN-005 observation-only run. Driver labeling journal, no trades; no_entry_window + patience path."
+}

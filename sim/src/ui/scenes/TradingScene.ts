@@ -51,6 +51,7 @@ import type { ScenarioDef } from "../../scenarios/types.js";
 import { scn001 } from "../../scenarios/scn001.js";
 import { getScenario } from "../../scenarios/registry.js";
 import type { RiskModalData } from "./RiskModalScene.js";
+import type { PolicyCardData } from "./PolicyCardScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -136,11 +137,23 @@ export class TradingScene extends Phaser.Scene {
   private orderQuantity = "";
   private orderStopPrice = "";
   private orderLimitPrice = "";
-  private focusedField: "quantity" | "stop" | "limit" | null = null;
+  /** Declared account-risk % for size_compliance grading (§4.2). */
+  private riskPctStr = "1.0";
+  private focusedField: "quantity" | "stop" | "limit" | "risk" | null = null;
 
   // Forex leverage acknowledgment — once per session (re-fires each new
   // scenario session per spec §3.4 / wireframe Screen 2a interaction notes).
   private leverageAcked = false;
+
+  // News Policy Card (scenarios with manifest.policyDeadlineMs — SCN-006)
+  private policyCardShown = false;
+  private policyDeclared = false;
+
+  /** Non-null when this session is a replay (set from DebriefScene init data). */
+  private replayOfSessionId: string | null = null;
+
+  /** Protective-stop orderId → entry orderId (stop-out bookkeeping, F1). */
+  private stopIdToEntryId: Map<string, string> = new Map();
 
   // Position state
   private positions: OpenPosition[] = [];
@@ -204,9 +217,17 @@ export class TradingScene extends Phaser.Scene {
    */
   init(data: unknown): void {
     let id = "SCN-001";
-    if (data && typeof data === "object" && "scenarioId" in data) {
-      const v = (data as { scenarioId: unknown }).scenarioId;
-      if (typeof v === "string") id = v;
+    this.replayOfSessionId = null;
+    if (data && typeof data === "object") {
+      if ("scenarioId" in data) {
+        const v = (data as { scenarioId: unknown }).scenarioId;
+        if (typeof v === "string") id = v;
+      }
+      // Set by DebriefScene's REPLAY button — the original session's ID.
+      if ("replayOf" in data) {
+        const r = (data as { replayOf: unknown }).replayOf;
+        if (typeof r === "string") this.replayOfSessionId = r;
+      }
     }
     this.def = getScenario(id) ?? scn001;
   }
@@ -231,8 +252,11 @@ export class TradingScene extends Phaser.Scene {
     this.orderQuantity = "";
     this.orderStopPrice = "";
     this.orderLimitPrice = "";
+    this.riskPctStr = "1.0";
     this.focusedField = null;
     this.leverageAcked = false;
+    this.policyCardShown = false;
+    this.policyDeclared = false;
     this.positions = [];
     this.pendingFillOrderId = null;
     this.pendingStopPrice = null;
@@ -241,6 +265,7 @@ export class TradingScene extends Phaser.Scene {
     this.journalText = "";
     this.journalTags = new Set();
     this.journalEntries = [];
+    this.stopIdToEntryId = new Map();
     this.fillOverlay = null;
     this.fillTimer = null;
     this.sessionEndFired = false;
@@ -254,6 +279,18 @@ export class TradingScene extends Phaser.Scene {
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));
     this.adapter.onSessionEnd((data) => this.transitionToDebrief(data));
+
+    // Replay marker (SIM_ENGINE_SPEC §5): a session launched via the debrief's
+    // REPLAY button records replay_started — its own debrief then earns the
+    // session_reviewed metric (+10, "re-review session later").
+    if (this.replayOfSessionId !== null) {
+      this.adapter.log.append(0, {
+        type: "replay_started",
+        originalSessionId: this.replayOfSessionId,
+        tickIndex: 0,
+        timestamp: 0,
+      });
+    }
 
     this.gStatic = this.add.graphics();
     this.gChart = this.add.graphics();
@@ -294,6 +331,23 @@ export class TradingScene extends Phaser.Scene {
       this.sessionEndFired = true;
       this.adapter.endSession();
       return; // endSession calls transitionToDebrief via onSessionEnd listener
+    }
+
+    // News Policy Card (SCN-006 pattern): on scenarios that author
+    // policyDeadlineMs, present the card at the card decision point — the
+    // latest decision point at or before the deadline (SCN-006: DP-A, T-05).
+    if (
+      !this.policyCardShown &&
+      this.def.manifest.policyDeadlineMs !== undefined
+    ) {
+      const deadline = this.def.manifest.policyDeadlineMs;
+      const cardDp = [...this.def.manifest.decisionPoints]
+        .filter((dp) => dp.simTimeMs <= deadline)
+        .sort((a, b) => b.simTimeMs - a.simTimeMs)[0];
+      if (cardDp !== undefined && tick.simTimeMs >= cardDp.simTimeMs) {
+        this.policyCardShown = true;
+        this.showPolicyCard();
+      }
     }
 
     this.latestPrice = tick.close;
@@ -431,6 +485,8 @@ export class TradingScene extends Phaser.Scene {
     // (simplistic: captures all char keys when journal is open and stop/qty
     // fields are not focused)
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      // F7: the policy card overlay owns the keyboard while active.
+      if (this.scene.isActive("PolicyCardScene")) return;
       if (!this.journalOpen) return;
       if (this.focusedField !== null) return;
       if (e.key === "Backspace") {
@@ -439,6 +495,42 @@ export class TradingScene extends Phaser.Scene {
         this.journalText += e.key;
       }
       this.redrawJournal();
+    });
+
+    // Keyboard capture for the order-ticket numeric fields (quantity / stop /
+    // limit / risk %). Click a field to focus it; digits and "." edit it,
+    // Backspace deletes, Enter/Escape blurs. Registered ONCE per scene create
+    // (same listener-compounding rule as the journal handler above).
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      // F7: the policy card overlay owns the keyboard while active.
+      if (this.scene.isActive("PolicyCardScene")) return;
+      if (this.focusedField === null) return;
+      if (e.key === "Enter" || e.key === "Escape") {
+        this.focusedField = null;
+        this.drawOrderTicket();
+        return;
+      }
+      const edit = (v: string): string => {
+        if (e.key === "Backspace") return v.slice(0, -1);
+        if (/^[0-9.]$/.test(e.key) && !(e.key === "." && v.includes("."))) {
+          return v + e.key;
+        }
+        return v;
+      };
+      switch (this.focusedField) {
+        case "quantity": this.orderQuantity = edit(this.orderQuantity); break;
+        case "stop":     this.orderStopPrice = edit(this.orderStopPrice); break;
+        case "limit":    this.orderLimitPrice = edit(this.orderLimitPrice); break;
+        case "risk": {
+          this.riskPctStr = edit(this.riskPctStr);
+          const pct = Number.parseFloat(this.riskPctStr);
+          // Clamp into (0, 100]; invalid/blank falls back to the 1% default.
+          this.adapter.declaredRiskPct =
+            Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : 1;
+          break;
+        }
+      }
+      this.drawOrderTicket();
     });
 
     // Footer — education-not-advice (persistent per spec)
@@ -683,10 +775,12 @@ export class TradingScene extends Phaser.Scene {
     void buyBtn; void sellBtn;
     py += 38;
 
-    // Quantity
+    // Quantity + declared account-risk % (size_compliance grades vs this rule)
     label(this, px, py, "Quantity:", { fontSize: "12px", color: CSS.DIM });
+    label(this, px + 88, py, "Risk %:", { fontSize: "12px", color: CSS.DIM });
     py += 18;
-    this.drawInputField(px, py, 168, "quantity", this.orderQuantity);
+    this.drawInputField(px, py, 80, "quantity", this.orderQuantity);
+    this.drawInputField(px + 88, py, 80, "risk", this.riskPctStr);
     py += 34;
 
     // Order type
@@ -750,7 +844,7 @@ export class TradingScene extends Phaser.Scene {
     x: number,
     y: number,
     w: number,
-    field: "quantity" | "stop" | "limit",
+    field: "quantity" | "stop" | "limit" | "risk",
     value: string,
     highlight = false
   ): void {
@@ -867,10 +961,32 @@ export class TradingScene extends Phaser.Scene {
     this.drawOrderTicket();
   }
 
+  /**
+   * True while trade entry is frozen for the news print: from the policy
+   * deadline (T-01) until the report window opens. The freeze end derives
+   * from the scenario's first no-entry window (the report time) rather than
+   * a hardcoded offset (F10); 60s fallback when no window is authored.
+   */
+  private inNewsFreeze(): boolean {
+    const deadline = this.def.manifest.policyDeadlineMs;
+    if (deadline === undefined) return false;
+    const freezeEnd =
+      this.def.manifest.noEntryWindows?.[0]?.startMs ?? deadline + 60_000;
+    const now = this.adapter.clock.state.simTimeMs;
+    return now >= deadline && now < freezeEnd;
+  }
+
   private submitOrder(): void {
     const qty = parseFloat(this.orderQuantity);
     const stop = parseFloat(this.orderStopPrice);
     if (!qty || !stop) return;
+
+    // News-freeze window (SCENARIOS_V1 SCN-006 UI beat): trade entry is
+    // disabled from the policy deadline (T-01) until the report prints.
+    if (this.inNewsFreeze()) {
+      this.showRejectNotice("news_freeze");
+      return;
+    }
 
     // Forex gate (SIM_ENGINE_SPEC §3.4 / wireframe Screen 2a): the blocking
     // leverage-risk modal fires at the FIRST forex order submission of the
@@ -887,8 +1003,37 @@ export class TradingScene extends Phaser.Scene {
 
   /** Actually route the order to the engine (after any forex ack gate). */
   private doSubmitOrder(qty: number, stop: number): void {
+    // News-freeze re-check (F3): the leverage-modal ack path re-enters here
+    // directly, and sim time keeps advancing under the modal — an order that
+    // passed the gate in submitOrder() can land inside the freeze by the
+    // time the player clicks "I UNDERSTAND".
+    if (this.inNewsFreeze()) {
+      this.showRejectNotice("news_freeze");
+      return;
+    }
+
     // Block speed changes during confirm (§1.3 — disabled until fill arrives).
     this.adapter.clock.beginOrderConfirm();
+
+    // PROTECTIVE STOP IS A REAL ORDER (F1): the ticket's stop price becomes a
+    // companion opposite-side stop order in the engine book, submitted BEFORE
+    // the entry — the same shape the harness scripts use. This is what makes
+    // stop_before_entry / stop_honored / no_stop_widen / policy option B
+    // earnable in live play, lets the stop actually execute, and keeps the
+    // reckless-winner stop leg alive.
+    const stopSide = this.orderSide === "buy" ? "sell" : "buy";
+    const stopOutcome = this.adapter.submitOrder({
+      side: stopSide,
+      quantity: qty,
+      stopPrice: stop,
+      orderType: "stop",
+      leverageAckReceived: this.leverageAcked,
+    });
+    if (stopOutcome.rejectReason !== null) {
+      this.adapter.clock.endOrderConfirm();
+      this.showRejectNotice(stopOutcome.rejectReason);
+      return;
+    }
 
     // Route through the engine OrderBook — fill math happens inside
     // computeMarketFillCosts (same path as the harness runner).
@@ -897,13 +1042,15 @@ export class TradingScene extends Phaser.Scene {
     const outcome = this.adapter.submitOrder({
       side: this.orderSide,
       quantity: qty,
-      stopPrice: stop,
+      stopPrice: null,
       orderType: this.orderType === "limit" ? "limit" : "market",
       limitPrice: this.orderType === "limit"
         ? (parseFloat(this.orderLimitPrice) || null)
         : null,
       leverageAckReceived: this.leverageAcked,
     });
+    // Map the protective stop to this entry for stop-out bookkeeping.
+    this.stopIdToEntryId.set(stopOutcome.orderId, outcome.orderId);
 
     if (outcome.rejectReason !== null) {
       // Order rejected at submit time (session closed, insufficient balance…).
@@ -925,6 +1072,40 @@ export class TradingScene extends Phaser.Scene {
     this.orderStopPrice = "";
     this.orderLimitPrice = "";
     this.drawOrderTicket();
+  }
+
+  /**
+   * Launch the blocking News Policy Card overlay (SCENARIOS_V1 SCN-006 core
+   * mechanic). The sim pauses while the card is up; the card emits the
+   * policy_declared event itself (policy_declared_card + policy_match read it).
+   * Play stays paused after declaring — the player resumes via the speed
+   * controls, mirroring the session-start convention.
+   */
+  private showPolicyCard(): void {
+    // F4: a live fill-confirm overlay holds orderConfirmPending, which makes
+    // setCompression("paused") silently fail — dismiss it (ends the confirm
+    // lock) so the pause is guaranteed before the card opens.
+    this.dismissFillOverlay();
+    const paused = this.adapter.setCompression("paused");
+    if (!paused) {
+      // Defensive: release any stray confirm lock and retry.
+      this.adapter.clock.endOrderConfirm();
+      this.adapter.setCompression("paused");
+    }
+    this.updateSpeedButtonHighlight("paused");
+    // F7: blur the order ticket so card rationale keystrokes don't edit the
+    // quantity/stop/risk fields underneath.
+    this.focusedField = null;
+    const data: PolicyCardData = {
+      scenarioId: this.def.manifest.id,
+      hasOpenPosition: this.positions.length > 0,
+      log: this.adapter.log,
+      clock: this.adapter.clock,
+      onDeclare: () => {
+        this.policyDeclared = true;
+      },
+    };
+    this.scene.launch("PolicyCardScene", data);
   }
 
   /**
@@ -972,6 +1153,7 @@ export class TradingScene extends Phaser.Scene {
       session_closed: "Order rejected: the market session is closed (market orders queue is not available).",
       insufficient_balance: "Order rejected: position size exceeds your account balance.",
       stop_limit_deferred: "Order rejected: stop-limit orders are not available in this version.",
+      news_freeze: "Trade entry disabled during news print. Report window in progress.",
     };
     const text = friendly[reason] ?? `Order rejected: ${reason}`;
 
@@ -992,6 +1174,28 @@ export class TradingScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private onEngineFill = (fill: OrderFillEvent): void => {
+    // Protective stop executed (F1): close the matching position and show a
+    // distinct confirmation — the stop doing its job is a teaching moment,
+    // not an error.
+    const entryForStop = this.stopIdToEntryId.get(fill.orderId);
+    if (entryForStop !== undefined) {
+      this.stopIdToEntryId.delete(fill.orderId);
+      const pos = this.positions.find((p) => p.orderId === entryForStop);
+      this.positions = this.positions.filter((p) => p.orderId !== entryForStop);
+      this.drawPositionPanel();
+      this.showFillConfirm({
+        orderId: fill.orderId,
+        side: `STOP ${pos?.side === "buy" ? "SELL" : "BUY"}`,
+        qty: pos?.quantity ?? 0,
+        estimatedFill: fill.fillPrice,
+        actualFill: fill.fillPrice,
+        slippage: fill.slippage,
+        spreadCost: fill.spreadCost,
+        feeCost: fill.feeCost,
+      });
+      return;
+    }
+
     // Only handle the most-recently submitted order from this UI session.
     if (this.pendingFillOrderId !== fill.orderId) return;
     this.pendingFillOrderId = null;
@@ -1174,8 +1378,17 @@ export class TradingScene extends Phaser.Scene {
       color: CSS.DIM,
     }));
 
-    // Tags
-    const tagsList = ["pre_trade", "hypothesis", "exit", "observation", "post_trade"];
+    // Tags — il_estimate / trigger_update are the SCN-004 LP-scenario
+    // rubric tags (il_estimate_written, trigger_updated metrics).
+    const tagsList = [
+      "pre_trade",
+      "hypothesis",
+      "exit",
+      "observation",
+      "post_trade",
+      "il_estimate",
+      "trigger_update",
+    ];
     addJ(label(this, jx + 12, jy + 52, "Tags:", {
       fontSize: "11px",
       color: CSS.DIM,
@@ -1265,6 +1478,8 @@ export class TradingScene extends Phaser.Scene {
   private saveJournalEntry(): void {
     const text = this.journalText.trim();
     const words = text ? text.split(/\s+/).length : 0;
+    // F6: an empty save is a click, not a journal — emit nothing.
+    if (words === 0) return;
     const tags = [...this.journalTags];
 
     // EventLog emission: wordCount + tags only.
@@ -1303,6 +1518,9 @@ export class TradingScene extends Phaser.Scene {
   private transitionToDebrief(data: DebriefData): void {
     this.adapter.offTick(this.onSimTick);
     this.adapter.offFill(this.onEngineFill);
+    // XP accounting happens in DebriefScene after completeDebrief() — the
+    // debrief +30 is part of this session's total, so adding here would
+    // either miss it or double-count it.
     this.scene.start("DebriefScene", data);
   }
 

@@ -1,5 +1,12 @@
 # Social Audit Notes
 
+> **CANONICAL HOME NOTE (2026-06-07, per Governor delegation):** the canonical,
+> maintained home for community/social docs is `docs/community/` — see
+> `docs/community/SOCIAL_AUDIT_NOTES.md` for the current audit record (owner's
+> 2026-06-07 FB/Telegram answers + dispositions). This file remains as the
+> detailed archive (full channel inventory, harvest procedure) and is
+> cross-referenced from there. New community docs land in `docs/community/`.
+
 Internal audit notes — sensitive; never publish; mark attorney work product if counsel engages.
 
 This file must never appear in TradeGame---Preview or any public surface. The Facebook URL below and all Telegram invite links are the confidential items. Mark this file attorney work product upon counsel engagement.

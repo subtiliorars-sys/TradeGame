@@ -37,6 +37,9 @@ import {
   hline,
 } from "../engine/draw.js";
 import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
+import { currentRank, ladderViewModel } from "../../engine/rank.js";
+import * as ProgressStore from "../../engine/progress.js";
+import { scenarioLockState } from "../engine/gating.js";
 
 // ---------------------------------------------------------------------------
 // Card-only display fields — not duplicated in the manifest
@@ -51,15 +54,12 @@ const CARD_EXTRAS: Record<string, CardExtras> = {
   "SCN-001": { subtitle: "" },
   "SCN-002": { subtitle: "Earnings Gap & Fade" },
   "SCN-003": { subtitle: "" },
+  "SCN-004": { subtitle: "AMM Liquidity & IL" },
+  "SCN-005": { subtitle: "Mechanical Flow & the Auction" },
+  "SCN-006": { subtitle: "Scheduled News & the Policy Card" },
 };
 
-// ---------------------------------------------------------------------------
-// XP display stub (no persistence yet — Tier B gates real storage)
-// ---------------------------------------------------------------------------
-
-const STUB_XP = 420;
-const STUB_XP_NEXT = 800;
-const STUB_RANK = "Trainee";
+// (XP display now uses live ProgressStore + RankService — stubs removed §4.5)
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -90,6 +90,7 @@ export class MenuScene extends Phaser.Scene {
     this.drawHeader(g, width);
     this.drawScenarioGrid(g, width, height);
     this.drawProgressBar(g, width, height);
+    this.drawRankLadder(g, width);
     this.drawFooter(g, width, height);
   }
 
@@ -117,7 +118,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   // -------------------------------------------------------------------------
-  // Scenario card grid — 3 cards across one row
+  // Scenario card grid — 3 cards per row, wrapping (6 scenarios = 2 rows)
   // -------------------------------------------------------------------------
 
   private drawScenarioGrid(
@@ -126,14 +127,18 @@ export class MenuScene extends Phaser.Scene {
     _height: number
   ): void {
     const scenarios = allScenarios();
-    const totalW = scenarios.length * CARD_W + (scenarios.length - 1) * PAD;
+    const cols = Math.min(3, scenarios.length);
+    const totalW = cols * CARD_W + (cols - 1) * PAD;
     const startX = (width - totalW) / 2;
     const startY = PAD + 96;
 
     scenarios.forEach((scn, i) => {
-      const cx = startX + i * (CARD_W + PAD);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = startX + col * (CARD_W + PAD);
+      const cy = startY + row * (CARD_H + PAD);
       const extras = CARD_EXTRAS[scn.manifest.id] ?? { subtitle: "" };
-      this.drawCard(g, cx, startY, scn.manifest.id, scn.manifest, extras);
+      this.drawCard(g, cx, cy, scn.manifest.id, scn.manifest, extras);
     });
   }
 
@@ -197,13 +202,45 @@ export class MenuScene extends Phaser.Scene {
 
     hline(g, x + 12, y + 148, CARD_W - 24);
 
-    // START button — all three scenarios are enabled.
+    // Gating (wave D): scenario-completion prereqs hard-lock the card with
+    // an explicit reason (§4.5 — never a silent stall); rank and drill/lesson
+    // requirements render as advisories until those systems ship (see
+    // ui/engine/gating.ts for the softlock rationale).
+    const lockState = scenarioLockState(
+      manifest,
+      currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId,
+      ProgressStore.completedScenarioIds()
+    );
+
     const bw = CARD_W - 24;
     const bh = 36;
-    const b = button(this, x + 12, y + CARD_H - bh - 12, bw, bh, "START", () =>
-      this.startScenario(scenarioId)
-    );
-    void b;
+    const by = y + CARD_H - bh - 12;
+
+    if (lockState.locked) {
+      // Locked: explicit gate panel in place of START.
+      fillRect(g, x + 12, by, bw, bh, C.SURFACE, 4);
+      strokeRect(g, x + 12, by, bw, bh, C.BORDER, 1, 4);
+      label(this, x + 12 + bw / 2, by + bh / 2, `LOCKED — ${lockState.reasons[0] ?? ""}`, {
+        fontSize: "11px",
+        color: CSS.DIM,
+        fontStyle: "bold",
+      }).setOrigin(0.5, 0.5);
+    } else {
+      const b = button(this, x + 12, by, bw, bh, "START", () =>
+        this.startScenario(scenarioId)
+      );
+      void b;
+    }
+
+    // Advisory line (rank / drills) — informational, never blocking.
+    if (lockState.advisories.length > 0) {
+      label(this, x + 12, y + 152, lockState.advisories.join("  ·  "), {
+        fontSize: "9px",
+        color: CSS.DIM,
+        fontStyle: "italic",
+        wordWrap: { width: CARD_W - 24 },
+      });
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -215,35 +252,138 @@ export class MenuScene extends Phaser.Scene {
     width: number,
     _height: number
   ): void {
-    // Position: below card grid, above footer.
-    const barY = PAD + 96 + CARD_H + PAD + 12;
+    // Position: below card grid (which wraps at 3 columns), above footer.
+    const rows = Math.ceil(allScenarios().length / 3);
+    const barY = PAD + 96 + rows * (CARD_H + PAD) + 12;
 
-    label(
-      this,
-      PAD,
-      barY,
-      `Your Progress:  Rank: ${STUB_RANK}   XP: ${STUB_XP} / ${STUB_XP_NEXT} to Practitioner`,
-      {
+    const xp = ProgressStore.xpTotal();
+    const drills = ProgressStore.completedDrillIds();
+    const { rank, nextRank, xpIntoRank, xpToNextRank, drillsMissing } =
+      currentRank(xp, drills);
+
+    if (nextRank === null) {
+      // Top rank: no bar, no treadmill (GDD §4.5).
+      label(this, PAD, barY, `Your Progress:  Rank: ${rank.displayLabel}`, {
         fontSize: "13px",
         color: CSS.DIM,
-      }
-    );
+      });
+      return;
+    }
 
-    // Bar track
+    // Rank label + XP text (§4.5 display format — both numbers are cumulative).
+    const xpLine =
+      `Your Progress:  Rank: ${rank.displayLabel}` +
+      `   XP: ${xp} / ${nextRank.xpRequired} to ${nextRank.displayLabel}`;
+    label(this, PAD, barY, xpLine, {
+      fontSize: "13px",
+      color: CSS.DIM,
+    });
+
+    // Bar track — process XP only, no outcome component (§4.4).
     const barW = width - PAD * 2;
     const barH = 8;
     fillRect(g, PAD, barY + 22, barW, barH, C.SURFACE, 4);
     strokeRect(g, PAD, barY + 22, barW, barH, C.BORDER, 1, 4);
 
-    // Bar fill — process XP, no PnL
-    const fill = Math.min(1, STUB_XP / STUB_XP_NEXT);
-    fillRect(g, PAD, barY + 22, Math.round(barW * fill), barH, C.AMBER, 4);
+    if (drillsMissing.length > 0) {
+      // Drill gate: bar shows full; explicit gate message (never a silent stall).
+      fillRect(g, PAD, barY + 22, barW, barH, C.AMBER, 4);
+      label(
+        this,
+        PAD,
+        barY + 38,
+        `Complete ${drillsMissing[0]} to advance`,
+        { fontSize: "10px", color: CSS.AMBER, fontStyle: "italic" }
+      );
+    } else {
+      // Normal fill: (xpTotal − rank.xpRequired) / (nextRank.xpRequired − rank.xpRequired).
+      const span = nextRank.xpRequired - rank.xpRequired;
+      const fill = span > 0 ? Math.min(1, xpIntoRank / span) : 0;
+      fillRect(g, PAD, barY + 22, Math.round(barW * fill), barH, C.AMBER, 4);
+      // xpToNextRank surfaced for completeness — drive is to-next, not from-start.
+      void xpToNextRank;
+      label(this, PAD, barY + 38, "< Process XP only — no outcome component >", {
+        fontSize: "10px",
+        color: CSS.DIM,
+        fontStyle: "italic",
+      });
+    }
+  }
 
-    label(this, PAD, barY + 38, "< Process XP only — no PnL component >", {
+  // -------------------------------------------------------------------------
+  // Rank ladder strip — full §4.5 ladder (Governor wave-E candidate (b))
+  // -------------------------------------------------------------------------
+
+  /**
+   * Six-rung horizontal ladder under the progress bar: achieved rungs filled,
+   * current rung highlighted, future rungs dimmed, drill-gated rungs marked
+   * explicitly. Thresholds are TUNABLE economy numbers displayed verbatim.
+   * §4.4: process XP and drill data only — no outcome component.
+   */
+  private drawRankLadder(g: Phaser.GameObjects.Graphics, width: number): void {
+    const rows = Math.ceil(allScenarios().length / 3);
+    const y = PAD + 96 + rows * (CARD_H + PAD) + 64;
+
+    const rungs = ladderViewModel(
+      ProgressStore.xpTotal(),
+      ProgressStore.completedDrillIds()
+    );
+
+    label(this, PAD, y, "RANK LADDER", {
       fontSize: "10px",
+      color: CSS.DIM,
+      fontStyle: "bold",
+    });
+    label(this, PAD + 92, y, "(thresholds TUNABLE — process XP + drill gates only)", {
+      fontSize: "9px",
       color: CSS.DIM,
       fontStyle: "italic",
     });
+
+    const stripY = y + 16;
+    const segW = Math.floor((width - PAD * 2 - (rungs.length - 1) * 6) / rungs.length);
+    const segH = 34;
+
+    rungs.forEach((rung, i) => {
+      const sx = PAD + i * (segW + 6);
+      const isCurrent = rung.state === "current";
+      const isAchieved = rung.state === "achieved";
+      const isGated = rung.state === "gated";
+
+      fillRect(g, sx, stripY, segW, segH, isCurrent || isAchieved ? C.AMBER : C.SURFACE, 3);
+      strokeRect(g, sx, stripY, segW, segH, isCurrent ? C.AMBER : C.BORDER, isCurrent ? 2 : 1, 3);
+      if (isAchieved) {
+        // Achieved rungs: amber at reduced presence vs the current rung.
+        fillRect(g, sx, stripY, segW, segH, C.SURFACE, 3);
+        strokeRect(g, sx, stripY, segW, segH, C.AMBER, 1, 3);
+      }
+
+      const labelColor = isCurrent ? CSS.BG : isAchieved ? CSS.AMBER : CSS.DIM;
+      label(this, sx + 6, stripY + 6, rung.displayLabel, {
+        fontSize: "10px",
+        color: labelColor,
+        fontStyle: isCurrent ? "bold" : "normal",
+      });
+      label(
+        this,
+        sx + 6,
+        stripY + 20,
+        isGated
+          ? `${rung.xpRequired} XP · drill gate`
+          : `${rung.xpRequired} XP`,
+        { fontSize: "9px", color: isCurrent ? CSS.BG : CSS.DIM }
+      );
+    });
+
+    // Drill-gate slots are authored-but-empty until the drill system ships —
+    // say so explicitly rather than implying ranks are XP-only.
+    label(
+      this,
+      PAD,
+      stripY + segH + 6,
+      "Drill gates per rank arrive with the drill system — XP alone will not advance past them (GDD §7).",
+      { fontSize: "9px", color: CSS.DIM, fontStyle: "italic" }
+    );
   }
 
   // -------------------------------------------------------------------------

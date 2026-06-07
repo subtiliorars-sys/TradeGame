@@ -1,0 +1,76 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-012",
+  "scenarioId": "SCN-006",
+  "seed": 3235799046,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "observation"
+        ],
+        "wordCount": 24
+      }
+    },
+    {
+      "type": "policy_declare",
+      "ticksAfter": 180,
+      "payload": {
+        "policyId": "scn006-card",
+        "option": "C_observe_only",
+        "journalWordCount": 12
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 70,
+      "payload": {
+        "tags": [
+          "observation"
+        ],
+        "wordCount": 15
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 890
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "9dd3e5a34b537b0b7fcf5a05fc7201627830cd5d33ce9e520273d4bd8d890343",
+  "expectedXpEvents": [
+    {
+      "metricId": "patience_observation",
+      "xpAmount": 40
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "policy_match",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "no_entry_window",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "policy_declared_card",
+      "xpAmount": 30
+    }
+  ],
+  "notes": "SCN-006 option C run. No-trade-zone policy declared at the card with journal; observation only through the event; patience + policy_match + no_entry_window path."
+}

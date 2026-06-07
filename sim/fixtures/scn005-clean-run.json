@@ -1,0 +1,119 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-009",
+  "scenarioId": "SCN-005",
+  "seed": 3235794949,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "hypothesis"
+        ],
+        "wordCount": 32
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 633,
+      "payload": {
+        "orderId": "stop-005",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 3,
+        "stopPrice": 33.8,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "entry-005",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 3,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 887,
+      "payload": {
+        "orderId": "exit-005",
+        "orderType": "market",
+        "side": "sell",
+        "quantity": 3,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 2,
+      "payload": {
+        "tags": [
+          "exit"
+        ],
+        "wordCount": 18
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 782
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "c111f1808c60351033b8588cf2aa31626b593b6dd35eb8cab8f5a435efffcf14",
+  "expectedXpEvents": [
+    {
+      "metricId": "journal_before_trade",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "size_compliance",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "stop_before_entry",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "stop_honored",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "exit_journal",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "no_stop_widen",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "plan_declared",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "no_entry_window",
+      "xpAmount": 15
+    }
+  ],
+  "notes": "SCN-005 clean run. Driver-labeled plan at tick 0; no trade in the D1-open no-entry window; D2 entry (3 VLDI ~1% notional) with stop 33.80 placed first; exit before the D5 closing auction at ~37; exit journaled. Stop never triggers (session_end cancel exempt)."
+}

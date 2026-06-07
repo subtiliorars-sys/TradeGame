@@ -1,5 +1,12 @@
 # Social Revival Plan
 
+> **CANONICAL HOME NOTE (2026-06-07, per Governor delegation):** the canonical,
+> maintained home for community/social docs is `docs/community/` — see
+> `docs/community/FB_REVIVAL_PLAN.md` (staged, audit-result-driven runbook) and
+> `docs/community/TELEGRAM_PLAN.md` (repurpose runbook for @TradeGame_Game).
+> This file remains as the detailed archive (first-month post drafts, private-
+> channel harvest procedure) and is cross-referenced from there.
+
 Internal operational plan — private HQ only. Owner executes each step.
 Audit source: docs/SOCIAL_AUDIT_NOTES.md (closed 2026-06-07).
 

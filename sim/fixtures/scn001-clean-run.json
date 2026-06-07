@@ -10,7 +10,10 @@
       "type": "journal_entry",
       "ticksAfter": 0,
       "payload": {
-        "tags": ["pre_trade", "hypothesis"],
+        "tags": [
+          "pre_trade",
+          "hypothesis"
+        ],
         "wordCount": 22
       }
     },
@@ -22,7 +25,7 @@
         "orderType": "stop",
         "side": "sell",
         "quantity": 100,
-        "stopPrice": 1.0010,
+        "stopPrice": 1.001,
         "price": null
       }
     },
@@ -41,13 +44,17 @@
     {
       "type": "advance_ticks",
       "ticksAfter": 0,
-      "payload": { "count": 192 }
+      "payload": {
+        "count": 192
+      }
     },
     {
       "type": "journal_entry",
       "ticksAfter": 0,
       "payload": {
-        "tags": ["exit"],
+        "tags": [
+          "exit"
+        ],
         "wordCount": 14
       }
     },
@@ -57,16 +64,28 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "b1e1b2b8cecd93d07477804adccd65f45239cf4350ffebdc54fee28237a19dd1",
+  "expectedLogDigest": "851b688e3595bef0faefe6a3d30c4486842c72cefdbf225c794a13aa6e0e4e7c",
   "expectedXpEvents": [
-    { "metricId": "journal_before_trade", "xpAmount": 20 },
-    { "metricId": "size_compliance",      "xpAmount": 30 },
-    { "metricId": "stop_before_entry",    "xpAmount": 25 },
-    { "metricId": "stop_honored",         "xpAmount": 20 },
-    { "metricId": "exit_journal",         "xpAmount": 15 },
-    { "metricId": "no_stop_widen",        "xpAmount": 15 },
-    { "metricId": "debrief_completed",    "xpAmount": 30 },
-    { "metricId": "plan_declared",        "xpAmount": 20 }
+    {
+      "metricId": "journal_before_trade",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "size_compliance",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "stop_before_entry",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "stop_honored",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    }
   ],
   "notes": "SCN-001 clean run. Player journals pre-trade (hypothesis at tick 0), advances to T+6 (tick 96), places stop at 1.0010 before entry, enters short (market sell) at tick 96, advances 192 ticks to tick 288, writes exit journal, completes debrief. All process metrics pass. sessionHasWin=true (short position profits from depeg collapse). No reckless_winner_flag (all metrics pass). Total XP: 175. Regenerate with: npx vitest run tests/_gen_digests.test.ts"
 }

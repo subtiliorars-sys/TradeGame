@@ -148,6 +148,13 @@ const DEFAULT_FOREX_LEVERAGE = 30;
 // ---------------------------------------------------------------------------
 
 export class SessionAdapter {
+  /**
+   * The most recently ended session — set by endSession(). DebriefScene uses
+   * this to call completeDebrief() (Phaser init data can't carry the adapter
+   * with type safety; module-level handoff mirrors the ProgressStore pattern).
+   */
+  static lastSession: SessionAdapter | null = null;
+
   readonly clock: SimClock;
   readonly log = createEventLog("ui-session-" + Date.now());
 
@@ -176,12 +183,33 @@ export class SessionAdapter {
   /** Whether the session has already ended (prevents double-end). */
   private sessionEnded = false;
 
+  /** Whether completeDebrief() has run (prevents double-award of the +30). */
+  private debriefCompleted = false;
+
   /**
    * Whether the sim determined the session had at least one "winning" trade.
-   * Set externally by the UI layer because the engine enforces the structural
-   * PnL guard — the adapter receives only a boolean (see MetricInput.sessionHasWin).
+   * Derived inside endSession() from entry fills vs. the final close —
+   * mirroring harness/run.ts exactly — so the reckless-winner coaching flag
+   * is live in real play (red-team finding R4-2).  Only this boolean reaches
+   * the scorer (structural PnL guard, MetricInput.sessionHasWin).
    */
   sessionHasWin = false;
+
+  /**
+   * Player-declared account-risk percent for size_compliance grading
+   * (SIM_ENGINE_SPEC §4.2 — "declared in pre-trade journal; default 1%").
+   * Set by the order ticket's Risk % field; clamped to (0, 100].
+   */
+  declaredRiskPct = 1;
+
+  /**
+   * The declaration in force at the FIRST order submit — what scoring grades
+   * against. Snapshotting at commit time (mirroring the harness's fixed
+   * per-run declaredRiskPct) closes the retro-fit exploit: editing Risk %
+   * AFTER the fill to match whatever was traded would otherwise suppress the
+   * reckless-winner coaching (red-team finding F2). Null until first order.
+   */
+  private declaredRiskPctAtFirstOrder: number | null = null;
 
   /**
    * Construct a SessionAdapter for the given scenario and seed.
@@ -212,19 +240,25 @@ export class SessionAdapter {
       this.feed = createForexAdapter();
     }
 
-    this.feed.init({
-      prng,
-      startPrice: this.manifest.startPrice,
-      msPerTick: this.manifest.msPerTick,
-      instrument: {
-        symbol: this.manifest.instrument.symbol,
-        marketType: this.marketType,
-        tickSize: this.marketType === "forex" ? 0.0001 : 0.0001,
-        baseSpread: this.marketType === "forex" ? 0.00012 : 0.001,
-        pipSize: this.marketType === "forex" ? 0.0001 : 1,
+    this.feed.init(Object.assign(
+      {
+        prng,
+        startPrice: this.manifest.startPrice,
+        msPerTick: this.manifest.msPerTick,
+        instrument: {
+          symbol: this.manifest.instrument.symbol,
+          marketType: this.marketType,
+          tickSize: this.marketType === "forex" ? 0.0001 : 0.0001,
+          baseSpread: this.marketType === "forex" ? 0.00012 : 0.001,
+          pipSize: this.marketType === "forex" ? 0.0001 : 1,
+        },
+        script: resolvedDef.script,
       },
-      script: resolvedDef.script,
-    });
+      // exactOptionalPropertyTypes: include simDayMs only when authored.
+      this.manifest.simDayMs !== undefined
+        ? { simDayMs: this.manifest.simDayMs }
+        : {}
+    ));
 
     // Account model.
     if (this.marketType === "forex") {
@@ -300,6 +334,12 @@ export class SessionAdapter {
     const { tickIndex, simTimeMs } = this.clock.state;
     const orderId = `ui-ord-${++this.orderSeq}`;
     const orderType = spec.orderType ?? "market";
+
+    // Freeze the risk declaration at the first order — pre-commitment is
+    // what size_compliance certifies (F2; see declaredRiskPctAtFirstOrder).
+    if (this.declaredRiskPctAtFirstOrder === null) {
+      this.declaredRiskPctAtFirstOrder = this.declaredRiskPct;
+    }
 
     const submitEv: OrderSubmitEvent = {
       type: "order_submit",
@@ -433,6 +473,7 @@ export class SessionAdapter {
   endSession(): DebriefData | null {
     if (this.sessionEnded) return null;
     this.sessionEnded = true;
+    SessionAdapter.lastSession = this;
 
     // Stop the clock so no more ticks fire after this point.
     this.clock.setCompression("paused");
@@ -448,12 +489,99 @@ export class SessionAdapter {
 
     // Build MetricInput from the event log (structural PnL guard: only boolean win).
     const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
-    const metricInput: MetricInput = {
-      events: allEvents,
-      sessionHasWin: this.sessionHasWin,
-      declaredRiskPct: 1, // default; Tier B: read from plan_declared journal entry
-      sessionStartEquity: 10_000,
-    };
+
+    // Derive sessionHasWin from entry fills vs. final close — identical logic
+    // to harness/run.ts (long wins if close > fill; short wins if close < fill).
+    // No dollar amount is computed; only the boolean leaves this block.
+    // An externally-set true (test harness / future engine signal) is kept.
+    const finalClose = this.latestTick?.close;
+    if (finalClose !== undefined && !this.sessionHasWin) {
+      const submitSideById = new Map<string, "buy" | "sell">();
+      const stopOrderIds = new Set<string>();
+      for (const ev of allEvents) {
+        if (ev.type === "order_submit") {
+          submitSideById.set(ev.orderId, ev.side);
+          if (ev.orderType === "stop") stopOrderIds.add(ev.orderId);
+        }
+      }
+      this.sessionHasWin = allEvents.some((ev) => {
+        if (ev.type !== "order_fill" || stopOrderIds.has(ev.orderId)) return false;
+        const side = submitSideById.get(ev.orderId);
+        if (side === undefined) return false;
+        return side === "buy"
+          ? finalClose > ev.fillPrice
+          : finalClose < ev.fillPrice;
+      });
+    }
+    // debrief_complete is NOT appended here — DebriefScene calls
+    // completeDebrief() when the player reaches the debrief screen, which
+    // re-scores and awards the +30 in THIS session (spec rubric: "Scenario
+    // debrief completed — flat, regardless of outcome"). The previous
+    // append-after-scoring ordering made the metric structurally unearnable
+    // in live play (red-team finding R6-3).
+    const debriefData = this._scoreAndBuild(simTimeMs);
+
+    // Notify listeners (e.g. TradingScene → DebriefScene transition).
+    for (const cb of this.sessionEndListeners) cb(debriefData);
+
+    return debriefData;
+  }
+
+  /**
+   * Mark the debrief as completed: appends debrief_complete to the log,
+   * re-scores, appends only newly-earned XP events (no duplicates), and
+   * returns the refreshed DebriefData. Idempotent — second call returns null.
+   *
+   * DebriefScene calls this on entry: reaching the debrief IS completing
+   * the session flow, so the +30 is earned in the session being debriefed.
+   */
+  completeDebrief(): DebriefData | null {
+    if (!this.sessionEnded || this.debriefCompleted) return null;
+    this.debriefCompleted = true;
+
+    const { tickIndex, simTimeMs } = this.clock.state;
+    this.log.append(simTimeMs, {
+      type: "debrief_complete",
+      tickIndex,
+      timestamp: simTimeMs,
+    });
+
+    return this._scoreAndBuild(simTimeMs);
+  }
+
+  /**
+   * Run the ScoreTracker over the current log, append XP events that are not
+   * already in the log (re-scoring after completeDebrief must not duplicate
+   * the events endSession already appended), and build the DebriefData.
+   */
+  private _scoreAndBuild(simTimeMs: number): DebriefData {
+    const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
+    const metricInput: MetricInput = Object.assign(
+      {
+        events: allEvents,
+        sessionHasWin: this.sessionHasWin,
+        // Grade against the declaration frozen at first order (F2);
+        // sessions with no orders fall back to the live field.
+        declaredRiskPct: (() => {
+          const pct = this.declaredRiskPctAtFirstOrder ?? this.declaredRiskPct;
+          return Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : 1;
+        })(),
+        sessionStartEquity: 10_000,
+        // Applicability gate for scenario-specific metrics (rubric-authored only).
+        rubricMetricIds: (this.manifest?.xpRubric ?? []).map((r) => r.metricId),
+      },
+      this.manifest?.noEntryWindows !== undefined
+        ? {
+            noEntryWindows: this.manifest.noEntryWindows.map((w) => ({
+              startMs: w.startMs,
+              endMs: w.endMs,
+            })),
+          }
+        : {},
+      this.manifest?.policyDeadlineMs !== undefined
+        ? { policyDeadlineMs: this.manifest.policyDeadlineMs }
+        : {}
+    );
 
     const scoreOut = runScoreTracker(
       this.log.sessionId,
@@ -462,18 +590,18 @@ export class SessionAdapter {
       this.manifest?.recklessWinnerCoachingText
     );
 
-    // Append XP events returned by the scorer.
+    // Append only XP events whose metric has not already emitted one — one
+    // XP event per metric per session, across endSession + completeDebrief.
+    const alreadyEmitted = new Set(
+      allEvents
+        .filter((e) => e.type === "xp")
+        .map((e) => (e.type === "xp" ? e.metricId : ""))
+    );
     for (const xpEv of scoreOut.xpEvents) {
-      this.log.append(simTimeMs, xpEv);
+      if (!alreadyEmitted.has(xpEv.metricId)) {
+        this.log.append(simTimeMs, xpEv);
+      }
     }
-
-    // Emit debrief_complete — this metric must be appended AFTER scoring so the
-    // debrief_completed metric itself fires on replay, not in this run.
-    this.log.append(simTimeMs, {
-      type: "debrief_complete",
-      tickIndex,
-      timestamp: simTimeMs,
-    });
 
     // Build rubric rows from the manifest xpRubric + score results.
     const rubricRows: DebriefMetricRow[] = this._buildRubricRows(
@@ -497,7 +625,7 @@ export class SessionAdapter {
       ? `Your declared policy (${scoreOut.policyMismatchFlag.declaredOption}) did not match your actions. This will be reviewed in your coaching notes.`
       : null;
 
-    const debriefData: DebriefData = {
+    return {
       scenarioId: this.manifest?.id ?? "SCN-001",
       scenarioTitle: this.manifest?.title ?? "The HarborUSD Depegging",
       rubricRows,
@@ -510,11 +638,6 @@ export class SessionAdapter {
       seed: this.sessionSeed,
       sessionId: this.log.sessionId,
     };
-
-    // Notify listeners (e.g. TradingScene → DebriefScene transition).
-    for (const cb of this.sessionEndListeners) cb(debriefData);
-
-    return debriefData;
   }
 
   /** Build rubric rows by joining manifest xpRubric with scorer results. */
