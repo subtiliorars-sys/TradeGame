@@ -161,6 +161,45 @@ export const scn002: ScenarioDef = {
       "scn002:good-process-can-lose",
       "scn002:common-errors",
     ],
+    // Pre-authored replay annotations (Screen 6 lane, scenario_authored —
+    // vetted here at authoring time; observational tone, no directives).
+    replayAnnotations: [
+      {
+        simTimeMs: 0,        // T_0800 — earnings gap fires, pre-market opens
+        text:
+          "NGSM gapped up at 08:00 on an earnings release: revenue beat, guidance " +
+          "missed. Pre-market volume is very thin and spread is wide — price discovery " +
+          "here reflects retail orders, not institutional positioning.",
+      },
+      {
+        simTimeMs: 5_400_000, // T_0930 — regular session open, DP-B
+        text:
+          "The 09:30 opening print extends the gap to $50.10 on a wide $0.40 spread. " +
+          "The first 5-minute candle contains both the session high and a sharp " +
+          "pullback — this is the normal price-discovery window, not a directional signal.",
+      },
+      {
+        simTimeMs: 5_700_000, // T_0935 — initial run, DP-C (gap-and-go trap)
+        text:
+          "Price recovered from the open whipsaw and pushed to $50.50 — the session " +
+          "high. This is the gap-and-go pattern. Process question: was entry here part " +
+          "of a plan written before the open, or a reaction to price movement?",
+      },
+      {
+        simTimeMs: 6_300_000, // T_0945 — fade confirmation, DP-D
+        text:
+          "At 09:45 the volume character changed — sell-side prints appeared on the " +
+          "tape while price was still near the session high. The fade began here, not " +
+          "at the price level where most exits happened.",
+      },
+      {
+        simTimeMs: 6_900_000, // T_0955 — resolution, fade through gap
+        text:
+          "Price fades through the opening gap and closes near $47.80 — below the " +
+          "prior close of $42.10 in gap terms, the gap itself became resistance. " +
+          "The guidance miss that drove the fade was present in the 08:00 release.",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------
