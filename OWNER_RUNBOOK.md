@@ -371,3 +371,16 @@ COMMUNITY.md §2, docs/templates/COACH_AGREEMENT.md.*
   Dollar). Content mostly says "HarborUSD" in full; decide whether to retire the
   HBD shorthand entirely (small sweep) or accept the collision with the canon's
   always-use-full-name rule.
+
+### P-7. Forex stop-out convention (added 2026-06-07, Phase 2 build)
+
+**Trigger:** Before the forex trading screen ships (vertical slice UI).
+
+**Decision:** Two internally-consistent stop-out conventions exist in the engine
+(reconciled in `sim/src/orders/account.ts` + `risk.ts` comments): the standard
+broker margin-level convention (equity / used margin ≤ 50%) vs the simplified
+balance-based one the X-B02 lesson teaches (50% of starting balance → 125 pips
+in the worked example). The sim UI must show ONE. Recommend: teach the
+margin-level convention in the UI (it's what real brokers use) and update the
+X-B02 lesson's skeleton to match; the lesson's "no buffer at max leverage"
+point survives either way.
