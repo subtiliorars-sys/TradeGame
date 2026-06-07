@@ -78,6 +78,7 @@ TRADEGAME
 └── COMMUNITY
     ├── #off-topic
     ├── #gaming-nights          (scheduling non-TradeGame game sessions)
+    ├── #scam-reports           (report impersonators/DM scams; 48h action SLA — RISK_REGISTER §11; live from Phase 1 launch)
     └── #feedback               (server improvement suggestions)
 ```
 

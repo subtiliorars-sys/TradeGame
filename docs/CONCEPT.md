@@ -47,7 +47,7 @@ We do not sell signals. We do not manage money. We do not promise returns. We te
 All three markets are first-class citizens. No market is a bolt-on. Every surface — website, apps, Discord, socials, the game — covers all three in parallel.
 
 ### Crypto
-- Day trading: reading order books, entry/exit timing, volatility management
+- Day trading: reading order books, how entries/exits are structured and journaled, volatility management
 - Grid trading: automated range strategies, when they work, when they don't
 - Spot vs derivatives: why beginners should understand spot first
 - Liquidity pools and DeFi basics: how AMMs price assets, impermanent loss explained
@@ -56,7 +56,7 @@ All three markets are first-class citizens. No market is a bolt-on. Every surfac
 
 ### Stocks
 - Long-term investing: index funds, ETFs, compounding — unglamorous and important
-- Day and swing trading: setups, sector rotation, earnings plays
+- Day and swing trading: how setups are evaluated and journaled, sector rotation as a concept, how earnings seasons move markets
 - Paper trading: fully supported track before any real capital
 - Reading a stock screener, understanding earnings, basic fundamental vs technical literacy
 
