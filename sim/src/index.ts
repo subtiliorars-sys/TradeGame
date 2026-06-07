@@ -13,3 +13,8 @@ export * from "./data/generator.js";
 export { createCryptoAdapter } from "./data/crypto.js";
 export { createStocksAdapter } from "./data/stocks.js";
 export { createForexAdapter } from "./data/forex.js";
+// Scenarios — typed manifests and V0 definitions.
+export * from "./scenarios/types.js";
+export { scn001 } from "./scenarios/scn001.js";
+// Harness — headless scenario runner (integration surface + golden-replay backend).
+export * from "./harness/run.js";

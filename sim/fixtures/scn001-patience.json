@@ -1,0 +1,47 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-003",
+  "scenarioId": "SCN-001",
+  "seed": 2712847316,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1.0,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 60,
+      "payload": {
+        "tags": ["observation", "hypothesis"],
+        "wordCount": 18
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 48,
+      "payload": {
+        "tags": ["observation"],
+        "wordCount": 12
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": { "count": 132 }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "23b5efeb66ef3c90d8161ecb490be6dd113e1f11952ea7862568a9a329244283",
+  "expectedXpEvents": [
+    { "metricId": "journal_before_trade", "xpAmount": 20 },
+    { "metricId": "size_compliance",      "xpAmount": 30 },
+    { "metricId": "stop_before_entry",    "xpAmount": 25 },
+    { "metricId": "stop_honored",         "xpAmount": 20 },
+    { "metricId": "no_stop_widen",        "xpAmount": 15 },
+    { "metricId": "patience_observation", "xpAmount": 40 },
+    { "metricId": "debrief_completed",    "xpAmount": 30 }
+  ],
+  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP). sessionHasWin=false. No reckless_winner_flag. Total XP: 180 (no-trade metrics auto-pass per spec design). Regenerate with: npx vitest run tests/_gen_digests.test.ts"
+}

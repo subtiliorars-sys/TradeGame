@@ -5,8 +5,10 @@
   "description": "TradeGame deterministic sim engine — Phase 2 foundation. Render-agnostic; Phaser arrives with the UI layer.",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --config vite.ui.config.ts",
     "build": "tsc --noEmit && vite build",
+    "build:ui": "tsc --noEmit --project tsconfig.ui.json && vite build --config vite.ui.config.ts",
+    "typecheck:ui": "tsc --noEmit --project tsconfig.ui.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint-pnl": "bash scripts/lint-pnl.sh"

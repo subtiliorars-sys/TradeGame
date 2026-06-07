@@ -1,0 +1,12 @@
+{
+  // UI-layer tsconfig — extends the engine base but adds DOM lib for Phaser.
+  // The engine tsconfig (tsconfig.json) intentionally excludes DOM so the
+  // render-agnostic engine core is never accidentally coupled to browser APIs.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "rootDir": ".",
+    "outDir": "dist-ui"
+  },
+  "include": ["src/**/*.ts", "index.html"]
+}
