@@ -40,11 +40,11 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "5734c86750b3aa031ae2c1901e1563e492bbf7b2fa3b4206eb980f4abad577d8",
+  "expectedLogDigest": "d97bad6f8ad13b8906600a83149c0b7e4055cfc9516130d0784f790b04c1ba5b",
   "expectedXpEvents": [
     {
       "metricId": "patience_observation",
-      "xpAmount": 40
+      "xpAmount": 80
     },
     {
       "metricId": "debrief_completed",

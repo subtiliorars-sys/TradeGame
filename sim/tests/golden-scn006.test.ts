@@ -217,7 +217,7 @@ describe("GR-012: SCN-006 option-C run — full XP without a single trade", () =
       result.xpSummary.events.find((e) => e.metricId === id);
     expect(byId("policy_declared_card")?.xpAmount).toBe(30);
     expect(byId("policy_match")?.xpAmount).toBe(25);
-    expect(byId("patience_observation")?.xpAmount).toBe(40);
+    expect(byId("patience_observation")?.xpAmount).toBe(135); // equal-ceiling P-8a (incl. leverage_ack)
     expect(byId("no_entry_window")?.xpAmount).toBe(15);
   });
 

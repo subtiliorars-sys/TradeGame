@@ -582,6 +582,15 @@ The scoring engine emits process-metric events only. It has no knowledge of and 
 use of PnL data. Any function in the scoring engine that reads `realizedPnL` or
 `unrealizedPnL` is a design violation and must be rejected in code review.
 
+**Equal ceilings (OWNER RULED 2026-06-08, runbook P-8 option a):** the trade
+path and the observation/patience path reach the SAME XP ceiling in every
+scenario. This section's equal-standing language is the ratified canon; the
+older SCENARIOS_V0/V1 observation targets (~70 XP) are superseded.
+Mechanically: every scenario rubric authors a `patience_observation` row
+whose amount equals the rubric's trade-only sum, the manifest rubric is the
+authoritative source of XP amounts (extractor values are sandbox defaults),
+and an engine property test enforces the parity per scenario.
+
 ---
 
 ### 4.2 Process Metric Extraction

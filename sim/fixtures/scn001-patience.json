@@ -4,7 +4,7 @@
   "scenarioId": "SCN-001",
   "seed": 2712847316,
   "accountEquity": 10000,
-  "declaredRiskPct": 1.0,
+  "declaredRiskPct": 1,
   "actions": [
     {
       "type": "journal_entry",
@@ -40,16 +40,16 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "a8dc52974045983b249db0cf0c1b89dd7a67c1cb7c425546ea99b3685d6898ce",
+  "expectedLogDigest": "3eb361345aa58cef7b63ee01375c62d35945c4d76774430bfb557b4bab3273b8",
   "expectedXpEvents": [
     {
       "metricId": "patience_observation",
-      "xpAmount": 40
+      "xpAmount": 95
     },
     {
       "metricId": "debrief_completed",
       "xpAmount": 30
     }
   ],
-  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path \u2014 no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 70. Regenerate with: npx vitest run tests/_gen_digests.test.ts"
+  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+95 XP (equal-ceiling P-8a)), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path \u2014 no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 125 (equal-ceiling P-8a). Regenerate with: npx vitest run tests/_gen_digests.test.ts"
 }

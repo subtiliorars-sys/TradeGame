@@ -130,9 +130,12 @@ describe("GR-004: SCN-002 no-trade run — digest + XP equality", () => {
     }
   });
 
-  it("XP total is 70 (spec patience target)", () => {
+  it("XP total is 155 — equal-ceiling ruling (P-8a) supersedes the old ~70 patience target", () => {
+    // patience_observation (125 = the rubric's trade-only sum) + debrief (30).
+    // plan_declared was journaled after session open in this fixture, so it
+    // does not fire — it is equally earnable on both paths (ceiling parity).
     const result = runScenario(fixtureToConfig(fixture));
-    expect(result.xpSummary.total).toBe(70);
+    expect(result.xpSummary.total).toBe(155);
   });
 
   it("no order_submit events in no-trade run (patience_observation fires)", () => {

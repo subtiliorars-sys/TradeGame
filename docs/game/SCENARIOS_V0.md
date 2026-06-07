@@ -9,6 +9,13 @@ no real data without license review.
 
 ---
 
+> **OWNER RULED 2026-06-08 (runbook P-8, option a): EQUAL CEILINGS.** The
+> observation/patience targets below (~70 XP) are SUPERSEDED. The observation
+> path's ceiling now equals the trade path's ceiling in every scenario:
+> `patience_observation` is tuned per scenario to the rubric's trade-only sum
+> (engine enforces this with a property test). Clean-run targets and
+> reckless-winner caps stand. Original lines kept for archeology.
+
 ## Scenario Index
 
 | ID | Title | Market | Event Type | Difficulty |

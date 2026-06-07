@@ -148,7 +148,7 @@ export const scn002: ScenarioDef = {
       },
       {
         metricId: "patience_observation",
-        xpOnPass: 40,
+        xpOnPass: 125,
         label: "No trade taken + journal observation written",
       },
     ],

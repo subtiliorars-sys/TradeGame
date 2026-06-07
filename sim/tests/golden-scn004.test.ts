@@ -170,11 +170,11 @@ describe("GR-008: SCN-004 observe run — patience path, deposit metrics inert",
     }
   });
 
-  it("patience_observation fires (+40) — equal in standing to a clean deposit", () => {
+  it("patience_observation fires (+80) — observation ceiling equals the trade ceiling (P-8a)", () => {
     const result = runScenario(fixtureToConfig(fixture));
     const xp = result.xpSummary.events.find((e) => e.metricId === "patience_observation");
     expect(xp).toBeDefined();
-    expect(xp?.xpAmount).toBe(40);
+    expect(xp?.xpAmount).toBe(80);
   });
 
   it("LP metrics are inapplicable without a deposit — no XP, no fail penalty", () => {

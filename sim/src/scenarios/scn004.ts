@@ -148,7 +148,7 @@ export const scn004: ScenarioDef = {
       },
       {
         metricId: "patience_observation",
-        xpOnPass: 40,
+        xpOnPass: 80,
         label: "Observation-only run (no deposit) with full journal",
       },
       {
