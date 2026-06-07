@@ -54,6 +54,7 @@ import type { RiskModalData } from "./RiskModalScene.js";
 import type { PolicyCardData } from "./PolicyCardScene.js";
 import { depositFromFill, lpPanelView, type LpDeposit } from "../engine/lp.js";
 import type { IlCheckpointData } from "./IlCheckpointScene.js";
+import type { LpExplainerData } from "./LpExplainerScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -323,6 +324,19 @@ export class TradingScene extends Phaser.Scene {
     // Set initial compression to paused so player must press a speed button
     this.adapter.setCompression("paused");
     this.updateSpeedButtonHighlight("paused");
+
+    // T-05 LP-panel explainer (SCN-004 UI beat): mandatory two screens on
+    // LP scenarios before first input; skippable on replay sessions only.
+    // The sim is already paused at session start — the overlay just gates.
+    if (this.def.manifest.showLpPanel) {
+      const data: LpExplainerData = {
+        isReplay: this.replayOfSessionId !== null,
+        onDone: () => {
+          // Player begins via the speed controls (session-start convention).
+        },
+      };
+      this.scene.launch("LpExplainerScene", data);
+    }
   }
 
   override update(_time: number, delta: number): void {
@@ -523,7 +537,7 @@ export class TradingScene extends Phaser.Scene {
     // fields are not focused)
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
       // F7: overlay scenes own the keyboard while active.
-      if (this.scene.isActive("PolicyCardScene") || this.scene.isActive("IlCheckpointScene")) return;
+      if (this.scene.isActive("PolicyCardScene") || this.scene.isActive("IlCheckpointScene") || this.scene.isActive("LpExplainerScene")) return;
       if (!this.journalOpen) return;
       if (this.focusedField !== null) return;
       if (e.key === "Backspace") {
@@ -540,7 +554,7 @@ export class TradingScene extends Phaser.Scene {
     // (same listener-compounding rule as the journal handler above).
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
       // F7: overlay scenes own the keyboard while active.
-      if (this.scene.isActive("PolicyCardScene") || this.scene.isActive("IlCheckpointScene")) return;
+      if (this.scene.isActive("PolicyCardScene") || this.scene.isActive("IlCheckpointScene") || this.scene.isActive("LpExplainerScene")) return;
       if (this.focusedField === null) return;
       if (e.key === "Enter" || e.key === "Escape") {
         this.focusedField = null;
