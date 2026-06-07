@@ -327,6 +327,60 @@ sigma(RANGE) forex = TUNABLE: 0.0006
 
 ---
 
+### 2.5 Reference (Non-Tradeable) Instruments — closes SG-08
+
+Advanced scenarios (ACN-004) require a second data stream the player can observe but
+not trade: the NMX 100 index (always the full form "NMX 100", never bare "NMX" —
+FICTIONAL_CANON.md Standing Rule 6) rendered as a read-only reference chart alongside
+the primary instrument.
+
+**Engine model:**
+
+```typescript
+interface InstrumentConfig {
+  instrumentId:  string;        // e.g. 'NMX100' (internal id; display name "NMX 100")
+  displayName:   string;        // canonical display form from FICTIONAL_CANON.md
+  marketType:    'crypto' | 'stocks' | 'forex' | 'index';
+  tradeable:     boolean;       // false for reference instruments
+  feed:          IMarketFeed;   // reference feeds use the same adapter machinery
+}
+```
+
+- A reference instrument is a second `IMarketFeed` instance running in the same tick
+  pipeline, advanced from the **same session seed** with a per-instrument stream
+  offset: `sub_seed = seed XOR fnv1a32(instrumentId)` (FNV-1a 32-bit — named
+  explicitly because golden-replay determinism (§7.4) requires an identical,
+  portable derivation on every platform; no language-default `hash()`).
+- **Type impact:** `TickData.marketType` (§2.1) and the `InstrumentConfig.marketType`
+  union gain the `'index'` member together, in the same replayVersion-2 change that
+  adds `instrumentId` — they must not drift apart.
+- **Engine-level rejection (defense in depth):** `OrderBook` must reject any
+  `order_submit` whose `instrumentId` resolves to `tradeable: false`, with reason
+  `instrument_not_tradeable`. The UI never offering the instrument in the order ticket
+  is necessary but not sufficient — the engine enforces it.
+- **Correlation hook:** for regime-indicator use (ACN-004), the reference feed's
+  regime state may be linked to the primary feed's regime schedule via the scenario
+  config (shared regime timeline), rather than independent generation. Scenario
+  authors choose linked or independent per scenario.
+- **Scoring:** the ScoreTracker ignores reference-instrument ticks entirely; no
+  process metric may read reference price levels (a metric like "exited when the
+  index fell below X" would be outcome-prediction territory — prohibited). Reference
+  instruments exist for *information-management* teaching only; any scoring tied to
+  them must use process predicates (e.g., journal entries tagged `regime_observation`),
+  never price levels.
+
+**UI surface:** the reference chart renders as a secondary read-only panel below or
+beside the primary chart, clearly labeled "{NMX 100} — reference only, not tradeable."
+No order ticket binding, no position panel rows, no stop fields.
+
+**Replay schema impact:** EventLog `TickEvent` (§5.1) is single-instrument in
+replayVersion 1. Multi-feed sessions require an optional `instrumentId` field on
+`TickEvent` (absent = primary instrument, preserving backward compatibility) and a
+`replayVersion: "2"` bump. COSTLY: schema migration + replay-viewer support; required
+before ACN-004 ships, not Phase-2 blocking.
+
+---
+
 ## 3. Order Model
 
 ### 3.1 Order Types
@@ -376,6 +430,34 @@ Fill price (market/stop orders):
 - Spread cost in price units
 
 This is not optional — it is the mechanism by which the game teaches transaction costs.
+
+**Fill confirmation overlay behavior — closes SG-02:**
+
+After each `order_fill`, a fill confirmation overlay displays the actual vs. estimated
+fill, slippage realized, spread cost, and fee charged (the four mandatory items above).
+
+- **Timing:** auto-dismisses after TUNABLE: 3 seconds of wall-clock time (not sim
+  time — at 16x compression a sim-time overlay would be unreadable).
+- **Early dismissal:** a click/tap anywhere on the overlay dismisses it immediately.
+  Dismissal is presentational only and is NOT logged to the EventLog (the fill data
+  is already canonically recorded in the `order_fill` event; logging UI dismissals
+  would add noise with no process-metric value).
+- **Non-blocking:** the overlay is non-modal. Chart, journal drawer, and order ticket
+  remain fully interactive while it is visible. It must not obscure the order ticket's
+  estimated-fill panel (place it over the chart area, top-right corner).
+- **Multiple fills:** if a second fill occurs while an overlay is visible, overlays
+  stack vertically, newest on top, maximum TUNABLE: 3 visible; the oldest is dropped
+  first. Each overlay runs its own dismissal timer.
+- **Time-compression interaction (clarifies §1.3):** the §1.3 rule "time compression
+  cannot be changed while an order is being confirmed" spans:
+  - immediate fills (market orders, triggered stops): from `order_submit` until the
+    fill confirmation overlay is dismissed or expires;
+  - resting orders (limit, stop, stop-limit): from `order_submit` until the engine
+    accepts the order as resting (one tick) — the lock must NOT persist while a
+    resting order waits for its trigger, which could span the whole session. When a
+    resting order later fills, the overlay appears but speed controls stay enabled
+    (the player took no compression action during that fill's confirmation).
+  Pause remains available at all times (pause is never restricted, per §1.3).
 
 ---
 
@@ -449,6 +531,43 @@ acknowledged leverage risk before entry).
 COSTLY: The mandatory risk display requires a separate UI component that blocks order
 entry. Must be built and cannot be bypassed by any configuration flag.
 
+#### Multi-position aggregate exposure (advanced tier) — closes SG-07
+
+Advanced scenarios with concurrent positions (ACN-001: two crypto positions; ACN-006:
+two forex pairs) require the Position Panel to show portfolio-level exposure, not just
+per-position rows. Not Phase-2 blocking; must be implemented before any ACN scenario
+with `positions ≥ 2` ships.
+
+**Definitions (computed by PositionLedger, displayed by UI):**
+
+```
+aggregate_notional   = sum(|position_value_i|) over all open positions
+                       // absolute values: a long and a short both ADD exposure;
+                       // netting them would hide exactly the risk ACN-001 teaches
+exposure_pct         = aggregate_notional / account_equity
+
+forex additionally:
+  total_used_margin  = sum(margin_required_i)
+  combined_pip_value = sum(pip_value_i)
+                       // displayed as "a 1-pip adverse move across all pairs costs ${X}"
+                       // deliberately assumes correlation = 1 (worst case) — that IS
+                       // the lesson of ACN-006; the panel labels it "if all pairs move
+                       // against you together"
+```
+
+**UI surface:** when open positions ≥ 2, the Position Panel renders an AGGREGATE
+EXPOSURE row above the per-position rows showing `aggregate_notional`, `exposure_pct`,
+and (forex) `total_used_margin` + `combined_pip_value`. With 0–1 positions the row is
+hidden (no layout change to the Phase-2 single-position panel).
+
+**Scoring interaction:** ACN-006 requires the player to journal their total exposure
+percentage before proceeding. The corresponding process predicate follows the
+`policy_match` pattern (§4.2): compare the value declared in the `journal_entry`
+tagged `exposure_declaration` against the PositionLedger's computed `exposure_pct` at
+that tick; match within TUNABLE: ±2 percentage points earns the XP event. The
+predicate reads position sizes and account equity (process inputs) — never PnL. It
+verifies the player *knows their exposure*, not whether the exposure made money.
+
 ---
 
 ## 4. Scoring Engine
@@ -478,6 +597,32 @@ The ScoreTracker monitors the EventLog in real time and extracts:
 | `debrief_completed` | Player completed the debrief screen | EventLog: `debrief_complete` event |
 | `session_reviewed` | Player replayed the session post-completion | EventLog: `replay_started` event in a post-session context |
 | `policy_match` (News/Plan Card scenarios only) | Player's declared policy option matches their actual in-scenario behavior during the event window | Reads the `pre_event_declaration` tag and declared option (A/B/C) from the `JournalEntryEvent` logged at card confirmation; compares to actual behavior: option A = `PositionLedger` shows no open positions at T-01 (no orders in window); option B = position held through window with a stop set and a `leverage_ack` logged (held with declared stop); option C = no `order_submit` events during the event window (observe-only). Match: emits +25 XP event per SCENARIOS_V1 SCN-006 rubric. Mismatch: no XP, emits `policy_mismatch` debrief flag. Computed deterministically from the EventLog alone; no runtime judgment required. |
+
+**Process-metric compliance indicator (Position Panel UI surface) — closes SG-03:**
+
+The Position Panel displays a live per-position compliance indicator for the two
+stop-discipline metrics, so the player gets in-the-moment feedback rather than
+debrief-only feedback:
+
+| Indicator state | Condition (from ScoreTracker, live) |
+|-----------------|-------------------------------------|
+| ✓ green "Stop set before entry" | `stop_before_entry` currently true for this position |
+| ✓ green "Stop honored" | position open, stop active, no cancel/widen events |
+| ⚠ amber "Stop cancelled" / "Stop widened" | `stop_honored` or `no_stop_widen` has gone false |
+| (no indicator) | no open position |
+
+Rules:
+- **Single source of truth:** the indicator must read the ScoreTracker's live metric
+  evaluation. The UI must NOT re-derive these predicates from raw events — duplicated
+  logic will drift from the scoring engine and show the player a compliance state that
+  contradicts their debrief rubric.
+- The indicator reflects process state only. It never changes color or content based
+  on the position's PnL, direction, or distance to profit (a green check on a losing
+  trade is correct and intentional — that is the entire teaching model, §4.1).
+- Indicator state changes are driven by EventLog events (`order_submit`,
+  `order_cancel`, `order_modify`, fills) — not polled per render frame.
+- The amber states are observational, mirroring the debrief tone rules: label text is
+  factual ("Stop cancelled at T+12"), never punitive.
 
 ---
 
@@ -512,6 +657,25 @@ interface RecklessWinnerFlag {
 }
 ```
 
+**Debrief placement and visibility — closes SG-05:**
+
+- The coaching alert renders in the Debrief Screen's right-panel COACHING ALERT
+  region (UI_WIREFRAMES Screen 5), directly below the XP summary.
+- **Above-the-fold requirement:** at the minimum supported desktop viewport
+  (TUNABLE: 1280×720 CSS pixels) the alert's heading and at least the first two lines
+  of `coachingText` must be visible without scrolling. If authored `coachingText`
+  exceeds the visible region, the alert truncates with an "expand" affordance — it
+  must never be pushed entirely below the fold by other right-panel content.
+- **Priority:** if multiple coaching flags exist for the session (reckless-winner plus
+  process-gap flags), `reckless_winner_flag` takes the top slot — it is the flag with
+  the highest miseducation risk (a profitable outcome reinforcing a bad process).
+- The alert is visually distinct from the rubric (alert styling, not checklist
+  styling) but is labeled "COACHING OBSERVATION" — not "penalty," "violation," or
+  "warning." No XP is subtracted (unchanged from above; the flag is informational).
+- `debrief_complete` does not require the player to expand or acknowledge the alert —
+  forcing acknowledgment would train players to click through it (banner blindness);
+  prominence, not friction, is the mechanism.
+
 ---
 
 ### 4.4 What the Scoring Engine Never Emits
@@ -526,6 +690,68 @@ The following are explicitly prohibited from appearing in any scoring engine out
 
 If a future engineer adds a `pnlScore` field to any scoring output type, it must be
 rejected in code review with a reference to this spec section and RISK_REGISTER §16.
+
+---
+
+### 4.5 Rank Progression and Display — closes SG-01
+
+GDD §7 defines the rank ladder (`Observer → Trainee → Practitioner → Journeyman →
+Strategist → Senior Strategist`) and the rule that ranks are earned by XP plus
+minimum drills completed — never by PnL milestones. This section specifies the
+engineering interface and the display format the Main Menu wireframe assumes.
+
+**Rank threshold lookup interface:**
+
+```typescript
+interface RankThreshold {
+  rankId:        string;    // 'observer' | 'trainee' | 'practitioner' | ...
+  displayLabel:  string;    // "Trainee" — authored, localizable
+  xpRequired:    number;    // cumulative process-XP to reach this rank
+  drillsRequired: string[]; // drill IDs that must be completed (GDD §7: XP alone
+                            // is insufficient — prevents XP-grinding past skills)
+}
+
+interface RankService {
+  // Pure function of (xpTotal, completedDrillIds) → current rank + progress.
+  // Reads XP events and drill-completion events ONLY. Reading any trade-outcome
+  // data here is a §4.4 violation.
+  currentRank(xpTotal: number, completedDrillIds: string[]): {
+    rank:           RankThreshold;
+    nextRank:       RankThreshold | null;   // null at top rank
+    xpIntoRank:     number;
+    xpToNextRank:   number;                 // for the progress bar
+    drillsMissing:  string[];               // empty if only XP is short
+  };
+}
+```
+
+Threshold values are TUNABLE scenario-economy numbers (placeholder ladder:
+0 / 200 / 800 / 2000 / 4500 / 8000 cumulative XP — to be balanced against per-scenario
+rubric totals once more scenarios are scored; see SCENARIOS_V0/V1 rubrics).
+
+**Display format (Main Menu, per UI_WIREFRAMES Screen 1):**
+
+- Rank label + progress bar: `Rank: {displayLabel}` and
+  `XP: {xpTotal} / {nextRank.xpRequired} to {nextRank.displayLabel}`
+  (matches the wireframe's `Rank: Trainee — XP: 420 / 800 to Practitioner`;
+  both numbers are cumulative XP, so the bar fill is
+  `(xpTotal − rank.xpRequired) / (nextRank.xpRequired − rank.xpRequired)`).
+- If XP suffices but drills are missing, the bar shows full with the label
+  `"Complete {drill name} to advance"` — the gate is explicit, never a silent stall.
+- At top rank the bar is replaced by the rank label alone (no infinite-progression
+  treadmill; GDD's progression ends in cohort/coaching roles, not number-go-up).
+- The progress bar reads process XP only. No PnL, win-rate, or outcome component may
+  appear on or near the rank display (§4.4; GDD §7 leaderboard constraint).
+- Rank-up moment: a rank change triggers a one-time, dismissible congratulation card
+  listing which process behaviors earned it ("You ranked up by journaling 12 sessions
+  and honoring every stop"). It names process behaviors, never trade outcomes.
+
+Cohort-model questions (per-market vs cross-market rank gates — GDD §11 Q3) remain
+open and do not block this interface: `RankService` is cohort-agnostic.
+
+Implementation timing: rank system is wired in Phase 3 per the §8 cutline ("XP
+progression / rank unlock" deferred row). This section exists so the Main Menu UI
+and the XP economy can be designed against a stable interface now.
 
 ---
 
@@ -912,6 +1138,8 @@ confirm whether the diff is an intentional change or a regression.
 | Age screen | Mandatory at account creation; blocks under-13 |
 | Mandatory forex leverage display | Blocks forex order entry without acknowledgment |
 | Slippage + spread display | Required on every order confirmation |
+| Fill confirmation overlay | Per §3.2 behavior spec (3s auto-dismiss, non-blocking, stacking) |
+| Position Panel compliance indicator | Per §4.2 process-metric UI surface (ScoreTracker-sourced) |
 | Golden replay regression tests | All eight tests from §7.4 |
 | "Sim is not the market" friction | On scenario start, scenario end, and debrief screen |
 
@@ -928,7 +1156,9 @@ confirm whether the diff is an intentional change or a regression.
 | PDT rule modeling (stocks) | COSTLY to model correctly; deferred |
 | Leverage variants (crypto, stocks) | Deferred per GDD §10 |
 | Mobile-responsive layout | Deferred per GDD §10 |
-| XP progression / rank unlock | Deferred — scoring engine emits XP events; rank system wired in Phase 3 |
+| XP progression / rank unlock | Deferred — scoring engine emits XP events; rank system (§4.5 RankService + Main Menu display) wired in Phase 3 |
+| Reference (non-tradeable) instruments | Deferred — §2.5; advanced tier only (ACN-004); requires replayVersion 2 |
+| Multi-position aggregate exposure display | Deferred — §3.4; advanced tier only (ACN-001, ACN-006) |
 | Paper Trading Sandbox (open-ended) | Deferred — vertical slice is scenario-only |
 | Strategy Sandbox (grid, DCA, carry) | Deferred — Phase 3+ per GDD §5.3 |
 | Risk Management Drills (full set) | Partial — position sizing and stop placement drills needed as prerequisites for Phase 2 scenarios; rest deferred |
