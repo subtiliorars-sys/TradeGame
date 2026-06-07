@@ -1,0 +1,105 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-014",
+  "scenarioId": "SCN-004",
+  "seed": 3235790852,
+  "accountEquity": 10000,
+  "declaredRiskPct": 10,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "hypothesis"
+        ],
+        "wordCount": 30
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 30,
+      "payload": {
+        "orderId": "deposit-014",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 238,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 240,
+      "payload": {
+        "tags": [
+          "il_estimate"
+        ],
+        "wordCount": 16
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 90,
+      "payload": {
+        "tags": [
+          "trigger_update"
+        ],
+        "wordCount": 18
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "trigger-014",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 238,
+        "stopPrice": 6.0,
+        "price": null
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 210
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "f0f0a4d50274c3c1ae8aa393ff4e944197cf17d2e26c80eb417df6749f3dfd2b",
+  "expectedXpEvents": [
+    {
+      "metricId": "journal_before_trade",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "stop_honored",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "plan_declared",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "il_estimate_written",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "trigger_updated",
+      "xpAmount": 15
+    }
+  ],
+  "notes": "SCN-004 trigger-honored-LATE run (GR-014). Deposit with NO pre-placed withdrawal trigger (the process gap); trigger defined late at DP-D (6.00) and EXECUTED by the partial correction (fill ~5.95). The only fixture where reckless_winner_flag fires: stop_before_entry failed + winning session. XP totals 130 \u2014 IDENTICAL to the clean run, locking in that the flag is coaching, never an XP penalty (the late trigger still earns stop_honored + trigger_updated; the gap costs nothing numerically, only the coaching callout)."
+}
