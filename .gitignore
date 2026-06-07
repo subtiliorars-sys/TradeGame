@@ -1,18 +1,30 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
 
-# Other files and folders
-.settings/
+# Env / secrets — never commit credentials
+.env
+.env.*
+*.pem
+*.key
+secrets/
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# Node (future game/site builds)
+node_modules/
+dist/
+build/
+*.log
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Python (future tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local scratch
+scratch/
+tmp/
