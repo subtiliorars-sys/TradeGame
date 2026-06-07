@@ -207,3 +207,44 @@ describe("awardDrill — honest-XP", () => {
     expect(ProgressStore.xpTotal()).toBe(160);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Wave-D red-team regressions
+// ---------------------------------------------------------------------------
+
+import { currentRank } from "../src/engine/rank.js";
+
+describe("F1: a drill completion that crosses a rank threshold fires the rank-up marker", () => {
+  it("4th drill at ≥200 XP → Observer→Trainee recorded (the primary on-ramp)", () => {
+    // The red-team's failing probe, as a permanent regression test.
+    ProgressStore.addXp(200);
+    const ids = DRILL_CATALOG.map((d) => d.id);
+    for (const id of ids.slice(0, 3)) {
+      ProgressStore.completeDrill(id, 40);
+    }
+    ProgressStore.clearRankUp(); // discard any earlier marker noise
+    expect(currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId).toBe("observer");
+    const last = DRILL_CATALOG.find((d) => d.id === ids[3])!;
+    awardDrill(last);
+    const up = ProgressStore.lastRankUp();
+    expect(up, "the drill-gate crossing must record the rank-up").not.toBeNull();
+    expect(up?.from.rankId).toBe("observer");
+    expect(up?.to.rankId).toBe("trainee");
+  });
+
+  it("completeDrill is the single atomic mutator (mark + XP together)", () => {
+    ProgressStore.completeDrill("drill:position-sizing-crypto", 40);
+    expect(ProgressStore.xpTotal()).toBe(40);
+    expect(ProgressStore.completedDrillIds()).toContain("drill:position-sizing-crypto");
+  });
+});
+
+describe("F3: rationale precision — 4-decimal levels never collapse", () => {
+  it("the forex short set's pass zone renders at full precision", () => {
+    const forexShort = getDrill("drill:stop-placement-v1")!.paramSets[1] as StopPlacementParams;
+    const r = evaluateStopPlacement(forexShort, 1.31); // any fail
+    expect(r.correctDisplay).toContain("1.3206");
+    expect(r.correctDisplay).toContain("1.3225");
+    expect(r.correctDisplay).not.toContain("1.32–1.32");
+  });
+});

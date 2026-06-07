@@ -54,6 +54,11 @@ export class DrillScene extends Phaser.Scene {
   private answerFocused = false;
   private result: DrillResult | null = null;
   private grantedXp: number | null = null;
+  /** The parameter set the CURRENT problem was posed from (snapshot — the
+   *  attempt pointer may advance underneath it on a fail, red-team F2). */
+  private currentSet: PositionSizingParams | StopPlacementParams | null = null;
+  /** Rank-up surfaced by the last award (drill completions can BE the rank-up). */
+  private rankUpLine: string | null = null;
 
   constructor() {
     super({ key: "DrillScene" });
@@ -66,6 +71,8 @@ export class DrillScene extends Phaser.Scene {
     this.answerFocused = false;
     this.result = null;
     this.grantedXp = null;
+    this.currentSet = null;
+    this.rankUpLine = null;
   }
 
   create(): void {
@@ -180,18 +187,28 @@ export class DrillScene extends Phaser.Scene {
         this.answerFocused = true;
         this.result = null;
         this.grantedXp = null;
+        this.rankUpLine = null;
+        this.currentSet = this.paramsAtPointer(d);
         this.redraw();
       });
       y += 76;
     }
   }
 
-  private currentParams(): PositionSizingParams | StopPlacementParams {
-    const d = this.active!;
+  /** Parameter set at the drill's current attempt pointer. */
+  private paramsAtPointer(d: DrillDef): PositionSizingParams | StopPlacementParams {
     const attempt = this.attempts.get(d.id) ?? 0;
     const set = d.paramSets[attempt % d.paramSets.length];
     if (set === undefined) throw new Error(`drill ${d.id}: empty paramSets`);
     return set;
+  }
+
+  /** The set the current problem was POSED from (stable across the result view). */
+  private currentParams(): PositionSizingParams | StopPlacementParams {
+    if (this.currentSet === null) {
+      this.currentSet = this.paramsAtPointer(this.active!);
+    }
+    return this.currentSet;
   }
 
   private drawRun(g: Phaser.GameObjects.Graphics): void {
@@ -354,6 +371,14 @@ export class DrillScene extends Phaser.Scene {
     });
 
     let by = y + 212;
+    if (this.rankUpLine !== null) {
+      label(this, PAD, by, this.rankUpLine, {
+        fontSize: "12px",
+        color: CSS.AMBER,
+        fontStyle: "bold",
+      });
+      by += 22;
+    }
     if (this.grantedXp !== null && this.grantedXp > 0) {
       label(this, PAD, by, `+${this.grantedXp} XP — drill completed (feeds rank gates and scenario prerequisites)`, {
         fontSize: "12px",
@@ -372,11 +397,16 @@ export class DrillScene extends Phaser.Scene {
 
     button(this, PAD, by, 200, 36, r.pass ? "NEXT VARIANT" : "RETRY (new numbers)", () => {
       const id = d.id;
-      this.attempts.set(id, (this.attempts.get(id) ?? 0) + 1);
+      // Pass path advances here; fail path already advanced at submit (F2).
+      if (r.pass) {
+        this.attempts.set(id, (this.attempts.get(id) ?? 0) + 1);
+      }
       this.answerStr = "";
       this.answerFocused = true;
       this.result = null;
       this.grantedXp = null;
+      this.rankUpLine = null;
+      this.currentSet = this.paramsAtPointer(d);
       this.redraw();
     });
     button(this, PAD + 216, by, 160, 36, "ALL DRILLS", () => {
@@ -393,6 +423,12 @@ export class DrillScene extends Phaser.Scene {
     const d = this.active;
     if (d === null || this.result !== null) return;
     const answer = Number.parseFloat(this.answerStr);
+    // F6: a lone "." parses NaN — clear the field instead of grading nonsense.
+    if (!Number.isFinite(answer)) {
+      this.answerStr = "";
+      this.redraw();
+      return;
+    }
     const p = this.currentParams();
 
     this.result =
@@ -400,8 +436,24 @@ export class DrillScene extends Phaser.Scene {
         ? evaluatePositionSizing(p as PositionSizingParams, answer)
         : evaluateStopPlacement(p as StopPlacementParams, answer);
 
+    // F2: the correct answer is revealed in the rationale (anti-headcanon —
+    // by design), so the parameter set advances ON FAIL here, not in the
+    // RETRY button: leaving via ALL DRILLS and re-entering re-poses a FRESH
+    // set, never the one whose answer was just shown.
+    if (!this.result.pass) {
+      this.attempts.set(d.id, (this.attempts.get(d.id) ?? 0) + 1);
+    }
+
     // XP on pass — once per drill ID (catalog enforces; 0 on repeats).
     this.grantedXp = this.result.pass ? awardDrill(d) : null;
+
+    // F1 surfacing: a drill completion can BE the rank-up — show it here
+    // (DebriefScene's card only covers scenario-driven crossings).
+    const up = ProgressStore.lastRankUp();
+    if (this.grantedXp !== null && this.grantedXp > 0 && up !== null) {
+      this.rankUpLine = `RANK UP — ${up.from.displayLabel} → ${up.to.displayLabel}: earned by process (drills + journaled sessions), never outcomes.`;
+      ProgressStore.clearRankUp();
+    }
     this.redraw();
   }
 }

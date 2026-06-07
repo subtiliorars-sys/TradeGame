@@ -81,6 +81,25 @@ export function markDrillCompleted(id: string): void {
 }
 
 /**
+ * Complete a drill AND award its XP atomically, with rank-change detection
+ * spanning BOTH mutations (red-team F1: when the DRILL gate — not the XP —
+ * crosses a rank threshold, marking the drill before addXp() made addXp's
+ * own before-snapshot already include the new drill, so the §4.5 rank-up
+ * marker never fired on the primary on-ramp path).
+ */
+export function completeDrill(id: string, xp: number): void {
+  const before = currentRank(_xpTotal, completedDrillIds()).rank;
+  _completedDrillIds.add(id);
+  if (Number.isFinite(xp) && xp > 0) {
+    _xpTotal += xp;
+  }
+  const after = currentRank(_xpTotal, completedDrillIds()).rank;
+  if (after.rankId !== before.rankId) {
+    _lastRankUp = { from: before, to: after };
+  }
+}
+
+/**
  * Mark a scenario as completed (debrief reached). Feeds the Main Menu's
  * scenario-prereq gates ("scenario:SCN-00X" in manifest.prereqs).
  * Completion = process flow finished, regardless of outcome — no PnL input.

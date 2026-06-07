@@ -63,7 +63,7 @@ export function scenarioLockState(
     // Unshipped drill IDs stay advisory (counted below) — never a dead end.
     if (prereq.startsWith("drill:") && SHIPPED_DRILL_IDS.has(prereq)) {
       if (!completedDrillIds.includes(prereq)) {
-        reasons.push(`Complete the ${prereqDrillLabel(prereq)} drill first`);
+        reasons.push(`Complete the ${prereqDrillLabel(prereq)} drill first (RISK DRILLS, top of menu)`);
       }
     }
   }

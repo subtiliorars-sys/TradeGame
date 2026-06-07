@@ -184,9 +184,9 @@ export function evaluateStopPlacement(
     );
   } else if (insideNoise) {
     explanation.push(
-      "Your stop sits inside the consolidation/wick range. Normal noise reaches " +
-        "there before the thesis is actually invalidated — the classic " +
-        "stopped-out-then-it-went-anyway placement."
+      "Your stop sits in the noise band between the key level and your entry. " +
+        "Normal adverse movement reaches there before the thesis is actually " +
+        "invalidated — the classic stopped-out-then-it-went-anyway placement."
     );
   } else {
     explanation.push(
@@ -208,7 +208,10 @@ export function evaluateStopPlacement(
 }
 
 function fmt(n: number): string {
-  return Number.isInteger(n) ? n.toString() : n.toFixed(2).replace(/\.?0+$/, "");
+  // Up to 4 decimals, trailing zeros trimmed — 4-decimal forex levels must
+  // not collapse to a zero-width "1.32–1.32" pass zone in the rationale
+  // (red-team F3: the rationale IS the teaching; toFixed(2) taught nonsense).
+  return Number.isInteger(n) ? n.toString() : n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -224,8 +227,9 @@ export function awardDrill(def: DrillDef): number {
   if (ProgressStore.completedDrillIds().includes(def.id)) {
     return 0;
   }
-  ProgressStore.markDrillCompleted(def.id);
-  ProgressStore.addXp(def.xp);
+  // Atomic mark+award with rank-change detection across both mutations —
+  // a drill completion can BE the rank-up (red-team F1).
+  ProgressStore.completeDrill(def.id, def.xp);
   return def.xp;
 }
 
