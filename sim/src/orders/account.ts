@@ -21,30 +21,28 @@
  *   free_margin     = equity - used_margin
  *   margin_level    = equity / used_margin   (expressed as ratio, not %)
  *
- * Margin-call warning:  margin_level ≤ 1.00 (100%)  → warn
- * Stop-out:             margin_level ≤ 0.50  (50%)  → auto-close all positions
+ * Canonical stop-out convention (DECIDED 2026-06-07 — P-7):
+ *   Margin-call warning:  margin_level ≤ 1.00 (100%)  → warn
+ *   Stop-out:             margin_level ≤ 0.50  (50%)  → auto-close all positions
  *
- * X-B02 worked example (curriculum canonical):
- *   balance = $500, leverage = 50:1, 2 mini lots (2 × 10,000 = 20,000 units)
- *   price = 1.0000
- *   margin_required = (20,000 × 1.0000) / 50 = $400
- *   free_margin = $500 - $400 = $100 (initial, before any move)
- *   stop-out fires at margin_level = 0.50 → equity = 0.50 × $400 = $200
- *   loss to reach stop-out = $500 - $200 = $300
- *   pips_to_stop_out = loss / pip_value_total
- *     pip_value per mini lot = $1.00; 2 mini lots = $2.00 pip_value
- *     pips = $300 / $2.00 = 150 pips
- *   NOTE: the task description states 125 pips for this example. Re-examination:
- *     margin_required = $400. At stop-out (50% margin level):
- *     equity = 0.50 × $400 = $200 → loss = $500 - $200 = $300 → 300/$2 = 150 pips.
- *   The 125-pip figure arises if the stop-out level is computed differently:
- *     free_margin = 0 → equity = used_margin ($400) → loss = $500 - $400 = $100 → 50 pips.
- *   Resolving: the 125-pip value matches stop-out at equity = $250 (50% of $500 balance).
- *     loss = $500 - $250 = $250 → 250/$2 = 125 pips.
- *   RESOLUTION: use equity-based margin_level = equity / used_margin, but the
- *   stop-out threshold is applied as equity ≤ 0.50 × balance (not used_margin).
- *   This matches: equity ≤ 0.50 × $500 = $250 → loss = $250 → 125 pips ✓.
- *   See risk.ts for the stop-out calculation that produces this result.
+ * used_margin is STATIC AT OPEN (the margin reserved when the position is
+ * opened at entry price). It is NOT marked-to-market. This matches the lesson
+ * skeleton, keeps the formula simple, and matches how retail brokers compute
+ * maintenance margin for the purpose of the stop-out trigger.
+ *
+ * X-B02 worked example (curriculum canonical — DECIDED 2026-06-07):
+ *   balance = $500, leverage = 50:1, 2 mini lots ANDU/HarborUSD at 1.2500
+ *   notional = 20,000 × 1.2500 = $25,000
+ *   used_margin (static at open) = $25,000 / 50 = $500
+ *   → used_margin = full balance → free_margin = $0 → margin_level = 1.00 at open
+ *   → margin-call warning fires immediately (margin_level is already at 100%)
+ *
+ *   pip_value_total = 0.0001 × 20,000 = $2.00/pip
+ *
+ *   Stop-out fires when equity / used_margin ≤ 0.50:
+ *     equity_at_so = used_margin × 0.50 = $500 × 0.50 = $250
+ *     loss_to_so   = $500 − $250 = $250
+ *     pips_to_so   = $250 / $2.00 = 125 pips ✓
  *
  * SCOPE NOTE: unrealized PnL tracking is position state, not scoring state.
  * account.ts intentionally carries equity/PnL — the no-PnL rule applies only
@@ -214,18 +212,16 @@ export function createStocksCashAccount(initialBalance: number): StocksCashAccou
 // ---------------------------------------------------------------------------
 
 /**
- * Margin-level thresholds (task spec values — override the spec's TUNABLE defaults).
+ * Margin-level thresholds — canonical (DECIDED 2026-06-07, P-7).
  *
- * The spec §3.4 lists margin_call_level = 50% and stop_out_level = 20% as
- * TUNABLE defaults. The task description overrides these with standard retail
- * broker conventions (more conservative and curriculum-accurate):
- *   Margin-call warning: margin_level ≤ 100% (equity = used_margin)
- *   Stop-out:            margin_level ≤  50% (equity = 0.5 × used_margin)
+ * Standard retail-broker convention:
+ *   Margin-call warning: margin_level ≤ 1.00 (equity = used_margin)
+ *   Stop-out:            margin_level ≤ 0.50 (equity = 50% of used_margin)
  *
- * These match the X-B02 worked example at 50:1 leverage:
- *   $500 balance, 2 mini lots, margin $400 → stop-out at equity $200 → 125 pips.
- *
- * See account.ts file-level comment for full X-B02 reconciliation.
+ * X-B02 verification: $500 balance, 50:1, 2 mini lots at 1.2500
+ *   → used_margin = $500, pip_value = $2.00/pip
+ *   → stop-out at equity $250 → loss $250 → 125 pips ✓
+ *   (See file-level comment for full arithmetic.)
  */
 export const MARGIN_CALL_LEVEL = 1.0; // 100% — equity equals used margin
 export const STOP_OUT_LEVEL = 0.5; // 50% — equity = 50% of used margin
