@@ -429,11 +429,11 @@ export class DebriefScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private replayScenario(): void {
-    // Restart TradingScene with the same seed.
-    // Phase 2: seed is baked into SessionAdapter constructor; the restart
-    // produces a deterministic replay because the engine seed is constant.
-    // Tier B: pass the seed explicitly via scene init data when multi-scenario
-    // seeds are managed dynamically.
-    this.scene.start("TradingScene");
+    // Restart TradingScene with the SAME scenario. The canonical per-scenario
+    // seed is resolved inside SessionAdapter (scenarios/registry.ts), so the
+    // restart is a deterministic replay of the same tick stream.
+    this.scene.start("TradingScene", {
+      scenarioId: this.debriefData?.scenarioId ?? "SCN-001",
+    });
   }
 }

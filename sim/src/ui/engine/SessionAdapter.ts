@@ -54,6 +54,7 @@ import {
 } from "../../engine/scoring.js";
 import type { ScenarioDef, ScenarioManifest, XpRubricEntry } from "../../scenarios/types.js";
 import { scn001 as _scn001Default } from "../../scenarios/scn001.js";
+import { scenarioSeed } from "../../scenarios/registry.js";
 
 /** Current price snapshot delivered to the UI each tick. */
 export interface PriceTick {
@@ -71,6 +72,17 @@ export interface PriceTick {
 export interface FillResult {
   orderId: string;
   fill: OrderFillEvent;
+}
+
+/** Synchronous outcome of submitOrder(). */
+export interface SubmitOutcome {
+  orderId: string;
+  /**
+   * Non-null when the OrderBook rejected the order at submit time
+   * (e.g. "leverage_ack_required", "session_closed", "insufficient_balance").
+   * Null means the order was accepted (fill arrives via onFill on a later tick).
+   */
+  rejectReason: string | null;
 }
 
 export type TickCallback = (tick: PriceTick) => void;
@@ -124,12 +136,12 @@ export interface DebriefData {
   readonly sessionId: string;
 }
 
-const MS_PER_TICK = 1_000; // 1 sim-second per tick
 // Estimated sigma for market orders (conservative baseline).
 const BASE_SIGMA = 0.008;
-// Default leverage for forex scenarios (overridable via manifest; no manifest field
-// for leverage yet, so use this sane default for the UI layer).
-const DEFAULT_FOREX_LEVERAGE = 50;
+// Default leverage for forex scenarios. SIM_ENGINE_SPEC §3.4: leverage_ratio
+// TUNABLE, 30:1 (EU/UK retail cap level — conservative default). The wireframe
+// Screen 2a (SCN-003) also shows 30:1. No manifest field for leverage yet.
+const DEFAULT_FOREX_LEVERAGE = 30;
 
 // ---------------------------------------------------------------------------
 // SessionAdapter — scenario-aware, market-selectable
@@ -159,7 +171,7 @@ export class SessionAdapter {
   latestTick: PriceTick | undefined;
 
   /** Scenario manifest wired at construction (used to build DebriefData). */
-  private manifest: ScenarioManifest;
+  private readonly manifest: ScenarioManifest;
 
   /** Whether the session has already ended (prevents double-end). */
   private sessionEnded = false;
@@ -181,16 +193,13 @@ export class SessionAdapter {
    * @param seedValue  PRNG seed. Defaults to the scenario's canonical seed.
    */
   constructor(def?: ScenarioDef, seedValue?: number) {
-    // Import here to avoid circular deps at module level; registry is UI-adjacent.
-    // Fall back to scn001 when called without arguments (backward-compat for
-    // ui-parity.test.ts which constructs SessionAdapter() with no args).
     // Fall back to scn001 when called without arguments (backward-compat for
     // ui-parity.test.ts which constructs SessionAdapter() with no args).
     const resolvedDef: ScenarioDef = def ?? _scn001Default;
 
     this.manifest = resolvedDef.manifest;
     this.marketType = this.manifest.market;
-    this.sessionSeed = seedValue ?? _scenarioSeed(this.manifest.id);
+    this.sessionSeed = seedValue ?? scenarioSeed(this.manifest.id);
 
     const prng = seedPrng(this.sessionSeed);
 
@@ -270,6 +279,11 @@ export class SessionAdapter {
    * identical to the harness runner. The UI no longer computes fill price
    * inline; it reads back FillResult from this method.
    *
+   * Rejects (leverage_ack_required, session_closed, insufficient_balance,
+   * stop_limit_deferred) are surfaced synchronously in the returned
+   * SubmitOutcome AND logged as an order_cancel with the reject reason —
+   * mirroring the harness runner's event-log shape exactly.
+   *
    * NOTE: For the current UI (market orders only), fills are processed during
    * the clock tick handler. This method submits the order; the fill is
    * delivered via the onFill callback on the very next tick advance.
@@ -282,7 +296,7 @@ export class SessionAdapter {
     limitPrice?: number | null;
     /** Forex: whether leverage_risk_acknowledged has been emitted. */
     leverageAckReceived?: boolean;
-  }): string {
+  }): SubmitOutcome {
     const { tickIndex, simTimeMs } = this.clock.state;
     const orderId = `ui-ord-${++this.orderSeq}`;
     const orderType = spec.orderType ?? "market";
@@ -318,8 +332,21 @@ export class SessionAdapter {
       sessionOpen,
     };
 
-    this.orderBook.submitOrder(params, tickIndex, simTimeMs);
-    return orderId;
+    const result = this.orderBook.submitOrder(params, tickIndex, simTimeMs);
+    if (result.type === "reject") {
+      // Log a cancel with the reject reason so the event log is complete
+      // (identical shape to the harness runner's reject handling).
+      const rejectReason = result.rejectReason ?? "rejected";
+      this.log.append(simTimeMs, {
+        type: "order_cancel",
+        orderId,
+        reason: rejectReason,
+        tickIndex,
+        timestamp: simTimeMs,
+      });
+      return { orderId, rejectReason };
+    }
+    return { orderId, rejectReason: null };
   }
 
   /** Current account equity (balance + unrealized PnL). */
@@ -385,18 +412,6 @@ export class SessionAdapter {
 
   offFill(cb: FillCallback): void {
     this.fillListeners = this.fillListeners.filter((x) => x !== cb);
-  }
-
-  /**
-   * Wire a ScenarioManifest so endSession() can build DebriefData.
-   * Called by TradingScene before starting the sim clock.
-   *
-   * @deprecated Pass ScenarioDef to the constructor instead. Kept for backward
-   * compat with any code that calls setManifest() before the constructor was
-   * scenario-aware.
-   */
-  setManifest(m: ScenarioManifest): void {
-    this.manifest = m;
   }
 
   /** Subscribe to session-end events (fired by endSession()). */
@@ -533,19 +548,4 @@ export class SessionAdapter {
   get compression(): CompressionMode {
     return this.clock.state.compression;
   }
-}
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/** Canonical per-scenario seeds matching the authored scenario defs. */
-const SCENARIO_SEEDS: Record<string, number> = {
-  "SCN-001": 42_001,
-  "SCN-002": 42_002,
-  "SCN-003": 42_003,
-};
-
-function _scenarioSeed(scenarioId: string): number {
-  return SCENARIO_SEEDS[scenarioId] ?? 42_001;
 }

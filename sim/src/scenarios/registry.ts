@@ -20,6 +20,27 @@ const _registry: Record<string, ScenarioDef> = {
 };
 
 /**
+ * Canonical per-scenario UI play seeds — the single source of truth.
+ *
+ * These are the seeds used for live UI sessions (shown on the menu cards for
+ * determinism transparency, and surfaced in DebriefData for "Replay scenario").
+ * Golden-fixture seeds are separate (stored per-fixture in tests/fixtures/).
+ */
+const CANONICAL_SEEDS: Record<string, number> = {
+  "SCN-001": 42_001,
+  "SCN-002": 42_002,
+  "SCN-003": 42_003,
+};
+
+/**
+ * Canonical UI play seed for a scenario ID. Falls back to the SCN-001 seed
+ * for unknown IDs (defensive — callers should pass registered IDs).
+ */
+export function scenarioSeed(id: string): number {
+  return CANONICAL_SEEDS[id] ?? 42_001;
+}
+
+/**
  * Look up a ScenarioDef by its canonical ID (e.g. "SCN-001").
  * Returns undefined if the ID is not registered.
  */

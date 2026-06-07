@@ -36,7 +36,7 @@ import {
   strokeRect,
   hline,
 } from "../engine/draw.js";
-import { allScenarios } from "../../scenarios/registry.js";
+import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
 
 // ---------------------------------------------------------------------------
 // Card-only display fields — not duplicated in the manifest
@@ -44,14 +44,13 @@ import { allScenarios } from "../../scenarios/registry.js";
 
 interface CardExtras {
   subtitle: string;
-  difficulty: string;
 }
 
 /** Display-only fields per scenario ID, not duplicated from the manifest. */
 const CARD_EXTRAS: Record<string, CardExtras> = {
-  "SCN-001": { subtitle: "",                    difficulty: "Intermediate" },
-  "SCN-002": { subtitle: "Earnings Gap & Fade", difficulty: "Intermediate" },
-  "SCN-003": { subtitle: "",                    difficulty: "Intermediate" },
+  "SCN-001": { subtitle: "" },
+  "SCN-002": { subtitle: "Earnings Gap & Fade" },
+  "SCN-003": { subtitle: "" },
 };
 
 // ---------------------------------------------------------------------------
@@ -133,7 +132,7 @@ export class MenuScene extends Phaser.Scene {
 
     scenarios.forEach((scn, i) => {
       const cx = startX + i * (CARD_W + PAD);
-      const extras = CARD_EXTRAS[scn.manifest.id] ?? { subtitle: "", difficulty: "Intermediate" };
+      const extras = CARD_EXTRAS[scn.manifest.id] ?? { subtitle: "" };
       this.drawCard(g, cx, startY, scn.manifest.id, scn.manifest, extras);
     });
   }
@@ -183,14 +182,14 @@ export class MenuScene extends Phaser.Scene {
     const durationMin = Math.round(manifest.durationMs / 60_000);
     const durationStr = `${durationMin} min`;
 
-    // Difficulty + duration
-    label(this, x + 12, y + 108, `${extras.difficulty}  ·  ${durationStr}`, {
+    // Difficulty (from the manifest — single source of truth) + duration
+    label(this, x + 12, y + 108, `${manifest.difficulty}  ·  ${durationStr}`, {
       fontSize: "11px",
       color: CSS.DIM,
     });
 
-    // Seed (authored scenario seed — visible for determinism transparency)
-    const seed = _scenarioSeedForId(scenarioId);
+    // Seed (canonical UI play seed — visible for determinism transparency)
+    const seed = scenarioSeed(scenarioId);
     label(this, x + 12, y + 128, `Seed: ${seed}`, {
       fontSize: "10px",
       color: CSS.DIM,
@@ -281,19 +280,4 @@ export class MenuScene extends Phaser.Scene {
   private startScenario(id: string): void {
     this.scene.start("TradingScene", { scenarioId: id });
   }
-}
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/** Per-scenario canonical seeds (matches SessionAdapter). */
-const _SEEDS: Record<string, number> = {
-  "SCN-001": 42_001,
-  "SCN-002": 42_002,
-  "SCN-003": 42_003,
-};
-
-function _scenarioSeedForId(id: string): number {
-  return _SEEDS[id] ?? 0;
 }

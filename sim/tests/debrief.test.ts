@@ -82,9 +82,9 @@ function buildAdapterWithEvents(events: SimEvent[], sessionHasWin = false): {
   adapter: SessionAdapter;
   debrief: DebriefData;
 } {
-  const adapter = new SessionAdapter();
-  // Wire the SCN-001 manifest so DebriefData has proper labels and IDs.
-  adapter.setManifest(scn001.manifest);
+  // SessionAdapter resolves the SCN-001 ScenarioDef (and its manifest) by
+  // default, so DebriefData gets proper labels and IDs from the constructor.
+  const adapter = new SessionAdapter(scn001);
   adapter.sessionHasWin = sessionHasWin;
 
   // Advance a few ticks to give the adapter a non-zero simTimeMs.
