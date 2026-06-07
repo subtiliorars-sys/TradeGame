@@ -173,6 +173,7 @@ export const scn004: ScenarioDef = {
       "scn004:good-process-can-lose",
       "scn004:common-errors",
     ],
+    showLpPanel: true,
   },
 
   // -------------------------------------------------------------------------
