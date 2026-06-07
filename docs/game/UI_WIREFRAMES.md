@@ -103,7 +103,7 @@ as blocking modal), SCENARIOS_V0.md UI Beats, GDD §4 (Practice phase of core lo
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  SCN-001: The HarborUSD Depegging    [PAUSE]  Speed: [1x] [4x] [16x]       │
-│  Sim time: {T+06:42}  Market: CRYPTO  HBD/USVC                             │
+│  Sim time: {T+06:42}  Market: CRYPTO  HarborUSD/USVC                       │
 ├──────────────────────────────────────────┬──────────────────────────────────┤
 │                                          │  POSITION PANEL                  │
 │  CHART AREA                              │  ┌────────────────────────────┐  │
@@ -116,7 +116,7 @@ as blocking modal), SCENARIOS_V0.md UI Beats, GDD §4 (Practice phase of core lo
 │  │    forex scenarios; no lines     │    │                                  │
 │  │    for crypto/stocks unless      │    │  ORDER TICKET                    │
 │  │    EventInjector adds them >     │    │  ┌────────────────────────────┐  │
-│  │                                  │    │  │ Instrument: HBD/USVC       │  │
+│  │                                  │    │  │ Instrument: HarborUSD/USVC │  │
 │  │  Volume bars below chart         │    │  │                            │  │
 │  │                                  │    │  │ Side: [BUY] [SELL]         │  │
 │  │  Spread indicator: bottom-left   │    │  │                            │  │
@@ -133,7 +133,7 @@ as blocking modal), SCENARIOS_V0.md UI Beats, GDD §4 (Practice phase of core lo
 │                                          │  │ │ Slippage: {+0.0004} │   │  │
 │  NEWS TICKER (fires on EventInjector)   │  │ │ Spread:  {0.008}    │   │  │
 │  ┌──────────────────────────────────┐   │  │ │ Fee:     {0.15%}    │   │  │
-│  │ {HBD protocol defense under      │   │  │ │ You pay: {0.9936}   │   │  │
+│  │ {HarborUSD protocol defense under │   │  │ │ You pay: {0.9936}   │   │  │
 │  │  stress — status unclear.}        │   │  │ └──────────────────────┘   │  │
 │  └──────────────────────────────────┘   │  │                            │  │
 │  < Factual only, no price prediction >  │  │ [ SUBMIT ORDER ]           │  │
@@ -456,7 +456,7 @@ emission), §4.4 (what scoring engine never emits — no PnL rank anywhere), GDD
 │                                          │  PROCESS RUBRIC                  │
 │  WHAT HAPPENED                           │  ─────────────────────────────   │
 │  ┌──────────────────────────────────┐    │  ┌────────────────────────────┐  │
-│  │  HarborUSD (HBD) lost its        │    │  │ Journal before trade     ✓ │  │
+│  │  HarborUSD lost its              │    │  │ Journal before trade     ✓ │  │
 │  │  algorithmic peg when selling    │    │  │ Position size (1% rule)  ✓ │  │
 │  │  pressure exceeded the           │    │  │ Stop placed before entry ✓ │  │
 │  │  protocol's reserve capacity.    │    │  │ Stop honored             ✓ │  │
@@ -559,7 +559,7 @@ Phase 2: player can view their own replay and see any pre-authored scenario anno
 │  REPLAY CHART                            │  ─────────────────────────────   │
 │  ┌──────────────────────────────────┐    │                                  │
 │  │                                  │    │  T+00:10  [Scenario]             │
-│  │  [Chart renders from EventLog    │    │  "HBD is an algorithmic stable.  │
+│  │  [Chart renders from EventLog    │    │  "HarborUSD is an algorithmic    │
 │  │   tick events — deterministic    │    │   Read the depth chart."         │
 │  │   replay per SIM_ENGINE_SPEC §1] │    │  < Pre-authored scenario beat >  │
 │  │                                  │    │                                  │
@@ -583,7 +583,7 @@ Phase 2: player can view their own replay and see any pre-authored scenario anno
 │                                          │   observation, no signals >      │
 │  Timeline scrubber:                      │                                  │
 │  |─────●─────────────────────|          │  T+16:00  [Scenario]             │
-│  {T+08:42}              {T+40:00}        │  "HBD protocol defense under     │
+│  {T+08:42}              {T+40:00}        │  "HarborUSD protocol defense     │
 │                                          │   stress — status unclear."      │
 │  [ JUMP TO DECISION POINT: A | B | C ]  │                                  │
 │                                          │  ─────────────────────────────   │
@@ -745,8 +745,8 @@ All spec gaps identified inline above are consolidated here for engineering tria
 | SG-01 | Main Menu | Rank/XP display format not specified in SIM_ENGINE_SPEC §6.2; wireframe assumes a progress bar and rank label. | No — design can proceed; spec addition needed before implementation. |
 | SG-02 | Trading Screen | Fill confirmation overlay timing/dismissal not specified in SIM_ENGINE_SPEC §3.2. Wireframe assumes 3-second auto-dismiss, non-blocking. | No — low-risk spec gap; suggest filling before UI sprint. |
 | SG-03 | Trading Screen | Process metric compliance indicator (stop-before-entry visual feedback) in Position Panel not explicitly specced as a UI surface in SIM_ENGINE_SPEC. | No — implied by scoring engine design; needs explicit spec addition. |
-| SG-04 | News Policy Card | `policy_match` metric not in SIM_ENGINE_SPEC §4.2 metric table. Required for SCN-006 scoring rubric to be implementable. | YES — blocking for SCN-006 implementation. Add to spec before development. |
+| SG-04 | News Policy Card | `policy_match` metric not in SIM_ENGINE_SPEC §4.2 metric table. Required for SCN-006 scoring rubric to be implementable. | CLOSED 2026-06-07 — added to SIM_ENGINE_SPEC §4.2. |
 | SG-05 | Debrief Screen | `RecklessWinnerFlag` placement not specified in SIM_ENGINE_SPEC §4.3 beyond "UI renders a coaching alert." | No — wireframe places it in right panel; confirm viewport visibility. |
-| SG-06 | Replay Viewer | Pre-authored scenario annotations not distinguished from user-generated coach annotations in SIM_ENGINE_SPEC §5.3. Content filter rule distinction unclear. | YES — blocking for replay viewer + coach annotation filter implementation. |
+| SG-06 | Replay Viewer | Pre-authored scenario annotations not distinguished from user-generated coach annotations in SIM_ENGINE_SPEC §5.3. Content filter rule distinction unclear. | CLOSED 2026-06-07 — added to SIM_ENGINE_SPEC §5.3. |
 | SG-07 | Multi-position | Aggregate notional exposure display (needed for Advanced tier ACN-001, ACN-006) not in SIM_ENGINE_SPEC §3.4. | No — not Phase 2 blocking; needed before advanced scenarios ship. |
 | SG-08 | ACN-004 | Non-tradeable index display surface (NMX 100 as reference chart) not in SIM_ENGINE_SPEC. | No — not Phase 2 blocking; needed before ACN-004 ships. |

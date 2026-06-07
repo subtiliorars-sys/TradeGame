@@ -197,12 +197,12 @@ The phrase validator runs at scenario-load time. Tests drive the validator direc
 
 | Test ID | Input text | Expected result |
 |---------|-----------|-----------------|
-| `CP-001` | `"buy HBD before it recovers"` | FAIL — contains "buy" as directive |
+| `CP-001` | `"buy HarborUSD before it recovers"` | FAIL — contains "buy" as directive |
 | `CP-002` | `"sell pressure is increasing"` | FAIL — contains "sell" |
 | `CP-003` | `"price target of 1.05 expected"` | FAIL — contains "target" and "expect" |
 | `CP-004` | `"price will recover to 1.00"` | FAIL — contains "price will" |
 | `CP-005` | `"analysts expect a rebound"` | FAIL — contains "expect" |
-| `CP-006` | `"short the HBD pair now"` | FAIL — "short" + directional intent |
+| `CP-006` | `"short the HarborUSD pair now"` | FAIL — "short" + directional intent |
 | `CP-007` | `"go long on ANDU after the sweep"` | FAIL — "go long" |
 
 **Educational uses that must PASS (true negatives):**
@@ -211,8 +211,8 @@ The phrase validator runs at scenario-load time. Tests drive the validator direc
 |---------|-----------|-----------------|--------|
 | `CP-101` | `"A buy order is a market order to purchase at the current price."` | PASS | "buy" as order-type noun, not directive |
 | `CP-102` | `"A sell order closes a long position."` | PASS | "sell" as order-type noun |
-| `CP-103` | `"HBD protocol defense mechanism under stress — status unclear."` | PASS | Factual; no price or direction |
-| `CP-104` | `"HBD protocol posts notice of reserve depletion."` | PASS | Factual announcement |
+| `CP-103` | `"HarborUSD protocol defense mechanism under stress — status unclear."` | PASS | Factual; no price or direction |
+| `CP-104` | `"HarborUSD protocol posts notice of reserve depletion."` | PASS | Factual announcement |
 | `CP-105` | `"NGSM beat revenue by 4% but missed forward guidance."` | PASS | Factual; no price prediction |
 | `CP-106` | `"Spread is elevated at London open — check your order cost."` | PASS | Operational / factual |
 | `CP-107` | `"Volume increased 3x in the last minute."` | PASS | Observable fact, no directive |

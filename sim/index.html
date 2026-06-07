@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TradeGame — Sim</title>
+    <!--
+      No external fonts, CDNs, or image assets.
+      All rendering is programmatic (Phaser rects/text).
+      Palette: near-black #0d0d0f, amber #e8a020.
+    -->
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: #0d0d0f;
+        overflow: hidden;
+      }
+      /* Phaser injects a <canvas>; centre it. */
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

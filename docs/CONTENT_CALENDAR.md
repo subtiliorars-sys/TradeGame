@@ -225,7 +225,7 @@ Education, not financial advice. Trading involves risk of significant loss. Simu
 | Month | Event | Channel | Notes |
 |---|---|---|---|
 | Every month | Cohort Graduation (when a cohort completes) | #cohort-announcements | Process achievements only — no PnL. Any showcased outcome requires Disclosure Block §A verbatim. Material-connection disclosure required if member received any benefit (FTC Endorsement Guides, RISK_REGISTER §17). Never implies result is typical. |
-| Every month | Community AMA | Discord voice + YouTube summary post | Questions pre-screened by a moderator before the session. A second staff member must be present OR session recorded. Any live "should I trade X" question redirected on-air to #rules and not answered. See RISK_REGISTER §24. |
+| Every quarter | Community AMA | Discord voice + YouTube summary post | Questions pre-screened by a moderator before the session. A second staff member must be present OR session recorded. Any live "should I trade X" question redirected on-air to #rules and not answered. See RISK_REGISTER §24. Cadence is quarterly until a Mentor is in place; revisit monthly once that role is filled (owner decision 2026-06-07). |
 | Every quarter | Surface Audit (internal) | HQ repo + fleet notes | Which platforms are producing real community engagement? Cut or reduce low-yield surfaces. Drop short-form before Discord or YouTube. |
 
 ### Cohort graduation post template
@@ -260,7 +260,7 @@ DRAFT — owner approves before posting.
 Channel: #cohort-announcements or #announcements
 
 ```
-Monthly Community AMA — [Date], [Time] in Office Hours Voice.
+Quarterly Community AMA — [Date], [Time] in Office Hours Voice.
 
 [Coach/Mentor name] will answer community questions live.
 

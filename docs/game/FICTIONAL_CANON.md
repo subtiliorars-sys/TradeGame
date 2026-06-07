@@ -24,11 +24,10 @@ Note the check result in the entry.
 4. **Collision check required** — before any addition, the author must assert
    whether the proposed name/ticker matches a real listed asset. Ambiguous
    collisions must be escalated, not assumed safe.
-5. **HBD collision flag** — the abbreviated ticker HBD is shared with the real
-   crypto token "Hive Backed Dollar." HBD is retained in the registry for
-   continuity with existing content, but authors must ensure no TradeGame
-   content creates confusion with the real HBD asset. Prefer spelling out
-   "HarborUSD" in lesson body copy where ambiguity could arise.
+5. **HBD shorthand RETIRED (owner decision 2026-06-07)** — the abbreviated ticker
+   HBD collided with the real crypto token "Hive Backed Dollar." The shorthand is
+   retired across all content. Always write "HarborUSD" in full. The collision note
+   is preserved in the registry entry as history.
 6. **NMX partial collision flag** — "NMX" is a recognized trading symbol for
    Natural Gas futures at NYMEX. The TradeGame index is the "NMX 100" (always
    two words, never bare "NMX"). Authors must always use the full form "NMX 100"
@@ -38,16 +37,16 @@ Note the check result in the entry.
 
 ## Registry
 
-### 1. HarborUSD / HBD
+### 1. HarborUSD
 
 | Field | Value |
 |-------|-------|
 | **Name** | HarborUSD |
-| **Ticker** | HBD |
+| **Ticker** | HBD — RETIRED by owner decision 2026-06-07 (real-ticker collision with Hive Backed Dollar). The name is always written in full as "HarborUSD." Do not use the HBD shorthand in any new or revised content. |
 | **Type** | Fictional stablecoin (token) |
 | **Profile** | Algorithmic stablecoin soft-pegged to 1.00 USD; relies on a reserve and defense mechanism to hold the peg. Used as the primary quote currency in crypto scenarios. |
 | **Used in** | `docs/game/SCENARIOS_V0.md` (SCN-001 — depeg scenario), `docs/game/SCENARIOS_V1.md` (SCN-004 — LP pool), `docs/lessons/PILLAR_INTROS.md`, `docs/game/TEST_PLAN.md` |
-| **Collision check** | FLAGGED — "HBD" is the live ticker for Hive Backed Dollar (real crypto stablecoin). Always use full name "HarborUSD" in lesson body copy. See Standing Rule 5. |
+| **Collision check** | FLAGGED (historical) — "HBD" is the live ticker for Hive Backed Dollar (real crypto stablecoin). Shorthand HBD is retired; always write "HarborUSD" in full. See Standing Rule 5. |
 
 ---
 
@@ -59,7 +58,7 @@ Note the check result in the entry.
 | **Ticker** | USVC |
 | **Type** | Fictional stablecoin (token) — second stable, quote currency |
 | **Profile** | A second fictional stable used as the neutral quote denomination when HarborUSD itself is the subject under stress (e.g., the depeg scenario). Not subject to peg risk in any authored scenario. |
-| **Used in** | `docs/game/SCENARIOS_V0.md` (SCN-001, pair HBD/USVC), `docs/game/SCENARIOS_V1.md` (SCN-004, pool value denominated in USVC) |
+| **Used in** | `docs/game/SCENARIOS_V0.md` (SCN-001, pair HarborUSD/USVC), `docs/game/SCENARIOS_V1.md` (SCN-004, pool value denominated in USVC) |
 | **Collision check** | No known real token, stablecoin, or ticker named USVC. Clear. |
 
 ---

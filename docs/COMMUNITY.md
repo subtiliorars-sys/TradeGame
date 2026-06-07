@@ -218,7 +218,7 @@ Pillars rotate so no single market dominates over any four-week window.
 | Frequency | Slot | Description |
 |---|---|---|
 | Monthly | **Cohort Graduation** | Post celebrating cohort completion — process achievements, not PnL. Any showcased member outcome must comply with FTC Endorsement Guides: include a material-connection disclosure if the member received any benefit, and never imply their result is typical. Cross-ref RISK_REGISTER FTC entry. |
-| Monthly | **Community AMA** | Coach or Mentor answers community questions in Discord voice + summary posted to YouTube. Questions pre-screened by a moderator before the session; a second staff member must be present or the session recorded. Any "should I trade X" question asked live is redirected on-air to `#rules` and not answered. |
+| Quarterly | **Community AMA** | Coach or Mentor answers community questions in Discord voice + summary posted to YouTube. Questions pre-screened by a moderator before the session; a second staff member must be present or the session recorded. Any "should I trade X" question asked live is redirected on-air to `#rules` and not answered. Cadence is quarterly until a Mentor is in place; revisit monthly once that role is filled (owner decision 2026-06-07). |
 | Quarterly | **Surface Audit** | Internal review: which platforms are producing real community engagement? Cut or reduce low-yield surfaces. |
 
 **Content debt rule:** if the team cannot maintain the Monday-Wednesday-Friday cadence, drop the short-form surface before dropping Discord or YouTube. Core community health outranks follower counts.
