@@ -70,8 +70,14 @@ export interface ScenarioManifest {
    * scenario unlocks. Checked at scenario-select time, not here.
    */
   prereqs: string[];
-  /** Minimum rank required to play. */
-  minRank: "Observer" | "Trainee" | "Practitioner" | "Expert";
+  /** Minimum rank required to play — labels from the §4.5 ladder. */
+  minRank:
+    | "Observer"
+    | "Trainee"
+    | "Practitioner"
+    | "Journeyman"
+    | "Strategist"
+    | "Senior Strategist";
   /** Difficulty classification. */
   difficulty: "Beginner" | "Intermediate" | "Advanced";
   /** Decision point descriptors — used by the harness to emit DecisionPointEvents. */

@@ -39,6 +39,7 @@ import {
 import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
 import { currentRank } from "../../engine/rank.js";
 import * as ProgressStore from "../../engine/progress.js";
+import { scenarioLockState } from "../engine/gating.js";
 
 // ---------------------------------------------------------------------------
 // Card-only display fields — not duplicated in the manifest
@@ -200,13 +201,45 @@ export class MenuScene extends Phaser.Scene {
 
     hline(g, x + 12, y + 148, CARD_W - 24);
 
-    // START button — all three scenarios are enabled.
+    // Gating (wave D): scenario-completion prereqs hard-lock the card with
+    // an explicit reason (§4.5 — never a silent stall); rank and drill/lesson
+    // requirements render as advisories until those systems ship (see
+    // ui/engine/gating.ts for the softlock rationale).
+    const lockState = scenarioLockState(
+      manifest,
+      currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId,
+      ProgressStore.completedScenarioIds()
+    );
+
     const bw = CARD_W - 24;
     const bh = 36;
-    const b = button(this, x + 12, y + CARD_H - bh - 12, bw, bh, "START", () =>
-      this.startScenario(scenarioId)
-    );
-    void b;
+    const by = y + CARD_H - bh - 12;
+
+    if (lockState.locked) {
+      // Locked: explicit gate panel in place of START.
+      fillRect(g, x + 12, by, bw, bh, C.SURFACE, 4);
+      strokeRect(g, x + 12, by, bw, bh, C.BORDER, 1, 4);
+      label(this, x + 12 + bw / 2, by + bh / 2, `LOCKED — ${lockState.reasons[0] ?? ""}`, {
+        fontSize: "11px",
+        color: CSS.DIM,
+        fontStyle: "bold",
+      }).setOrigin(0.5, 0.5);
+    } else {
+      const b = button(this, x + 12, by, bw, bh, "START", () =>
+        this.startScenario(scenarioId)
+      );
+      void b;
+    }
+
+    // Advisory line (rank / drills) — informational, never blocking.
+    if (lockState.advisories.length > 0) {
+      label(this, x + 12, y + 152, lockState.advisories.join("  ·  "), {
+        fontSize: "9px",
+        color: CSS.DIM,
+        fontStyle: "italic",
+        wordWrap: { width: CARD_W - 24 },
+      });
+    }
   }
 
   // -------------------------------------------------------------------------

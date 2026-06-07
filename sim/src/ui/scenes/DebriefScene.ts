@@ -117,6 +117,9 @@ export class DebriefScene extends Phaser.Scene {
     if (refreshed !== null && refreshed.sessionId === this.debriefData?.sessionId) {
       this.debriefData = refreshed;
       ProgressStore.addXp(refreshed.xpTotal); // single XP accounting point (§4.5)
+      // Scenario-completion prereq gates (wave D): completing the debrief
+      // completes the scenario — outcome plays no part.
+      ProgressStore.markScenarioCompleted(refreshed.scenarioId);
     }
 
     this.drawHeader(g, width);

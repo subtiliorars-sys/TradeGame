@@ -20,6 +20,7 @@ import { currentRank, type RankThreshold } from "./rank.js";
 
 let _xpTotal = 0;
 const _completedDrillIds = new Set<string>();
+const _completedScenarioIds = new Set<string>();
 let _lastRankUp: { from: RankThreshold; to: RankThreshold } | null = null;
 
 // ---------------------------------------------------------------------------
@@ -80,11 +81,26 @@ export function markDrillCompleted(id: string): void {
 }
 
 /**
+ * Mark a scenario as completed (debrief reached). Feeds the Main Menu's
+ * scenario-prereq gates ("scenario:SCN-00X" in manifest.prereqs).
+ * Completion = process flow finished, regardless of outcome — no PnL input.
+ */
+export function markScenarioCompleted(id: string): void {
+  _completedScenarioIds.add(id);
+}
+
+/** IDs of scenarios completed this browser session. */
+export function completedScenarioIds(): string[] {
+  return Array.from(_completedScenarioIds);
+}
+
+/**
  * Reset all state — used between test runs and on hard session restart.
  * Not called automatically; the UI must explicitly invoke this.
  */
 export function reset(): void {
   _xpTotal = 0;
   _completedDrillIds.clear();
+  _completedScenarioIds.clear();
   _lastRankUp = null;
 }
