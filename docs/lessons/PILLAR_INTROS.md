@@ -327,19 +327,24 @@ This lesson exists because retail forex has one distinguishing feature that no o
 
 **Jurisdiction disclaimer — read this.** Maximum permitted leverage varies dramatically by country and regulatory regime. Some jurisdictions cap retail leverage at 2:1 for certain instruments; others permit ratios above 100:1. No curriculum lesson will prescribe a ratio. What is legal and what is prudent are different questions. The aggregate loss data (which you will examine in X-I04 in full) shows that accounts using high leverage are the dominant failure mode, regardless of jurisdiction. The aggregate data shows accounts that start well below the maximum permitted ratio survive longer — this is the pattern the X-I04 data will show you directly.
 
-**Worked liquidation example.** You deposit $500 with a broker offering 50:1 leverage. You open 1 standard lot of ANDU/HarborUSD at 1.2500. Position size: 100,000 units.
+**Worked liquidation example.** You have $500 in a forex account. The broker offers 50:1 leverage. You open 2 mini lots of ANDU/HarborUSD at 1.2500.
 
-- Required margin (at 50:1): $2,500 — but wait, you only have $500. At 50:1 you can actually open a position where $500 controls $25,000. Let us use a smaller example that illustrates the math precisely.
+- 2 mini lots = 20,000 units of ANDU.
+- Notional position value: 20,000 × 1.2500 = **$25,000**.
+- Required margin at 50:1: $25,000 / 50 = **$500** — your entire account.
+- Free margin: $500 − $500 = **$0**.
 
-Revised: You have $500. One mini lot (10,000 units of ANDU) at 1.2500 is a notional position of 10,000 × 1.2500 = $12,500. Required margin at 50:1 = $12,500 / 50 = $250. You open 2 mini lots. Required margin: $500 — your ENTIRE account. Free margin: $0.
+The margin level at the moment you open is: equity ($500) ÷ used margin ($500) = **1.00 = 100%** — precisely at the margin-call threshold. The warning fires immediately, before price moves a single pip.
 
-Pip value for 2 mini lots: $1.00 × 2 = $2.00 per pip. From the very first pip against you, account equity ($500 − $2) is below required margin ($500) — you are in margin-call territory the moment the position opens and the spread is paid.
+Pip value for 2 mini lots: 0.0001 × 20,000 = **$2.00 per pip**.
 
-The broker's stop-out level is 50% (account equity falls to 50% of required margin = $250).
+The broker's stop-out level is 50% (margin level falls to equity / used margin = 0.50). Stop-out triggers when equity equals 50% of used margin:
 
-At stop-out: loss required = $500 − $250 = $250. At $2.00 per pip, that is $250 / $2.00 = 125 pips against you.
+> equity at stop-out = $500 × 0.50 = **$250**  
+> loss to reach stop-out = $500 − $250 = **$250**  
+> pips to stop-out = $250 ÷ $2.00 = **125 pips**
 
-At maximum leverage there is no buffer at all: the warning is immediate, and stop-out arrives at 125 pips — if not automatically closed earlier. The numbers shift with every broker, every leverage ratio, every lot size. The calculation above is the skeleton. In a real account you would need to run it for your specific setup; in the sim, the platform calculates it for you — but the point is that you can do it manually.
+At maximum leverage there is zero buffer: the warning is immediate, and stop-out arrives at 125 pips against you — if not automatically closed earlier. The numbers shift with every broker, every leverage ratio, every lot size. The skeleton formula is always: (equity − used_margin × stop_out_pct) ÷ pip_value. In a real account you run it before you enter; in the sim the platform shows you the calculation in the risk modal before every forex order.
 
 **The aggregate picture.** Regulated brokers in multiple jurisdictions are required to disclose the percentage of retail accounts that lose money. Across publicly available disclosures, the numbers cluster in the 70–80% range, with some brokers disclosing higher. Forex is not uniquely difficult in terms of mechanics — pairs, pips, and sessions are learnable. The loss rate is attributable to leverage use combined with inadequate position sizing. X-I04 will walk through the disclosed numbers with you directly.
 

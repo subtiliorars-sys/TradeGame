@@ -86,8 +86,24 @@ export interface MetricInput {
 export interface MetricResult {
   readonly metricId: MetricId;
   readonly passed: boolean;
-  /** XP amount to emit on pass (0 = no XP for this metric or it failed). */
+  /**
+   * XP amount to emit on pass (0 = no XP for this metric or it failed).
+   * Ignored when applicable === false.
+   */
   readonly xpOnPass: number;
+  /**
+   * Applicability flag — SIM_ENGINE_SPEC §4 "Scoring semantics — applicability".
+   *
+   * true  (default) — metric applies to this session; pass/fail determines XP.
+   * false           — metric does not apply (e.g., a trade-execution metric when
+   *                   no trade was taken).  The engine emits NO XP event and no
+   *                   process-failure record.  This is NOT a fail.
+   *
+   * Rule: a not-applicable result must never penalise the player.  It simply
+   * means the metric had no opportunity to fire.  XP emission requires both
+   * applicable === true AND passed === true.
+   */
+  readonly applicable: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,16 +111,27 @@ export interface MetricResult {
 // Each function name matches a MetricId for self-documentation.
 // ---------------------------------------------------------------------------
 
-/** journal_before_trade: a journal_entry event precedes the first order_submit. */
+/**
+ * journal_before_trade: a journal_entry event precedes the first order_submit.
+ *
+ * Applicability: requires that at least one order_submit event exists.  On a
+ * patience run (no orders ever submitted) this metric is not applicable — the
+ * patience path earns its journal XP through patience_observation instead.
+ * Marking it not-applicable prevents double-counting journal reward on no-trade
+ * sessions while preserving the metric's meaning: "you journaled before you
+ * committed capital."
+ */
 export function journal_before_trade(input: MetricInput): MetricResult {
   const firstJournal = firstEventIndexOf(input.events, "journal_entry");
   const firstOrder = firstEventIndexOf(input.events, "order_submit");
 
-  const passed =
-    firstJournal !== -1 &&
-    (firstOrder === -1 || firstJournal < firstOrder);
+  if (firstOrder === -1) {
+    // No order was ever submitted — metric not applicable on patience path.
+    return { metricId: "journal_before_trade", passed: false, xpOnPass: 20, applicable: false };
+  }
 
-  return { metricId: "journal_before_trade", passed, xpOnPass: 20 };
+  const passed = firstJournal !== -1 && firstJournal < firstOrder;
+  return { metricId: "journal_before_trade", passed, xpOnPass: 20, applicable: true };
 }
 
 /** stop_before_entry: stop order submitted before or at the same tick as entry fill. */
@@ -124,13 +151,13 @@ export function stop_before_entry(input: MetricInput): MetricResult {
   );
 
   if (!entryFill || !stopSubmit) {
-    // No position opened — metric not applicable; treat as passed (no violation).
-    return { metricId: "stop_before_entry", passed: true, xpOnPass: 25 };
+    // No position opened — metric not applicable; no XP event, no penalty.
+    return { metricId: "stop_before_entry", passed: false, xpOnPass: 25, applicable: false };
   }
 
   // Stop must be submitted at or before the entry fill timestamp.
   const passed = stopSubmit.timestamp <= entryFill.timestamp;
-  return { metricId: "stop_before_entry", passed, xpOnPass: 25 };
+  return { metricId: "stop_before_entry", passed, xpOnPass: 25, applicable: true };
 }
 
 /** stop_honored: stop order not manually cancelled after position open. */
@@ -142,8 +169,8 @@ export function stop_honored(input: MetricInput): MetricResult {
   );
 
   if (!stopSubmit) {
-    // No stop placed — metric not applicable; treat as passed (patience path, etc.)
-    return { metricId: "stop_honored", passed: true, xpOnPass: 20 };
+    // No stop placed — metric not applicable; no XP event, no penalty.
+    return { metricId: "stop_honored", passed: false, xpOnPass: 20, applicable: false };
   }
 
   // Find the entry fill (first order_fill that is NOT the stop itself).
@@ -154,7 +181,8 @@ export function stop_honored(input: MetricInput): MetricResult {
 
   if (!entryFill) {
     // Entry never filled — stop cancellation before entry doesn't count as violation.
-    return { metricId: "stop_honored", passed: true, xpOnPass: 20 };
+    // Still not applicable (no position was open).
+    return { metricId: "stop_honored", passed: false, xpOnPass: 20, applicable: false };
   }
 
   // After the entry fill, was the stop manually cancelled?
@@ -169,6 +197,7 @@ export function stop_honored(input: MetricInput): MetricResult {
     metricId: "stop_honored",
     passed: !stopCancelledAfterEntry,
     xpOnPass: 20,
+    applicable: true,
   };
 }
 
@@ -180,7 +209,8 @@ export function no_stop_widen(input: MetricInput): MetricResult {
   );
 
   if (!stopSubmit) {
-    return { metricId: "no_stop_widen", passed: true, xpOnPass: 15 };
+    // No stop placed — metric not applicable; no XP event, no penalty.
+    return { metricId: "no_stop_widen", passed: false, xpOnPass: 15, applicable: false };
   }
 
   const entryFill = input.events.find(
@@ -189,7 +219,8 @@ export function no_stop_widen(input: MetricInput): MetricResult {
   );
 
   if (!entryFill || stopSubmit.stopPrice === null) {
-    return { metricId: "no_stop_widen", passed: true, xpOnPass: 15 };
+    // Stop placed but no position fill — not applicable yet.
+    return { metricId: "no_stop_widen", passed: false, xpOnPass: 15, applicable: false };
   }
 
   const originalStopPrice = stopSubmit.stopPrice;
@@ -216,16 +247,21 @@ export function no_stop_widen(input: MetricInput): MetricResult {
     return newDist > originalDist; // widened = further from fill = violation
   });
 
-  return { metricId: "no_stop_widen", passed: !stopWidened, xpOnPass: 15 };
+  return { metricId: "no_stop_widen", passed: !stopWidened, xpOnPass: 15, applicable: true };
 }
 
-/** exit_journal: a journal_entry with tag 'exit' exists. */
+/** exit_journal: a journal_entry with tag 'exit' exists. Applicable only when a
+ * fill exists — an exit journal without an exit is meaningless, and gating it
+ * keeps the patience path from harvesting trade-metric XP (applicability rule). */
 export function exit_journal(input: MetricInput): MetricResult {
-  const passed = input.events.some(
-    (e): e is JournalEntryEvent =>
-      e.type === "journal_entry" && e.tags.includes("exit")
-  );
-  return { metricId: "exit_journal", passed, xpOnPass: 15 };
+  const applicable = input.events.some((e) => e.type === "order_fill");
+  const passed =
+    applicable &&
+    input.events.some(
+      (e): e is JournalEntryEvent =>
+        e.type === "journal_entry" && e.tags.includes("exit")
+    );
+  return { metricId: "exit_journal", passed, xpOnPass: 15, applicable };
 }
 
 /** patience_observation: journaled without trading (no fills). */
@@ -235,7 +271,7 @@ export function patience_observation(input: MetricInput): MetricResult {
   ).length;
   const fillCount = input.events.filter((e) => e.type === "order_fill").length;
   const passed = journalCount >= 1 && fillCount === 0;
-  return { metricId: "patience_observation", passed, xpOnPass: 40 };
+  return { metricId: "patience_observation", passed, xpOnPass: 40, applicable: true };
 }
 
 /** leverage_ack (forex only): leverage_risk_acknowledged before first fill. */
@@ -246,19 +282,19 @@ export function leverage_ack(input: MetricInput): MetricResult {
   const passed =
     ackIdx !== -1 && (firstFillIdx === -1 || ackIdx < firstFillIdx);
 
-  return { metricId: "leverage_ack", passed, xpOnPass: 10 };
+  return { metricId: "leverage_ack", passed, xpOnPass: 10, applicable: true };
 }
 
 /** debrief_completed: debrief_complete event present. */
 export function debrief_completed(input: MetricInput): MetricResult {
   const passed = input.events.some((e) => e.type === "debrief_complete");
-  return { metricId: "debrief_completed", passed, xpOnPass: 30 };
+  return { metricId: "debrief_completed", passed, xpOnPass: 30, applicable: true };
 }
 
 /** session_reviewed: replay_started event present in a post-session context. */
 export function session_reviewed(input: MetricInput): MetricResult {
   const passed = input.events.some((e) => e.type === "replay_started");
-  return { metricId: "session_reviewed", passed, xpOnPass: 10 };
+  return { metricId: "session_reviewed", passed, xpOnPass: 10, applicable: true };
 }
 
 /**
@@ -278,8 +314,8 @@ export function size_compliance(input: MetricInput): MetricResult {
   );
 
   if (!firstFill || !firstSubmit) {
-    // No trade placed — no compliance check required.
-    return { metricId: "size_compliance", passed: true, xpOnPass: 30 };
+    // No trade placed — metric not applicable; no XP event, no penalty.
+    return { metricId: "size_compliance", passed: false, xpOnPass: 30, applicable: false };
   }
 
   const positionValue = firstSubmit.quantity * firstFill.fillPrice;
@@ -289,7 +325,7 @@ export function size_compliance(input: MetricInput): MetricResult {
   const upperBound = input.declaredRiskPct * (1 + tolerance) / 100;
   const passed = actualRiskPct >= lowerBound && actualRiskPct <= upperBound;
 
-  return { metricId: "size_compliance", passed, xpOnPass: 30 };
+  return { metricId: "size_compliance", passed, xpOnPass: 30, applicable: true };
 }
 
 /**
@@ -308,7 +344,7 @@ export function plan_declared(input: MetricInput): MetricResult {
       (e.tags.includes("plan") || e.tags.includes("hypothesis")) &&
       e.timestamp <= sessionOpenTs
   );
-  return { metricId: "plan_declared", passed, xpOnPass: 20 };
+  return { metricId: "plan_declared", passed, xpOnPass: 20, applicable: true };
 }
 
 /**
@@ -334,7 +370,7 @@ export function plan_declared_late(input: MetricInput): MetricResult {
 
   // passed = true means the plan WAS declared late (the flag fires when late).
   const passed = hasAnyPlan && !hasPreOpenPlan;
-  return { metricId: "plan_declared_late", passed, xpOnPass: 0 };
+  return { metricId: "plan_declared_late", passed, xpOnPass: 0, applicable: true };
 }
 
 /**
@@ -366,7 +402,7 @@ export function policy_match(input: MetricInput): MetricResult {
 
   if (!declaration) {
     // No declaration — metric is inert. No XP, no mismatch flag.
-    return { metricId: "policy_match", passed: false, xpOnPass: 0 };
+    return { metricId: "policy_match", passed: false, xpOnPass: 0, applicable: false };
   }
 
   const declarationTick = declaration.tickIndex;
@@ -405,7 +441,7 @@ export function policy_match(input: MetricInput): MetricResult {
     passed = windowSubmits.length === 0;
   }
 
-  return { metricId: "policy_match", passed, xpOnPass: passed ? 25 : 0 };
+  return { metricId: "policy_match", passed, xpOnPass: passed ? 25 : 0, applicable: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -469,9 +505,10 @@ export function runScoreTracker(
     results.push(METRIC_REGISTRY[metricId](input));
   }
 
-  // XP emission — one event per passed metric with xpOnPass > 0.
+  // XP emission — one event per metric that is applicable, passed, and has xpOnPass > 0.
+  // Metrics with applicable === false emit no XP event (not a failure — just no opportunity).
   const xpEvents: XpEvent[] = results
-    .filter((r) => r.passed && r.xpOnPass > 0)
+    .filter((r) => r.applicable && r.passed && r.xpOnPass > 0)
     .map((r) => ({
       type: "xp" as const,
       sessionId,
@@ -481,11 +518,13 @@ export function runScoreTracker(
       timestamp: simTimeMs,
     }));
 
-  // Reckless-winner flag (§4.3): size_compliance or stop_before_entry failed
+  // Reckless-winner flag (§4.3): size_compliance or stop_before_entry applicable-and-failed
   // AND the session had at least one winning trade.
-  const sizeFailed = results.find((r) => r.metricId === "size_compliance")?.passed === false;
-  const stopEntryFailed =
-    results.find((r) => r.metricId === "stop_before_entry")?.passed === false;
+  // applicable === false means no trade was taken; the flag must not fire for patience runs.
+  const sizeResult = results.find((r) => r.metricId === "size_compliance");
+  const sizeFailed = (sizeResult?.applicable === true) && (sizeResult?.passed === false);
+  const stopEntryResult = results.find((r) => r.metricId === "stop_before_entry");
+  const stopEntryFailed = (stopEntryResult?.applicable === true) && (stopEntryResult?.passed === false);
 
   let recklessWinnerFlag: RecklessWinnerFlagEvent | null = null;
   if (input.sessionHasWin && (sizeFailed || stopEntryFailed)) {

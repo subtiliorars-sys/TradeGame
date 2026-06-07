@@ -132,6 +132,25 @@ describe("GR-003: SCN-001 patience run — digest + XP equality", () => {
     );
     expect(orderSubmits).toHaveLength(0);
   });
+
+  it("trade-execution metrics not applicable on patience path (no XP emitted for them)", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    const xpMetricIds = result.xpSummary.events.map((e) => e.metricId);
+    // These metrics must NOT appear in XP events on a no-trade run.
+    const notApplicableOnPatience = [
+      "journal_before_trade",
+      "size_compliance",
+      "stop_before_entry",
+      "stop_honored",
+      "no_stop_widen",
+    ];
+    for (const metricId of notApplicableOnPatience) {
+      expect(
+        xpMetricIds,
+        `'${metricId}' must not emit XP on a no-trade patience run`
+      ).not.toContain(metricId);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

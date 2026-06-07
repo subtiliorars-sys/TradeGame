@@ -46,7 +46,7 @@ import {
   hline,
 } from "../engine/draw.js";
 import type { CompressionMode } from "../../engine/clock.js";
-import type { EventLog } from "../../engine/events.js";
+import type { EventLog, OrderFillEvent } from "../../engine/events.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -67,9 +67,10 @@ const SIDE_Y = HEADER_H + PAD;
 const TICKS_PER_CANDLE = 60; // 1 sim-minute
 const MAX_CANDLES = 42;
 
-// Fee constants (matching engine FEE_CRYPTO_TAKER = 0.0015)
-const FEE_RATE = 0.0015;
-const BASE_SLIPPAGE_RATE = 0.0005;
+// Estimate-panel display constants (for the pre-order estimate preview only —
+// the actual fill uses engine computeMarketFillCosts via SessionAdapter).
+const EST_FEE_RATE = 0.0015;        // crypto taker fee (matching engine FEE_CRYPTO_TAKER)
+const EST_BASE_SLIPPAGE_RATE = 0.0005; // 0.05% base slippage (matching engine BASE_SLIPPAGE.crypto)
 
 // ---------------------------------------------------------------------------
 // Types
@@ -119,7 +120,8 @@ export class TradingScene extends Phaser.Scene {
 
   // Position state
   private positions: OpenPosition[] = [];
-  private cashBalance = 10_000;
+  /** Order ID of a pending market order awaiting its fill event. */
+  private pendingFillOrderId: string | null = null;
 
   // Journal
   private journalOpen = false;
@@ -157,8 +159,6 @@ export class TradingScene extends Phaser.Scene {
     lbl: Phaser.GameObjects.Text;
   }> = [];
 
-  // Order ID counter
-  private orderSeq = 0;
 
   constructor() {
     super({ key: "TradingScene" });
@@ -173,6 +173,7 @@ export class TradingScene extends Phaser.Scene {
 
     this.adapter = new SessionAdapter();
     this.adapter.onTick((tick) => this.onSimTick(tick));
+    this.adapter.onFill((fill) => this.onEngineFill(fill));
 
     this.gStatic = this.add.graphics();
     this.gChart = this.add.graphics();
@@ -200,6 +201,7 @@ export class TradingScene extends Phaser.Scene {
 
   shutdown(): void {
     this.adapter.offTick(this.onSimTick.bind(this));
+    this.adapter.offFill(this.onEngineFill.bind(this));
   }
 
   // -------------------------------------------------------------------------
@@ -487,7 +489,7 @@ export class TradingScene extends Phaser.Scene {
     });
     py += 20;
 
-    this.balanceLbl = label(this, px, py, `Account: ${this.cashBalance.toFixed(2)} USVC`, {
+    this.balanceLbl = label(this, px, py, `Account: ${this.adapter.accountBalance.toFixed(2)} USVC`, {
       fontSize: "13px",
       color: CSS.TEXT,
     });
@@ -663,14 +665,15 @@ export class TradingScene extends Phaser.Scene {
     if (price === 0 || !this.estimateLbl) return;
 
     const qty = parseFloat(this.orderQuantity) || 0;
-    const slippage = price * BASE_SLIPPAGE_RATE;
-    const fee = qty * price * FEE_RATE;
+    // Estimate only — actual fill comes from engine computeMarketFillCosts.
+    const slippage = price * EST_BASE_SLIPPAGE_RATE;
+    const fee = qty * price * EST_FEE_RATE;
     const ask = price + this.latestSpread / 2 + slippage;
 
     if (qty > 0) {
       this.estimateLbl.setText(
         `Ask: ${ask.toFixed(4)}   Slippage: +${slippage.toFixed(4)}\n` +
-          `Spread: ${this.latestSpread.toFixed(4)}   Fee: ${(FEE_RATE * 100).toFixed(2)}%\n` +
+          `Spread: ${this.latestSpread.toFixed(4)}   Fee: ${(EST_FEE_RATE * 100).toFixed(2)}%\n` +
           `You pay: ${(ask + this.latestSpread / 2).toFixed(4)}   Fee cost: ${fee.toFixed(4)} USVC`
       );
       this.estimateLbl.setColor(CSS.AMBER);
@@ -701,7 +704,7 @@ export class TradingScene extends Phaser.Scene {
       this.spreadLbl.setText(`Spread: ${this.latestSpread.toFixed(4)}`);
     }
     if (this.balanceLbl) {
-      this.balanceLbl.setText(`Account: ${this.cashBalance.toFixed(2)} USVC`);
+      this.balanceLbl.setText(`Account: ${this.adapter.accountBalance.toFixed(2)} USVC`);
     }
     if (this.positionLbl) {
       this.positionLbl.setText(`Open positions: ${this.positions.length}`);
@@ -722,51 +725,63 @@ export class TradingScene extends Phaser.Scene {
     const stop = parseFloat(this.orderStopPrice);
     if (!qty || !stop) return;
 
-    const price = this.latestPrice;
-    const slippage = price * BASE_SLIPPAGE_RATE;
-    const fillPrice = this.orderSide === "buy"
-      ? price + this.latestSpread / 2 + slippage
-      : price - this.latestSpread / 2 - slippage;
-    const fee = qty * fillPrice * FEE_RATE;
-
-    // Block speed changes during confirm
+    // Block speed changes during confirm (§1.3 — disabled until fill arrives).
     this.adapter.clock.beginOrderConfirm();
 
-    // Record position
-    const orderId = `ord-${++this.orderSeq}`;
-    this.positions.push({
-      orderId,
+    // Route through the engine OrderBook — fill math happens inside
+    // computeMarketFillCosts (same path as the harness runner).
+    // The fill event is delivered asynchronously via onEngineFill when the
+    // next tick processes the order.
+    this.pendingFillOrderId = this.adapter.submitOrder({
       side: this.orderSide,
       quantity: qty,
-      entryPrice: fillPrice,
       stopPrice: stop,
+      orderType: this.orderType === "limit" ? "limit" : "market",
+      limitPrice: this.orderType === "limit"
+        ? (parseFloat(this.orderLimitPrice) || null)
+        : null,
     });
 
-    // Deduct from cash (simplified — full account model in Tier B)
-    const cost = qty * fillPrice + fee;
-    this.cashBalance -= cost;
-
-    // Emit fill confirmation overlay (teaching mechanic — visually unmissable)
-    this.showFillConfirm({
-      orderId,
-      side: this.orderSide,
-      qty,
-      estimatedFill: price + this.latestSpread / 2,
-      actualFill: fillPrice,
-      slippage,
-      spreadCost: (this.latestSpread / 2) * qty,
-      feeCost: fee,
-    });
-
-    // Release confirm lock after overlay dismisses (3s or manual)
-    // Lock is released inside showFillConfirm on dismiss.
-
-    // Reset ticket
+    // Reset ticket immediately.
     this.orderQuantity = "";
     this.orderStopPrice = "";
     this.orderLimitPrice = "";
     this.drawOrderTicket();
   }
+
+  // -------------------------------------------------------------------------
+  // Engine fill handler — receives FillEvent from the OrderBook (via adapter)
+  // -------------------------------------------------------------------------
+
+  private onEngineFill = (fill: OrderFillEvent): void => {
+    // Only handle the most-recently submitted order from this UI session.
+    if (this.pendingFillOrderId !== fill.orderId) return;
+    this.pendingFillOrderId = null;
+
+    const estimatedFill = this.latestPrice + this.latestSpread / 2;
+    const stopPriceForPos = parseFloat(this.orderStopPrice) || null;
+
+    // Record position using the engine's fill price.
+    this.positions.push({
+      orderId: fill.orderId,
+      side: this.orderSide,
+      quantity: fill.fillPrice > 0 ? 1 : 0, // qty tracked externally; stub for display
+      entryPrice: fill.fillPrice,
+      stopPrice: stopPriceForPos,
+    });
+
+    // Emit fill confirmation overlay (teaching mechanic — visually unmissable).
+    this.showFillConfirm({
+      orderId: fill.orderId,
+      side: this.orderSide,
+      qty: this.positions[this.positions.length - 1]?.quantity ?? 0,
+      estimatedFill,
+      actualFill: fill.fillPrice,
+      slippage: fill.slippage,
+      spreadCost: fill.spreadCost,
+      feeCost: fill.feeCost,
+    });
+  };
 
   // -------------------------------------------------------------------------
   // Fill confirmation overlay (teaching mechanic — §3.2, visually unmissable)
