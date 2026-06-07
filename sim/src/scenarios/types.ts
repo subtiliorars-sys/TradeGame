@@ -112,6 +112,13 @@ export interface ScenarioManifest {
    * Omit for the default 24h sim day.
    */
   simDayMs?: number;
+  /**
+   * Pre-authored replay annotations for Screen 6's annotation lane
+   * (annotationType "scenario_authored" per SIM_ENGINE_SPEC §5.3 / SG-06):
+   * vetted at authoring time, observational tone only — no buy/sell
+   * directives, no price targets (§5.3 content rule). Omit when none.
+   */
+  replayAnnotations?: Array<{ simTimeMs: number; text: string }>;
 }
 
 // ---------------------------------------------------------------------------
