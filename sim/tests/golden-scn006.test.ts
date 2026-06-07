@@ -300,3 +300,30 @@ describe("GR-011/012 determinism: two runs with same config produce identical di
     expect(run1.digest.sha256).toBe(run2.digest.sha256);
   });
 });
+
+// ---------------------------------------------------------------------------
+// GR-013: policy MISMATCH — the betrayal costs the adherence reward, only
+// ---------------------------------------------------------------------------
+
+describe("GR-013: SCN-006 policy mismatch — declared A, then traded", () => {
+  const fixture = loadFixture("scn006-policy-mismatch.json");
+
+  it("digest matches golden", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    expect(result.digest.sha256).toBe(fixture.expectedLogDigest);
+  });
+
+  it("the card pays, policy_match does NOT, trade discipline still pays", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    const ids = result.xpSummary.events.map((e) => e.metricId);
+    expect(ids).toContain("policy_declared_card"); // declared on time
+    expect(ids).not.toContain("policy_match");     // violated → withheld
+    expect(ids).toContain("stop_before_entry");    // unrelated discipline unaffected
+    expect(result.xpSummary.total).toBe(195);
+  });
+
+  it("determinism: two runs identical", () => {
+    const config = fixtureToConfig(fixture);
+    expect(runScenario(config).digest.sha256).toBe(runScenario(config).digest.sha256);
+  });
+});
