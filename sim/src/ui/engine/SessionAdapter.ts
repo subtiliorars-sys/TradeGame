@@ -12,21 +12,34 @@
  * TickEvent emissions from the engine are the authoritative price source.
  * This adapter exposes an onTick callback that TradingScene subscribes to.
  *
+ * Adapter selection:
+ *   Constructor accepts a ScenarioDef and numeric seed. The market adapter
+ *   (crypto / stocks / forex) is selected from manifest.market — mirroring
+ *   the harness/run.ts adapter wiring exactly.
+ *
+ * Account model:
+ *   crypto/stocks → CryptoSpotAccount (cash, no leverage)
+ *   forex         → ForexMarginAccount (leveraged)
+ *
+ * Leverage for forex is taken from the manifest or defaults to 50:1.
+ *
  * Order routing:
- *   The adapter owns an OrderBook and CryptoSpotAccount instance.
+ *   The adapter owns an OrderBook and appropriate account instance.
  *   TradingScene calls adapter.submitOrder() to place orders; fill math is
  *   performed inside the engine OrderBook (computeMarketFillCosts) so that
  *   live play and headless replay produce identical FillEvent fields.
- *   The inline fill math that previously lived in TradingScene is removed.
  */
 
 import {
   createClock,
   createCryptoAdapter,
+  createStocksAdapter,
+  createForexAdapter,
   createEventLog,
   seed as seedPrng,
   createOrderBook,
   createCryptoSpotAccount,
+  createForexMarginAccount,
   type SimClock,
   type CompressionMode,
   ticksPerWallSecond,
@@ -34,11 +47,13 @@ import {
 import type { IMarketFeed } from "../../data/feed.js";
 import type { OrderFillEvent, OrderSubmitEvent, SimEvent } from "../../engine/events.js";
 import type { OrderParams } from "../../orders/book.js";
+import type { CryptoSpotAccount, ForexMarginAccount } from "../../orders/account.js";
 import {
   runScoreTracker,
   type MetricInput,
 } from "../../engine/scoring.js";
-import type { ScenarioManifest, XpRubricEntry } from "../../scenarios/types.js";
+import type { ScenarioDef, ScenarioManifest, XpRubricEntry } from "../../scenarios/types.js";
+import { scn001 as _scn001Default } from "../../scenarios/scn001.js";
 
 /** Current price snapshot delivered to the UI each tick. */
 export interface PriceTick {
@@ -109,10 +124,16 @@ export interface DebriefData {
   readonly sessionId: string;
 }
 
-const SCN001_SEED = 42_001;
 const MS_PER_TICK = 1_000; // 1 sim-second per tick
-// Estimated sigma for the HarborUSD/USVC feed (conservative baseline).
+// Estimated sigma for market orders (conservative baseline).
 const BASE_SIGMA = 0.008;
+// Default leverage for forex scenarios (overridable via manifest; no manifest field
+// for leverage yet, so use this sane default for the UI layer).
+const DEFAULT_FOREX_LEVERAGE = 50;
+
+// ---------------------------------------------------------------------------
+// SessionAdapter — scenario-aware, market-selectable
+// ---------------------------------------------------------------------------
 
 export class SessionAdapter {
   readonly clock: SimClock;
@@ -120,7 +141,13 @@ export class SessionAdapter {
 
   private readonly feed: IMarketFeed;
   private readonly orderBook = createOrderBook();
-  private readonly account = createCryptoSpotAccount(10_000);
+  /** crypto / stocks → CryptoSpotAccount; forex → ForexMarginAccount */
+  private readonly accountSpot: CryptoSpotAccount | null;
+  private readonly accountForex: ForexMarginAccount | null;
+  /** Market type from the resolved manifest. */
+  private readonly marketType: "crypto" | "stocks" | "forex";
+  /** Seed used for this session (surfaced to DebriefData). */
+  private readonly sessionSeed: number;
 
   private accumulatedMs = 0;
   private tickListeners: TickCallback[] = [];
@@ -132,7 +159,7 @@ export class SessionAdapter {
   latestTick: PriceTick | undefined;
 
   /** Scenario manifest wired at construction (used to build DebriefData). */
-  private manifest: ScenarioManifest | null = null;
+  private manifest: ScenarioManifest;
 
   /** Whether the session has already ended (prevents double-end). */
   private sessionEnded = false;
@@ -144,22 +171,60 @@ export class SessionAdapter {
    */
   sessionHasWin = false;
 
-  constructor() {
-    const prng = seedPrng(SCN001_SEED);
+  /**
+   * Construct a SessionAdapter for the given scenario and seed.
+   *
+   * The market adapter (crypto / stocks / forex) is selected from
+   * manifest.market — matching the adapter wiring in harness/run.ts exactly.
+   *
+   * @param def  ScenarioDef to run. Defaults to scn001 for backward-compat.
+   * @param seedValue  PRNG seed. Defaults to the scenario's canonical seed.
+   */
+  constructor(def?: ScenarioDef, seedValue?: number) {
+    // Import here to avoid circular deps at module level; registry is UI-adjacent.
+    // Fall back to scn001 when called without arguments (backward-compat for
+    // ui-parity.test.ts which constructs SessionAdapter() with no args).
+    // Fall back to scn001 when called without arguments (backward-compat for
+    // ui-parity.test.ts which constructs SessionAdapter() with no args).
+    const resolvedDef: ScenarioDef = def ?? _scn001Default;
 
-    this.feed = createCryptoAdapter();
+    this.manifest = resolvedDef.manifest;
+    this.marketType = this.manifest.market;
+    this.sessionSeed = seedValue ?? _scenarioSeed(this.manifest.id);
+
+    const prng = seedPrng(this.sessionSeed);
+
+    // Select market adapter (mirrors harness/run.ts).
+    if (this.marketType === "crypto") {
+      this.feed = createCryptoAdapter();
+    } else if (this.marketType === "stocks") {
+      this.feed = createStocksAdapter();
+    } else {
+      this.feed = createForexAdapter();
+    }
+
     this.feed.init({
       prng,
-      startPrice: 1.0,
-      msPerTick: MS_PER_TICK,
+      startPrice: this.manifest.startPrice,
+      msPerTick: this.manifest.msPerTick,
       instrument: {
-        symbol: "HarborUSD/USVC",
-        marketType: "crypto",
-        tickSize: 0.0001,
-        baseSpread: 0.008,
-        pipSize: 1,
+        symbol: this.manifest.instrument.symbol,
+        marketType: this.marketType,
+        tickSize: this.marketType === "forex" ? 0.0001 : 0.0001,
+        baseSpread: this.marketType === "forex" ? 0.00012 : 0.001,
+        pipSize: this.marketType === "forex" ? 0.0001 : 1,
       },
+      script: resolvedDef.script,
     });
+
+    // Account model.
+    if (this.marketType === "forex") {
+      this.accountSpot = null;
+      this.accountForex = createForexMarginAccount(10_000);
+    } else {
+      this.accountSpot = createCryptoSpotAccount(10_000);
+      this.accountForex = null;
+    }
 
     this.clock = createClock(
       this.log,
@@ -194,7 +259,7 @@ export class SessionAdapter {
 
         for (const cb of this.tickListeners) cb(pt);
       },
-      MS_PER_TICK
+      this.manifest.msPerTick
     );
   }
 
@@ -204,11 +269,6 @@ export class SessionAdapter {
    * Fill math is performed by computeMarketFillCosts inside the book —
    * identical to the harness runner. The UI no longer computes fill price
    * inline; it reads back FillResult from this method.
-   *
-   * Returns the FillResult immediately for market orders (filled on next
-   * tick via the clock's tick handler) — but for simplicity, market orders
-   * here are delivered synchronously by advancing one tick internally after
-   * submit. The UI should call this when the tick is current.
    *
    * NOTE: For the current UI (market orders only), fills are processed during
    * the clock tick handler. This method submits the order; the fill is
@@ -220,6 +280,8 @@ export class SessionAdapter {
     stopPrice: number | null;
     orderType?: "market" | "limit" | "stop";
     limitPrice?: number | null;
+    /** Forex: whether leverage_risk_acknowledged has been emitted. */
+    leverageAckReceived?: boolean;
   }): string {
     const { tickIndex, simTimeMs } = this.clock.state;
     const orderId = `ui-ord-${++this.orderSeq}`;
@@ -238,6 +300,9 @@ export class SessionAdapter {
     };
     this.log.append(simTimeMs, submitEv);
 
+    // sessionOpen comes from the feed's session state.
+    const sessionOpen = this.feed.sessionState().isOpen;
+
     const params: OrderParams = {
       orderId,
       orderType,
@@ -245,12 +310,12 @@ export class SessionAdapter {
       quantity: spec.quantity,
       price: spec.limitPrice ?? null,
       stopPrice: spec.stopPrice,
-      marketType: "crypto",
+      marketType: this.marketType,
       currentSigma: BASE_SIGMA,
       baseSigma: BASE_SIGMA,
-      accountEquity: this.account.equity,
-      leverageAckReceived: false, // crypto — no leverage ack required
-      sessionOpen: true,
+      accountEquity: this.accountEquity,
+      leverageAckReceived: spec.leverageAckReceived ?? false,
+      sessionOpen,
     };
 
     this.orderBook.submitOrder(params, tickIndex, simTimeMs);
@@ -259,12 +324,31 @@ export class SessionAdapter {
 
   /** Current account equity (balance + unrealized PnL). */
   get accountEquity(): number {
-    return this.account.equity;
+    if (this.accountForex !== null) return this.accountForex.marginSummary.equity;
+    if (this.accountSpot !== null) return this.accountSpot.equity;
+    return 10_000;
   }
 
   /** Current account balance (settled cash). */
   get accountBalance(): number {
-    return this.account.balance;
+    if (this.accountForex !== null) return this.accountForex.balance;
+    if (this.accountSpot !== null) return this.accountSpot.balance;
+    return 10_000;
+  }
+
+  /** Forex margin summary — undefined for non-forex markets. */
+  get forexMarginSummary() {
+    return this.accountForex?.marginSummary ?? null;
+  }
+
+  /** Default leverage for this session (forex only). */
+  get leverage(): number {
+    return DEFAULT_FOREX_LEVERAGE;
+  }
+
+  /** Current session state from the underlying feed. */
+  get sessionState() {
+    return this.feed.sessionState();
   }
 
   /**
@@ -306,6 +390,10 @@ export class SessionAdapter {
   /**
    * Wire a ScenarioManifest so endSession() can build DebriefData.
    * Called by TradingScene before starting the sim clock.
+   *
+   * @deprecated Pass ScenarioDef to the constructor instead. Kept for backward
+   * compat with any code that calls setManifest() before the constructor was
+   * scenario-aware.
    */
   setManifest(m: ScenarioManifest): void {
     this.manifest = m;
@@ -404,7 +492,7 @@ export class SessionAdapter {
       goodProcessCanLoseId,
       recklessWinnerText,
       policyMismatchNote,
-      seed: SCN001_SEED,
+      seed: this.sessionSeed,
       sessionId: this.log.sessionId,
     };
 
@@ -445,4 +533,19 @@ export class SessionAdapter {
   get compression(): CompressionMode {
     return this.clock.state.compression;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/** Canonical per-scenario seeds matching the authored scenario defs. */
+const SCENARIO_SEEDS: Record<string, number> = {
+  "SCN-001": 42_001,
+  "SCN-002": 42_002,
+  "SCN-003": 42_003,
+};
+
+function _scenarioSeed(scenarioId: string): number {
+  return SCENARIO_SEEDS[scenarioId] ?? 42_001;
 }
