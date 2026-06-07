@@ -7,8 +7,8 @@
  * Three metrics are exercised in detail per the deliverable spec:
  *   1. stop_honored (SM-001, SM-002)
  *   2. no_stop_widen (SM-003, SM-004)
- *   3. policy_match → mapped to stop_before_entry (SM-007, SM-008) which is
- *      the spec's closest equivalent to "declared option vs. behavior" per §4.2.
+ *   3. policy_match (PM-001 … PM-005) — SIM_ENGINE_SPEC §4.2 / SCENARIOS_V1 SCN-006.
+ *      Distinct from stop_before_entry; see policy_match extractor for semantics.
  *
  * Additional metric tests cover the full registry.
  */
@@ -24,6 +24,7 @@ import {
   leverage_ack,
   debrief_completed,
   size_compliance,
+  policy_match,
   runScoreTracker,
 } from "../src/engine/scoring.js";
 import type { MetricInput } from "../src/engine/scoring.js";
@@ -210,15 +211,10 @@ describe("no_stop_widen", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. stop_before_entry / policy_match (SM-007, SM-008)
-//
-// Spec §4.2 maps "declared option vs behavior" to stop_before_entry:
-// the player declares intent to protect the position with a stop, and the
-// behavior metric checks whether the stop was submitted before/at entry fill.
-// This is the closest structural match to "policy_match" in the spec table.
+// 3. stop_before_entry (SM-007, SM-008)
 // ---------------------------------------------------------------------------
 
-describe("stop_before_entry (policy_match)", () => {
+describe("stop_before_entry", () => {
   // SM-007: stop submitted before entry fill → pass
   it("SM-007: pass — stop submitted at tick 9, entry fills at tick 10", () => {
     const events: SimEvent[] = [
@@ -253,6 +249,105 @@ describe("stop_before_entry (policy_match)", () => {
   it("no stop placed, no fill → pass (no position opened)", () => {
     const result = stop_before_entry(buildInput([]));
     expect(result.passed).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. policy_match (PM-001 … PM-005) — SIM_ENGINE_SPEC §4.2 / SCN-006
+// ---------------------------------------------------------------------------
+
+/** Helper: builds a PolicyDeclaredEvent at the given tick. */
+function makePolicyDeclared(
+  tickIndex: number,
+  option: "A_flat" | "B_hold_with_stop" | "C_observe_only",
+  policyId = "news-policy-001"
+): SimEvent {
+  return {
+    type: "policy_declared",
+    policyId,
+    option,
+    journalWordCount: 15,
+    tickIndex,
+    timestamp: tickIndex * 1000,
+  };
+}
+
+describe("policy_match", () => {
+  // PM-001: declared A_flat — no order_submits after declaration tick → match
+  it("PM-001: pass (A_flat) — no orders after declaration", () => {
+    const events: SimEvent[] = [
+      makePolicyDeclared(5, "A_flat"),
+      // no order_submit events after tick 5
+    ];
+    const result = policy_match(buildInput(events));
+    expect(result.metricId).toBe("policy_match");
+    expect(result.passed).toBe(true);
+    expect(result.xpOnPass).toBe(25);
+  });
+
+  // PM-002: declared B_hold_with_stop — position held (fill before declaration)
+  //         and stop present before declaration tick → match
+  it("PM-002: pass (B_hold_with_stop) — pre-existing fill + stop before declaration", () => {
+    const events: SimEvent[] = [
+      makeStopSubmit(2000),   // stop at tick 2 — before declaration tick 5
+      makeEntryFill(3000),    // fill at tick 3 — before declaration tick 5
+      makePolicyDeclared(5, "B_hold_with_stop"),
+      // no cancel, no modify after declaration
+    ];
+    const result = policy_match(buildInput(events));
+    expect(result.passed).toBe(true);
+    expect(result.xpOnPass).toBe(25);
+  });
+
+  // PM-003: declared C_observe_only — no order_submits after declaration → match
+  it("PM-003: pass (C_observe_only) — no orders submitted after declaration", () => {
+    const events: SimEvent[] = [
+      makePolicyDeclared(5, "C_observe_only"),
+      makeJournalEntry(8000, ["observation"]), // journal only, no orders
+    ];
+    const result = policy_match(buildInput(events));
+    expect(result.passed).toBe(true);
+    expect(result.xpOnPass).toBe(25);
+  });
+
+  // PM-004: declared A_flat but traded anyway (order_submit after declaration) → mismatch
+  it("PM-004: fail (A_flat mismatch) — order submitted after declaration", () => {
+    const events: SimEvent[] = [
+      makePolicyDeclared(5, "A_flat"),
+      makeEntrySubmit(8000), // tick 8 > declaration tick 5 → violation
+    ];
+    const result = policy_match(buildInput(events));
+    expect(result.passed).toBe(false);
+    expect(result.xpOnPass).toBe(0);
+  });
+
+  // PM-004b: runScoreTracker emits policyMismatchFlag when mismatch detected
+  it("PM-004b: runScoreTracker emits policyMismatchFlag on mismatch", () => {
+    const events: SimEvent[] = [
+      makePolicyDeclared(5, "A_flat"),
+      makeEntrySubmit(8000), // traded after declaring A_flat
+    ];
+    const output = runScoreTracker("sess-pm-001", buildInput(events), 10000);
+    expect(output.policyMismatchFlag).not.toBeNull();
+    expect(output.policyMismatchFlag?.declaredOption).toBe("A_flat");
+    expect(output.policyMismatchFlag?.policyId).toBe("news-policy-001");
+    // No XP event for policy_match when mismatch
+    const pmXp = output.xpEvents.find((x) => x.metricId === "policy_match");
+    expect(pmXp).toBeUndefined();
+  });
+
+  // PM-005: no PolicyDeclaredEvent present — metric is inert (no XP, no flag)
+  it("PM-005: inert — no PolicyDeclaredEvent in log", () => {
+    const events: SimEvent[] = [
+      makeJournalEntry(2000, ["observation"]),
+      makeEntrySubmit(5000),
+    ];
+    const result = policy_match(buildInput(events));
+    expect(result.passed).toBe(false);
+    expect(result.xpOnPass).toBe(0);
+    // runScoreTracker should emit no policyMismatchFlag when there was no declaration
+    const output = runScoreTracker("sess-pm-002", buildInput(events), 8000);
+    expect(output.policyMismatchFlag).toBeNull();
   });
 });
 

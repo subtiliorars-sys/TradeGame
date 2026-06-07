@@ -155,6 +155,30 @@ export interface SessionEndEvent {
   timestamp: number;
 }
 
+/**
+ * PolicyDeclaredEvent — scenario-scoped pre-commitment for News/Plan Card
+ * scenarios (SIM_ENGINE_SPEC §4.2 policy_match, SCENARIOS_V1 SCN-006).
+ *
+ * Fired when the player confirms the News Policy Card before the event window
+ * opens. The `option` is their declared behaviour for the window:
+ *   A_flat          — close all positions before the report; re-enter after.
+ *   B_hold_with_stop — hold through the window; position sized for event
+ *                      volatility, stop set to account for spread blowout.
+ *   C_observe_only  — no trading through the window; observation only.
+ *
+ * `journalWordCount` is the word count of the mandatory rationale entry
+ * written at card confirmation (text stored server-side per §6.4 / §5.1
+ * privacy design — not included here).
+ */
+export interface PolicyDeclaredEvent {
+  type: "policy_declared";
+  policyId: string;       // scenario-defined ID for the policy card instance
+  option: "A_flat" | "B_hold_with_stop" | "C_observe_only";
+  journalWordCount: number;
+  tickIndex: number;
+  timestamp: number;
+}
+
 // ---------------------------------------------------------------------------
 // Discriminated union of all event types
 // ---------------------------------------------------------------------------
@@ -174,7 +198,8 @@ export type SimEvent =
   | LeverageAckEvent
   | DebriefCompleteEvent
   | ReplayStartedEvent
-  | SessionEndEvent;
+  | SessionEndEvent
+  | PolicyDeclaredEvent;
 
 // Exhaustive switch helper: TypeScript will error at compile time if a case is
 // missing from a switch on SimEvent["type"].

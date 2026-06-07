@@ -22,6 +22,7 @@ import type {
   OrderCancelEvent,
   OrderModifyEvent,
   JournalEntryEvent,
+  PolicyDeclaredEvent,
 } from "./events.js";
 
 // ---------------------------------------------------------------------------
@@ -44,7 +45,8 @@ export type MetricId =
   | "debrief_completed"
   | "session_reviewed"
   | "plan_declared"
-  | "plan_declared_late";
+  | "plan_declared_late"
+  | "policy_match";
 
 // ---------------------------------------------------------------------------
 // MetricInput — the only view of the EventLog that scoring functions receive.
@@ -335,6 +337,77 @@ export function plan_declared_late(input: MetricInput): MetricResult {
   return { metricId: "plan_declared_late", passed, xpOnPass: 0 };
 }
 
+/**
+ * policy_match (News/Plan Card scenarios only) — SIM_ENGINE_SPEC §4.2.
+ *
+ * Reads the PolicyDeclaredEvent (emitted at News Policy Card confirmation) and
+ * compares the declared option against actual EventLog behaviour in the window
+ * that begins at the declaration tick.
+ *
+ * Option semantics (SCENARIOS_V1 SCN-006 rubric):
+ *   A_flat          — no order_submit events after the declaration tick.
+ *   B_hold_with_stop — at least one order_fill before the declaration tick
+ *                      (position held) AND a stop order_submit present at or
+ *                      before the declaration tick.
+ *   C_observe_only  — no order_submit events after the declaration tick.
+ *
+ * Match  → +25 XP event (xpOnPass = 25).
+ * Mismatch → no XP; a `policy_mismatch` debrief flag is appended via the
+ *   `debriefFlags` array on ScoreOutput (see below).
+ *
+ * If no PolicyDeclaredEvent is present the metric is inert: passed = false,
+ * xpOnPass = 0. Callers must not emit XP for inert results.
+ */
+export function policy_match(input: MetricInput): MetricResult {
+  // Find the PolicyDeclaredEvent, if any.
+  const declaration = input.events.find(
+    (e): e is PolicyDeclaredEvent => e.type === "policy_declared"
+  );
+
+  if (!declaration) {
+    // No declaration — metric is inert. No XP, no mismatch flag.
+    return { metricId: "policy_match", passed: false, xpOnPass: 0 };
+  }
+
+  const declarationTick = declaration.tickIndex;
+  const declaredOption = declaration.option;
+
+  // Events after the declaration tick (the "event window").
+  const windowSubmits = input.events.filter(
+    (e): e is OrderSubmitEvent =>
+      e.type === "order_submit" && e.tickIndex > declarationTick
+  );
+
+  // Events at or before the declaration tick.
+  const preDeclarationFills = input.events.filter(
+    (e): e is OrderFillEvent =>
+      e.type === "order_fill" && e.tickIndex <= declarationTick
+  );
+  const preDeclarationStopSubmits = input.events.filter(
+    (e): e is OrderSubmitEvent =>
+      e.type === "order_submit" &&
+      e.orderType === "stop" &&
+      e.tickIndex <= declarationTick
+  );
+
+  let passed = false;
+
+  if (declaredOption === "A_flat") {
+    // A_flat: no order_submit events in the window after declaration.
+    passed = windowSubmits.length === 0;
+  } else if (declaredOption === "B_hold_with_stop") {
+    // B_hold_with_stop: position was held (at least one fill before declaration)
+    // AND a stop order was present at or before the declaration tick.
+    passed =
+      preDeclarationFills.length > 0 && preDeclarationStopSubmits.length > 0;
+  } else if (declaredOption === "C_observe_only") {
+    // C_observe_only: no order_submit events in the window after declaration.
+    passed = windowSubmits.length === 0;
+  }
+
+  return { metricId: "policy_match", passed, xpOnPass: passed ? 25 : 0 };
+}
+
 // ---------------------------------------------------------------------------
 // ProcessMetric registry — maps MetricId → extractor function
 // ---------------------------------------------------------------------------
@@ -354,16 +427,27 @@ export const METRIC_REGISTRY: Record<MetricId, MetricFn> = {
   session_reviewed,
   plan_declared,
   plan_declared_late,
+  policy_match,
 };
 
 // ---------------------------------------------------------------------------
 // ScoreTracker — runs all metrics and emits XP + reckless-winner events
 // ---------------------------------------------------------------------------
 
+/** Emitted when the player's declared policy option does not match their
+ *  actual in-window behaviour (SIM_ENGINE_SPEC §4.2 policy_match mismatch). */
+export interface PolicyMismatchFlag {
+  type: "policy_mismatch";
+  declaredOption: "A_flat" | "B_hold_with_stop" | "C_observe_only";
+  policyId: string;
+}
+
 export interface ScoreOutput {
   readonly results: readonly MetricResult[];
   readonly xpEvents: readonly XpEvent[];
   readonly recklessWinnerFlag: RecklessWinnerFlagEvent | null;
+  /** Present when a PolicyDeclaredEvent was found but behaviour did not match. */
+  readonly policyMismatchFlag: PolicyMismatchFlag | null;
 }
 
 /**
@@ -415,7 +499,22 @@ export function runScoreTracker(
     };
   }
 
-  return { results, xpEvents, recklessWinnerFlag };
+  // policy_mismatch flag — emitted when declaration was present but behaviour
+  // did not match. Inert (no declaration) → no flag.
+  const policyResult = results.find((r) => r.metricId === "policy_match");
+  const declaration = input.events.find(
+    (e): e is PolicyDeclaredEvent => e.type === "policy_declared"
+  );
+  let policyMismatchFlag: PolicyMismatchFlag | null = null;
+  if (declaration && policyResult && !policyResult.passed) {
+    policyMismatchFlag = {
+      type: "policy_mismatch",
+      declaredOption: declaration.option,
+      policyId: declaration.policyId,
+    };
+  }
+
+  return { results, xpEvents, recklessWinnerFlag, policyMismatchFlag };
 }
 
 // ---------------------------------------------------------------------------
