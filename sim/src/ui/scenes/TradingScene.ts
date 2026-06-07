@@ -52,6 +52,7 @@ import type { ScenarioDef } from "../../scenarios/types.js";
 import { scn001 } from "../../scenarios/scn001.js";
 import { getScenario } from "../../scenarios/registry.js";
 import type { RiskModalData } from "./RiskModalScene.js";
+import type { PolicyCardData } from "./PolicyCardScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -137,11 +138,17 @@ export class TradingScene extends Phaser.Scene {
   private orderQuantity = "";
   private orderStopPrice = "";
   private orderLimitPrice = "";
-  private focusedField: "quantity" | "stop" | "limit" | null = null;
+  /** Declared account-risk % for size_compliance grading (§4.2). */
+  private riskPctStr = "1.0";
+  private focusedField: "quantity" | "stop" | "limit" | "risk" | null = null;
 
   // Forex leverage acknowledgment — once per session (re-fires each new
   // scenario session per spec §3.4 / wireframe Screen 2a interaction notes).
   private leverageAcked = false;
+
+  // News Policy Card (scenarios with manifest.policyDeadlineMs — SCN-006)
+  private policyCardShown = false;
+  private policyDeclared = false;
 
   // Position state
   private positions: OpenPosition[] = [];
@@ -232,8 +239,11 @@ export class TradingScene extends Phaser.Scene {
     this.orderQuantity = "";
     this.orderStopPrice = "";
     this.orderLimitPrice = "";
+    this.riskPctStr = "1.0";
     this.focusedField = null;
     this.leverageAcked = false;
+    this.policyCardShown = false;
+    this.policyDeclared = false;
     this.positions = [];
     this.pendingFillOrderId = null;
     this.pendingStopPrice = null;
@@ -295,6 +305,23 @@ export class TradingScene extends Phaser.Scene {
       this.sessionEndFired = true;
       this.adapter.endSession();
       return; // endSession calls transitionToDebrief via onSessionEnd listener
+    }
+
+    // News Policy Card (SCN-006 pattern): on scenarios that author
+    // policyDeadlineMs, present the card at the card decision point — the
+    // latest decision point at or before the deadline (SCN-006: DP-A, T-05).
+    if (
+      !this.policyCardShown &&
+      this.def.manifest.policyDeadlineMs !== undefined
+    ) {
+      const deadline = this.def.manifest.policyDeadlineMs;
+      const cardDp = [...this.def.manifest.decisionPoints]
+        .filter((dp) => dp.simTimeMs <= deadline)
+        .sort((a, b) => b.simTimeMs - a.simTimeMs)[0];
+      if (cardDp !== undefined && tick.simTimeMs >= cardDp.simTimeMs) {
+        this.policyCardShown = true;
+        this.showPolicyCard();
+      }
     }
 
     this.latestPrice = tick.close;
@@ -440,6 +467,40 @@ export class TradingScene extends Phaser.Scene {
         this.journalText += e.key;
       }
       this.redrawJournal();
+    });
+
+    // Keyboard capture for the order-ticket numeric fields (quantity / stop /
+    // limit / risk %). Click a field to focus it; digits and "." edit it,
+    // Backspace deletes, Enter/Escape blurs. Registered ONCE per scene create
+    // (same listener-compounding rule as the journal handler above).
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      if (this.focusedField === null) return;
+      if (e.key === "Enter" || e.key === "Escape") {
+        this.focusedField = null;
+        this.drawOrderTicket();
+        return;
+      }
+      const edit = (v: string): string => {
+        if (e.key === "Backspace") return v.slice(0, -1);
+        if (/^[0-9.]$/.test(e.key) && !(e.key === "." && v.includes("."))) {
+          return v + e.key;
+        }
+        return v;
+      };
+      switch (this.focusedField) {
+        case "quantity": this.orderQuantity = edit(this.orderQuantity); break;
+        case "stop":     this.orderStopPrice = edit(this.orderStopPrice); break;
+        case "limit":    this.orderLimitPrice = edit(this.orderLimitPrice); break;
+        case "risk": {
+          this.riskPctStr = edit(this.riskPctStr);
+          const pct = Number.parseFloat(this.riskPctStr);
+          // Clamp into (0, 100]; invalid/blank falls back to the 1% default.
+          this.adapter.declaredRiskPct =
+            Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : 1;
+          break;
+        }
+      }
+      this.drawOrderTicket();
     });
 
     // Footer — education-not-advice (persistent per spec)
@@ -684,10 +745,12 @@ export class TradingScene extends Phaser.Scene {
     void buyBtn; void sellBtn;
     py += 38;
 
-    // Quantity
+    // Quantity + declared account-risk % (size_compliance grades vs this rule)
     label(this, px, py, "Quantity:", { fontSize: "12px", color: CSS.DIM });
+    label(this, px + 88, py, "Risk %:", { fontSize: "12px", color: CSS.DIM });
     py += 18;
-    this.drawInputField(px, py, 168, "quantity", this.orderQuantity);
+    this.drawInputField(px, py, 80, "quantity", this.orderQuantity);
+    this.drawInputField(px + 88, py, 80, "risk", this.riskPctStr);
     py += 34;
 
     // Order type
@@ -751,7 +814,7 @@ export class TradingScene extends Phaser.Scene {
     x: number,
     y: number,
     w: number,
-    field: "quantity" | "stop" | "limit",
+    field: "quantity" | "stop" | "limit" | "risk",
     value: string,
     highlight = false
   ): void {
@@ -873,6 +936,18 @@ export class TradingScene extends Phaser.Scene {
     const stop = parseFloat(this.orderStopPrice);
     if (!qty || !stop) return;
 
+    // News-freeze window (SCENARIOS_V1 SCN-006 UI beat): trade entry is
+    // disabled from the policy deadline (T-01) until the report prints
+    // 60 seconds later. Scenarios without a policy deadline are unaffected.
+    const deadline = this.def.manifest.policyDeadlineMs;
+    if (deadline !== undefined) {
+      const now = this.adapter.clock.state.simTimeMs;
+      if (now >= deadline && now < deadline + 60_000) {
+        this.showRejectNotice("news_freeze");
+        return;
+      }
+    }
+
     // Forex gate (SIM_ENGINE_SPEC §3.4 / wireframe Screen 2a): the blocking
     // leverage-risk modal fires at the FIRST forex order submission of the
     // session. The order proceeds only after "I UNDERSTAND" (which emits
@@ -929,6 +1004,28 @@ export class TradingScene extends Phaser.Scene {
   }
 
   /**
+   * Launch the blocking News Policy Card overlay (SCENARIOS_V1 SCN-006 core
+   * mechanic). The sim pauses while the card is up; the card emits the
+   * policy_declared event itself (policy_declared_card + policy_match read it).
+   * Play stays paused after declaring — the player resumes via the speed
+   * controls, mirroring the session-start convention.
+   */
+  private showPolicyCard(): void {
+    this.adapter.setCompression("paused");
+    this.updateSpeedButtonHighlight("paused");
+    const data: PolicyCardData = {
+      scenarioId: this.def.manifest.id,
+      hasOpenPosition: this.positions.length > 0,
+      log: this.adapter.log,
+      clock: this.adapter.clock,
+      onDeclare: () => {
+        this.policyDeclared = true;
+      },
+    };
+    this.scene.launch("PolicyCardScene", data);
+  }
+
+  /**
    * Launch the blocking forex leverage-risk modal (Screen 2a) as an overlay.
    * On acknowledge the modal emits leverage_risk_acknowledged to the EventLog
    * itself; we then mark the session acked and submit the held order.
@@ -973,6 +1070,7 @@ export class TradingScene extends Phaser.Scene {
       session_closed: "Order rejected: the market session is closed (market orders queue is not available).",
       insufficient_balance: "Order rejected: position size exceeds your account balance.",
       stop_limit_deferred: "Order rejected: stop-limit orders are not available in this version.",
+      news_freeze: "Trade entry disabled during news print. Report window in progress.",
     };
     const text = friendly[reason] ?? `Order rejected: ${reason}`;
 

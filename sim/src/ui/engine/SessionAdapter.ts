@@ -186,6 +186,13 @@ export class SessionAdapter {
   sessionHasWin = false;
 
   /**
+   * Player-declared account-risk percent for size_compliance grading
+   * (SIM_ENGINE_SPEC §4.2 — "declared in pre-trade journal; default 1%").
+   * Set by the order ticket's Risk % field; clamped to (0, 100].
+   */
+  declaredRiskPct = 1;
+
+  /**
    * Construct a SessionAdapter for the given scenario and seed.
    *
    * The market adapter (crypto / stocks / forex) is selected from
@@ -484,7 +491,12 @@ export class SessionAdapter {
       {
         events: allEvents,
         sessionHasWin: this.sessionHasWin,
-        declaredRiskPct: 1, // default; Tier B: read from plan_declared journal entry
+        declaredRiskPct:
+          Number.isFinite(this.declaredRiskPct) &&
+          this.declaredRiskPct > 0 &&
+          this.declaredRiskPct <= 100
+            ? this.declaredRiskPct
+            : 1,
         sessionStartEquity: 10_000,
         // Applicability gate for scenario-specific metrics (rubric-authored only).
         rubricMetricIds: (this.manifest?.xpRubric ?? []).map((r) => r.metricId),

@@ -21,6 +21,7 @@ import { AgeGateScene } from "./ui/scenes/AgeGateScene.js";
 import { MenuScene } from "./ui/scenes/MenuScene.js";
 import { TradingScene } from "./ui/scenes/TradingScene.js";
 import { RiskModalScene } from "./ui/scenes/RiskModalScene.js";
+import { PolicyCardScene } from "./ui/scenes/PolicyCardScene.js";
 import { DebriefScene } from "./ui/scenes/DebriefScene.js";
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -28,7 +29,7 @@ const config: Phaser.Types.Core.GameConfig = {
   width: 1280,
   height: 800,
   backgroundColor: "#0d0d0f",
-  scene: [AgeGateScene, MenuScene, TradingScene, RiskModalScene, DebriefScene],
+  scene: [AgeGateScene, MenuScene, TradingScene, RiskModalScene, PolicyCardScene, DebriefScene],
   parent: document.body,
   dom: { createContainer: false },
   scale: {
