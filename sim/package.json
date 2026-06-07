@@ -1,0 +1,23 @@
+{
+  "name": "tradegame-sim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TradeGame deterministic sim engine — Phase 2 foundation. Render-agnostic; Phaser arrives with the UI layer.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint-pnl": "bash scripts/lint-pnl.sh"
+  },
+  "dependencies": {
+    "phaser": "^3.85.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.5.0",
+    "vite": "^5.0.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
+  }
+}
