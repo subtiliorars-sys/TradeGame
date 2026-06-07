@@ -166,6 +166,25 @@ merge or close it before it accumulates conflicts.
 
 ---
 
+### N-7. Review PR #8 — the playable game (added 2026-06-08, overnight build)
+
+**What:** PR #8 stacks the Phase-2 vertical slice: all six scenarios (SCN-001
+through SCN-006) playable in the Phaser sim, rank/XP system (§4.5), News
+Policy Card, scenario gating, debrief/replay flow. Three red-team passes ran
+the same night; every finding was fixed in-stack with regression tests
+(381/381 green). Review and merge or comment.
+
+**Steps (Chromebook — GitHub web):**
+1. Open Pull Requests > #8 in the HQ repo. The PR body + comments narrate each
+   wave and each red-team pass.
+2. To try it before merging: `cd ~/TradeGame/sim && npm install && npm run dev`
+   then open the printed localhost URL. (Tests: `npm test`.)
+3. Merge if it looks right — nothing deploys on merge (no deploy automation).
+
+**Source:** PR #8 thread; docs/game/SIM_ENGINE_SPEC.md for the contracts.
+
+---
+
 ## GATES — Required before public-facing activity or any revenue
 
 Do not open Discord to the public, post social content, or accept any money
@@ -377,3 +396,27 @@ been removed from risk.ts. The X-B02 worked example is recomputed at price
 1.2500 so used_margin = $500 = full balance, giving an immediate margin-call
 warning at open and stop-out at exactly 125 pips — the same 125-pip number
 survives, now derived correctly from the margin-level formula.
+
+---
+
+### P-8. XP path parity — trade vs. observation ceilings (added 2026-06-08)
+
+**Trigger:** Before any XP economy re-tune, and no later than the Tier-B
+persistence gate.
+
+**Decision:** SIM_ENGINE_SPEC §4 implies the trade and no-trade (patience)
+paths reach the same XP ceiling; SCENARIOS_V1's own TUNABLE targets set clean
+runs ≈185 XP vs. observation-only ≈70. The build follows SCENARIOS_V1 today
+(clean 130–235 vs. observe 90–140). The red-team flags the gradient as a
+pay-to-trade/FOMO incentive contrary to the teaching model; the two documents
+genuinely conflict. Options: equalize ceilings (amend SCENARIOS_V1 targets),
+keep the gradient (amend SIM_ENGINE_SPEC §4's equal-standing language), or a
+middle ratio. All numbers are TUNABLE; either ruling is one fixture
+regeneration.
+
+**Also carried to the Tier-B gate (not decisions, reminders):** a replay
+first-clear rule must ship before XP persists (replay grind is bounded today
+only because progress is in-memory), and journal quality gates are word-count
+floors by design.
+
+**Source:** PR #8 thread (red-team passes 1 and 3); fleet questions.md.
