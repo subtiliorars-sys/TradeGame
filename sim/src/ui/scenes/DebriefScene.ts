@@ -35,6 +35,8 @@ import {
 } from "../engine/draw.js";
 import { SessionAdapter, type DebriefData } from "../engine/SessionAdapter.js";
 import * as ProgressStore from "../../engine/progress.js";
+import { getScenario } from "../../scenarios/registry.js";
+import type { ReplayData } from "./ReplayScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants (1280 × 800 canvas)
@@ -394,6 +396,19 @@ export class DebriefScene extends Phaser.Scene {
     const btnH = 38;
     const btnGap = 10;
 
+    // "View replay" — Screen 6: watch this session back from its EventLog.
+    button(
+      this,
+      RIGHT_X,
+      y,
+      btnW,
+      btnH,
+      "VIEW REPLAY",
+      () => this.viewReplay(),
+      { fontSize: "12px" }
+    );
+    y += btnH + btnGap;
+
     // "Replay scenario" — restart with the same seed.
     button(
       this,
@@ -448,6 +463,23 @@ export class DebriefScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
   // Scene transitions
   // -------------------------------------------------------------------------
+
+  /**
+   * Open the Replay Viewer (Screen 6) over this session's stored EventLog.
+   * View-only — completeDebrief already ran, and re-entering DebriefScene
+   * afterwards is idempotent (no double XP).
+   */
+  private viewReplay(): void {
+    const session = SessionAdapter.lastSession;
+    const manifest = getScenario(this.debriefData?.scenarioId ?? "")?.manifest;
+    if (session === null || manifest === undefined || !this.debriefData) return;
+    const data: ReplayData = {
+      events: session.log.entries.map((e) => e.event),
+      manifest,
+      debriefData: this.debriefData,
+    };
+    this.scene.start("ReplayScene", data);
+  }
 
   private replayScenario(): void {
     // Restart TradingScene with the SAME scenario. The canonical per-scenario

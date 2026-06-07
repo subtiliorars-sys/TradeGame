@@ -198,6 +198,54 @@ export const scn006: ScenarioDef = {
       "scn006:good-process-can-lose",
       "scn006:common-errors",
     ],
+    // Pre-authored replay annotations (Screen 6 lane, scenario_authored).
+    // Observational tone only — no buy/sell directives, no price targets
+    // (SIM_ENGINE_SPEC §5.3 content rule).
+    replayAnnotations: [
+      {
+        simTimeMs: 0, // T_CONTEXT — pre-report quiet
+        text:
+          "ANDU is ranging in a narrow band with a 0.9-pip spread and " +
+          "declining volume. This pre-report pattern — price compression, " +
+          "volume drying — is the structural context the News Policy Card " +
+          "asks the trader to evaluate before the release.",
+      },
+      {
+        simTimeMs: 900_000, // T_CARD — News Policy Card moment (T-05)
+        text:
+          "Five minutes before the Monthly Labor Conditions Report, the " +
+          "policy deadline window opens. The spread is already widening " +
+          "toward 1.8 pips. Whatever position-management plan applies to " +
+          "this event needs to be declared before T-01 — not after the " +
+          "number prints.",
+      },
+      {
+        simTimeMs: 1_215_000, // T_WHIP — whipsaw reversal begins (T0+15s)
+        text:
+          "Fifteen seconds after the release, price has reversed 130 pips " +
+          "from the spike high. The spread during this reversal is 6 pips. " +
+          "This is the whipsaw window: the highest-slippage, highest-spread " +
+          "period of the entire scenario.",
+      },
+      {
+        simTimeMs: 1_250_000, // T_NORMAL — spread normalizing (T0+50s)
+        text:
+          "The spread is contracting from 6 pips toward 3 pips and then " +
+          "lower. ANDU has stabilized near 1.3190–1.3205 after the " +
+          "whipsaw low. The report's direction is now structurally visible " +
+          "in price — the question is whether a trend is establishing or " +
+          "the range is resetting.",
+      },
+      {
+        simTimeMs: 4_200_000, // T_HIGH — trend high (T0+50min)
+        text:
+          "ANDU has trended from the post-whipsaw stabilization zone at " +
+          "~1.3190 to ~1.3290 — a 100-pip range over the 50 minutes " +
+          "following the report. The spread has normalized to 0.9 pips. " +
+          "Two pullbacks occurred along the way; neither reached the pre- " +
+          "report baseline.",
+      },
+    ],
     noEntryWindows: [
       {
         startMs: T0,

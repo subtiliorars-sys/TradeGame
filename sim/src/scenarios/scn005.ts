@@ -186,6 +186,51 @@ export const scn005: ScenarioDef = {
       "scn005:good-process-can-lose",
       "scn005:common-errors",
     ],
+    // Pre-authored replay annotations (Screen 6 lane, scenario_authored).
+    // Observational tone only — no buy/sell directives, no price targets
+    // (SIM_ENGINE_SPEC §5.3 content rule).
+    replayAnnotations: [
+      {
+        simTimeMs: 270_000, // Day 0 regular open — pre-announcement context
+        text:
+          "VLDI is trading near its normal range before any announcement. " +
+          "This is the baseline reference: price, spread, and volume " +
+          "before a known structural catalyst enters the picture.",
+      },
+      {
+        simTimeMs: 4_590_000, // D1_OPEN — announcement gap, +7.6%
+        text:
+          "NMX 100 announces VLDI inclusion effective Day 5. The open gap " +
+          "reflects market participants repricing around the mechanical " +
+          "demand that passive index funds will create at the D5 closing " +
+          "auction. Spread is at its widest here ($0.28).",
+      },
+      {
+        simTimeMs: 13_810_000, // D3_MID — peak run momentum
+        text:
+          "Three sessions into the run, VLDI is near its high. The driver " +
+          "is still the same one from Day 1: anticipated mechanical buying " +
+          "on Day 5. Process question: has the hypothesis that justified any " +
+          "entry changed since Day 1, or is this the same information " +
+          "priced progressively higher?",
+      },
+      {
+        simTimeMs: 23_010_000, // D5_AUCTION — closing auction
+        text:
+          "The Day 5 closing auction is the moment passive index funds are " +
+          "required to hold VLDI at the closing price. The auction print " +
+          "above the pinned level (~$37.80 vs. $37.20) reflects that " +
+          "concentration of forced demand at a single price point.",
+      },
+      {
+        simTimeMs: 26_190_000, // D6_OPEN — post-inclusion fade begins
+        text:
+          "Day 6 opens at the Day 5 close price. The mechanical demand from " +
+          "index fund rebalancing concluded at the auction. Volume is " +
+          "below-average and the price structure that followed the " +
+          "announcement is now unwinding.",
+      },
+    ],
     noEntryWindows: [
       {
         startMs: D1_OPEN,
