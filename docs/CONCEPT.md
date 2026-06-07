@@ -109,6 +109,8 @@ No one on the ladder is selling advice. Coaches teach method, process, and risk 
 - Potentially paid (when org is ready): structured cohort programs with dedicated coach time, advanced curriculum tracks, cosmetic items in the game
 - Never paid for: signals, trade recommendations, managed accounts, performance-based tiers
 
+(Any paid offering — including cosmetics, donations, subscriptions — requires the RISK_REGISTER §4 attorney-review gate first; compensation is analyzed org-wide.)
+
 Monetization decisions require explicit org-level review against the education-not-advice principle. See `docs/RISK_REGISTER.md`.
 
 ---

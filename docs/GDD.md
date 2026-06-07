@@ -226,9 +226,11 @@ This is surfaced explicitly in the UI.
 
 Ranks gate cohort entry and unlock scenario library tiers. Suggested progression:
 
-`Observer → Trainee → Practitioner → Journeyman → Analyst → Senior Analyst`
+`Observer → Trainee → Practitioner → Journeyman → Strategist → Senior Strategist`
 
 Ranks are earned by XP + minimum drills completed, not by PnL milestones.
+
+**Leaderboard constraint:** any leaderboard or ranking display in the game is process-scored only. No PnL ranking component — not in any view, mode, or optional display. This is a hard design constraint, not a UI preference. See RISK_REGISTER → Game-Specific.
 
 ### Replay Sharing & Coaching Hooks
 
@@ -308,6 +310,8 @@ in a licensed live feed later requires only a new adapter, not engine changes.
 **State:** Player portfolio, XP, journal entries, and replay refs stored server-side (user
 account). Replay tick data can be client-cached.
 
+**Governance gate:** storing accounts, portfolios, or journals at Phase 2 triggers governance Tier B requirements — privacy policy, data retention schedule, breach response plan, and COPPA review — BEFORE shipping to users. An age screen at account creation is mandatory. Do not ship account persistence without this gate cleared. See ROADMAP.md Phase 2 compliance gate and `GOVERNANCE.md`.
+
 **Coaching annotation layer:** Timestamped comment objects attached to a session ID.
 Stored separately from the sim state so they can be added post-hoc without mutating the
 original replay.
@@ -336,8 +340,8 @@ The following are permanently excluded or explicitly deferred.
 
 | # | Question | Blocking? |
 |---|----------|-----------|
-| Q1 | Real-time data licensing — can we use a free-tier feed (e.g., CoinGecko for crypto, polygon.io for stocks) under educational terms, or do we build pure-synthetic v1? | Blocks live data only; synthetic unblocks v1 |
-| Q2 | Historical data licensing — anonymized replays of real events: what provenance / licensing is needed per market? | Blocks scenario replay library; scripted synthetic events unblock MVP |
+| Q1 | Real-time data licensing — can we use a free-tier feed (e.g., CoinGecko for crypto, polygon.io for stocks) under educational terms, or do we build pure-synthetic v1? **Tracked as a risk-register entry with a hard gate: no real or historical data integration without explicit license review. Note: "educational use" is NOT a recognized carve-out in CoinGecko or polygon.io ToS.** | Blocks live data only; synthetic unblocks v1 |
+| Q2 | Historical data licensing — anonymized replays of real events: what provenance / licensing is needed per market? **Same hard gate as Q1 — no historical data integrated without license review; "educational use" exemption does not apply.** | Blocks scenario replay library; scripted synthetic events unblock MVP |
 | Q3 | Rank/cohort model — are cohorts per-market, cross-market, or both? | Design decision, not blocking build |
 | Q4 | Coach role — separate account type or a rank gate? | Blocks coaching feature; deferred to post-v1 |
 | Q5 | Lesson authoring tool — in-app CMS or flat-file + git? | Blocks content scale; flat-file works for v1 |

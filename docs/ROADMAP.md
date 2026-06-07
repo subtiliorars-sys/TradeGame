@@ -43,11 +43,11 @@ across a solo founder + AI-agent build team.
   paper-trading pointers.
 - Coaching ladder v0 defined: tiers, how members advance, what "coaching" means
   (process review, not trade advice).
-- Weekly cadence established: one recurring community event per week (trade-review
-  Q&A, market-structure walkthrough, or replay-session placeholder).
+- Weekly cadence established: one recurring community event per week (replay review (process) session, market-structure walkthrough, or replay-session placeholder).
 - Moderation playbook drafted and at least one moderator beyond the founder trained.
 
 **Exit Criteria**
+- Legal entity formed before any public-facing activity (Discord invites, social posts, website launch).
 - Seed cohort active (members posting; at least two weekly cadence events completed).
 - Coaching ladder v0 documented and linked in Discord `#start-here`.
 - Scam-defense measures in place: "coaches never DM first" pinned rule, scam-report
@@ -95,6 +95,10 @@ across a solo founder + AI-agent build team.
   no referral-to-broker integration (RISK_REGISTER → Regulatory, Game-Specific).
 - Review Discord ToS on embedded tools or linked external apps if game is web-hosted
   and linked from Discord (RISK_REGISTER → Platform).
+- **Hard gate — must be cleared BEFORE the vertical slice ships with user accounts or any real/historical market data:**
+  - Tier B data governance in place: privacy policy published, data retention schedule documented, breach response plan written, COPPA analysis complete (see GDD §9 governance note).
+  - Age screen at account creation implemented and verified.
+  - Market-data license review complete for any non-synthetic data source (see GDD §11 Q1/Q2 hard gate); "educational use" is not a recognized carve-out — do not use unlicensed data.
 
 ---
 
@@ -158,9 +162,10 @@ across a solo founder + AI-agent build team.
 - Legal review completed if paid cohorts are in scope.
 
 **Compliance Gate — HARD GATE**
-- Paid coaching: REQUIRED lawyer review before any cohort is sold. This is not
-  optional. See RISK_REGISTER §Regulatory. The org does not launch paid tiers
-  without this gate being explicitly cleared and documented.
+- ANY revenue stream — paid cohorts, cosmetics, donations, server subscriptions,
+  paid roles — requires attorney review before launch. Not optional. See RISK_REGISTER §4.
+  The org does not launch any paid tier without this gate explicitly cleared and documented.
+- E&O (errors and omissions) and media-liability insurance in place before public launch.
 - Crypto regulatory status check at time of launch (rules change; a check done at
   Phase 0 is stale by Phase 4).
 - Reconfirm no signal-selling, no brokerage referrals, no RIA-triggering language

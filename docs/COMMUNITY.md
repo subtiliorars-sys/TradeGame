@@ -49,26 +49,26 @@ TRADEGAME
 │
 ├── CRYPTO — EDUCATION NOT FINANCIAL ADVICE
 │   ├── #crypto-learn           (concepts, resources, glossary; no advice)
-│   ├── #crypto-charts-analysis (chart posts + written analysis; header: "Analysis ≠ Advice")
+│   ├── #crypto-charts-analysis (PINNED DISCLAIMER — see moderation rule below)
 │   ├── #crypto-strategy        (system discussion, risk frameworks; no calls)
 │   └── #crypto-journal         (wins AND losses; process reflection required)
 │
 ├── STOCKS — EDUCATION NOT FINANCIAL ADVICE
 │   ├── #stocks-learn
-│   ├── #stocks-charts-analysis (header: "Analysis ≠ Advice")
+│   ├── #stocks-charts-analysis (PINNED DISCLAIMER — see moderation rule below)
 │   ├── #stocks-strategy
 │   └── #stocks-journal
 │
 ├── FOREX — EDUCATION NOT FINANCIAL ADVICE
 │   ├── #forex-learn
-│   ├── #forex-charts-analysis  (header: "Analysis ≠ Advice")
+│   ├── #forex-charts-analysis  (PINNED DISCLAIMER — see moderation rule below)
 │   ├── #forex-strategy
 │   └── #forex-journal
 │
 ├── THE GAME
 │   ├── #sim-runs               (post your game session results + screen)
 │   ├── #scenario-replays       (share saved replays for community review)
-│   └── #leaderboards           (bot-updated; process metrics, not just PnL rank)
+│   └── #leaderboards           (bot-updated; process metrics only — no PnL ranking component)
 │
 ├── COACHING
 │   ├── #cohort-announcements   (enrollment, graduation, cohort news)
@@ -80,6 +80,13 @@ TRADEGAME
     ├── #gaming-nights          (scheduling non-TradeGame game sessions)
     └── #feedback               (server improvement suggestions)
 ```
+
+**Pinned disclaimer — required verbatim in every \*-charts-analysis channel description:**
+
+> "Posts here are educational discussion only. Nothing posted in this channel constitutes financial advice, a trading recommendation, or an investment analysis report. TradeGame is not a registered investment adviser or commodity trading adviser."
+
+**Moderation removal criteria for \*-charts-analysis channels (content-based, not intent-based):**
+A post is removed if it combines a chart with marked price levels AND language that implies a specific trade action — for example, "watching this zone," "entry here," "setting alerts at," or similar. The combination of annotated levels plus directional language constitutes an actionable trade idea regardless of how it is labelled. Remove the post; do not warn first. Cross-reference RISK_REGISTER §6.
 
 **Category description template (required on all three market categories):**
 
@@ -94,7 +101,7 @@ TRADEGAME
 | Tier | Title | Entry Criteria |
 |---|---|---|
 | 1 | **Learner** | Verified Member; has completed game tutorial |
-| 2 | **Helper** | 30+ days active; 20+ journal entries; game scenario pass rate ≥ 60%; nominated by a Coach |
+| 2 | **Helper** | 30+ days active; 20+ journal entries; consistent scenario completion with demonstrated debrief quality (process reflection, not outcome focus); nominated by a Coach |
 | 3 | **Coach** | Helper for 60+ days; completed one full cohort as co-facilitator; mentor approval |
 | 4 | **Mentor** | Coach for 90+ days; led at least two cohorts solo; Admin approval |
 
@@ -128,7 +135,7 @@ Game scenario replays are the primary teaching tool. Sessions:
 
 ### Paid Tiers (deferred, not designed yet)
 
-Future option: paid coaching access for advanced cohorts. Any paid tier must carry the same education-not-advice constraint. Design + legal review required before launch; do not promise paid tiers publicly until that work is done.
+Future option: paid coaching access for advanced cohorts. Any paid tier must carry the same education-not-advice constraint. Design + legal review required before launch; do not promise paid tiers publicly until that work is done. See RISK_REGISTER §4 — hard gate: attorney review required before ANY revenue (cohorts, donations, server subscriptions, paid roles, cosmetics) while the coaching ladder operates.
 
 ---
 
@@ -136,7 +143,7 @@ Future option: paid coaching access for advanced cohorts. Any paid tier must car
 
 ### 3a. Facebook Page Audit Checklist
 
-Page: https://www.facebook.com/profile.php?id=100081818004619
+Page: [Facebook page URL — see SOCIAL_AUDIT_NOTES.md]
 
 A human or agent with browser access should complete this checklist before any revival decision:
 
@@ -209,8 +216,8 @@ Pillars rotate so no single market dominates over any four-week window.
 
 | Frequency | Slot | Description |
 |---|---|---|
-| Monthly | **Cohort Graduation** | Post celebrating cohort completion — process achievements, not PnL. |
-| Monthly | **Community AMA** | Coach or Mentor answers community questions in Discord voice + summary posted to YouTube. |
+| Monthly | **Cohort Graduation** | Post celebrating cohort completion — process achievements, not PnL. Any showcased member outcome must comply with FTC Endorsement Guides: include a material-connection disclosure if the member received any benefit, and never imply their result is typical. Cross-ref RISK_REGISTER FTC entry. |
+| Monthly | **Community AMA** | Coach or Mentor answers community questions in Discord voice + summary posted to YouTube. Questions pre-screened by a moderator before the session; a second staff member must be present or the session recorded. Any "should I trade X" question asked live is redirected on-air to `#rules` and not answered. |
 | Quarterly | **Surface Audit** | Internal review: which platforms are producing real community engagement? Cut or reduce low-yield surfaces. |
 
 **Content debt rule:** if the team cannot maintain the Monday-Wednesday-Friday cadence, drop the short-form surface before dropping Discord or YouTube. Core community health outranks follower counts.
@@ -226,4 +233,4 @@ Growth comes from the quality of the free education and the pull of the game —
 - **No paid signal funnels.** We do not cross-promote or partner with signals sellers or tip services. A signals seller offering a collab is a red flag, not an opportunity.
 - **Attraction over promotion.** The game is the magnet. Someone plays the sim, gets better, joins the community, tells a friend. That is the loop. Organic referral from genuine skill-building.
 - **Useful first.** Every piece of free content is complete and useful on its own. It does not withhold the valuable part behind a paywall or upsell. Trust is the asset.
-- **Partner filter.** Any collab, guest post, or community crossover partner must pass the same education-not-advice standard. Decline anything that would compromise that standard regardless of the audience size offered.
+- **Partner filter.** Any collab, guest post, or community crossover partner must pass the same education-not-advice standard. Decline anything that would compromise that standard regardless of the audience size offered. Any paid or token-granted relationship with a partner must be disclosed publicly on every piece of collaborative content. Do not partner with or promote any project offering token compensation without explicit disclosure; no token touting of any kind.
