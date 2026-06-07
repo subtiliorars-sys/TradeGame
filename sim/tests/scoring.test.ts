@@ -145,19 +145,19 @@ describe("stop_honored", () => {
     expect(result.passed).toBe(false);
   });
 
-  it("no stop placed → pass (no stop = no violation)", () => {
+  it("no stop placed → not applicable (no stop = no opportunity to violate)", () => {
     const events: SimEvent[] = [makeEntryFill(2000)];
     const result = stop_honored(buildInput(events));
-    expect(result.passed).toBe(true);
+    expect(result.applicable).toBe(false);
   });
 
-  it("stop cancel before entry fill → pass (no position yet)", () => {
+  it("stop cancel before entry fill → not applicable (no position was open)", () => {
     const events: SimEvent[] = [
       makeStopSubmit(1000),
       makeStopCancel(1500), // cancelled before any fill
     ];
     const result = stop_honored(buildInput(events));
-    expect(result.passed).toBe(true);
+    expect(result.applicable).toBe(false);
   });
 });
 
@@ -246,9 +246,9 @@ describe("stop_before_entry", () => {
     expect(result.passed).toBe(false);
   });
 
-  it("no stop placed, no fill → pass (no position opened)", () => {
+  it("no stop placed, no fill → not applicable (no position opened)", () => {
     const result = stop_before_entry(buildInput([]));
-    expect(result.passed).toBe(true);
+    expect(result.applicable).toBe(false);
   });
 });
 
@@ -372,11 +372,12 @@ describe("journal_before_trade", () => {
     expect(journal_before_trade(buildInput(events)).passed).toBe(false);
   });
 
-  it("pass — journal exists, no orders ever placed", () => {
+  it("not applicable — journal exists, no orders ever placed (patience path)", () => {
     const events: SimEvent[] = [
       makeJournalEntry(5000, ["observation"]),
     ];
-    expect(journal_before_trade(buildInput(events)).passed).toBe(true);
+    const result = journal_before_trade(buildInput(events));
+    expect(result.applicable).toBe(false);
   });
 });
 
@@ -385,18 +386,32 @@ describe("journal_before_trade", () => {
 // ---------------------------------------------------------------------------
 
 describe("exit_journal", () => {
-  it("SM-011: pass — journal entry with tag 'exit'", () => {
+  it("SM-011: pass — journal entry with tag 'exit' after a fill", () => {
+    const events: SimEvent[] = [
+      makeEntryFill(4000),
+      makeJournalEntry(5000, ["exit"]),
+    ];
+    const r = exit_journal(buildInput(events));
+    expect(r.applicable).toBe(true);
+    expect(r.passed).toBe(true);
+  });
+
+  it("SM-012: fail — fill exists, journal exists but no 'exit' tag", () => {
+    const events: SimEvent[] = [
+      makeEntryFill(4000),
+      makeJournalEntry(5000, ["pre_trade"]),
+    ];
+    const r = exit_journal(buildInput(events));
+    expect(r.applicable).toBe(true);
+    expect(r.passed).toBe(false);
+  });
+
+  it("SM-012b: not applicable — exit-tagged journal but NO fill (patience path cannot harvest exit XP)", () => {
     const events: SimEvent[] = [
       makeJournalEntry(5000, ["exit"]),
     ];
-    expect(exit_journal(buildInput(events)).passed).toBe(true);
-  });
-
-  it("SM-012: fail — journal exists but no 'exit' tag", () => {
-    const events: SimEvent[] = [
-      makeJournalEntry(5000, ["pre_trade"]),
-    ];
-    expect(exit_journal(buildInput(events)).passed).toBe(false);
+    const r = exit_journal(buildInput(events));
+    expect(r.applicable).toBe(false);
   });
 });
 
@@ -670,13 +685,35 @@ describe("runScoreTracker — reckless-winner flag", () => {
   });
 
   // XP events emitted for passing metrics.
-  it("XP events contain correct metricIds for passing metrics", () => {
+  // journal_before_trade is not-applicable when no orders exist (patience path),
+  // so only debrief_completed and patience_observation emit XP here.
+  it("XP events contain correct metricIds for passing metrics (no-trade session)", () => {
     const events: SimEvent[] = [
       makeJournalEntry(500, ["pre_trade"]),
       { type: "debrief_complete", tickIndex: 5, timestamp: 5000 },
     ];
     const input = buildInput(events);
     const output = runScoreTracker("sess-005", input, 5000);
+    const xpMetricIds = output.xpEvents.map((x) => x.metricId);
+    // journal_before_trade not applicable on no-trade path — must NOT appear.
+    expect(xpMetricIds).not.toContain("journal_before_trade");
+    expect(xpMetricIds).toContain("debrief_completed");
+    expect(xpMetricIds).toContain("patience_observation");
+  });
+
+  // When a trade IS placed, journal_before_trade is applicable and emits XP if passed.
+  it("XP events include journal_before_trade when a trade was placed with prior journal", () => {
+    const events: SimEvent[] = [
+      makeJournalEntry(500, ["pre_trade"]),
+      makeStopSubmit(9000),
+      makeEntryFill(10000),
+      { type: "debrief_complete", tickIndex: 20, timestamp: 20000 },
+    ];
+    const input = buildInput(events, {
+      sessionStartEquity: 10000,
+      declaredRiskPct: 1,
+    });
+    const output = runScoreTracker("sess-006", input, 20000);
     const xpMetricIds = output.xpEvents.map((x) => x.metricId);
     expect(xpMetricIds).toContain("journal_before_trade");
     expect(xpMetricIds).toContain("debrief_completed");
