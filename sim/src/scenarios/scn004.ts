@@ -218,6 +218,7 @@ export const scn004: ScenarioDef = {
           "panel does not indicate what happens next.",
       },
     ],
+    showLpPanel: true,
   },
 
   // -------------------------------------------------------------------------

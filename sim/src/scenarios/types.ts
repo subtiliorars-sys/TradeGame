@@ -113,6 +113,13 @@ export interface ScenarioManifest {
    */
   simDayMs?: number;
   /**
+   * Show the LP Position Panel (SCENARIOS_V1 SCN-004 core mechanic): pool
+   * value / HODL baseline / fees earned / net-vs-HODL, computed from
+   * engine/amm.ts against the deposit fill. Display surface only — never a
+   * scoring input. Omit on non-LP scenarios.
+   */
+  showLpPanel?: boolean;
+  /**
    * Pre-authored replay annotations for Screen 6's annotation lane
    * (annotationType "scenario_authored" per SIM_ENGINE_SPEC §5.3 / SG-06):
    * vetted at authoring time, observational tone only — no buy/sell
