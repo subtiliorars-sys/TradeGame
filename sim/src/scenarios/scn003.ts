@@ -203,6 +203,49 @@ export const scn003: ScenarioDef = {
       "scn003:good-process-can-lose",
       "scn003:common-errors",
     ],
+    // Pre-authored replay annotations (Screen 6 lane, scenario_authored —
+    // vetted here at authoring time; observational tone, no directives).
+    replayAnnotations: [
+      {
+        simTimeMs: 0,          // T_CONTEXT — Asian session context start (07:45)
+        text:
+          "ANDU has been ranging in a 35-pip Asian band (1.2810 – 1.2845) since " +
+          "overnight. The session range low at 1.2790 is where protective stops from " +
+          "Asian-session longs tend to cluster — that level becomes structurally " +
+          "relevant at London open.",
+      },
+      {
+        simTimeMs: 960_000,    // T_SWEEP — sweep leg begins, DP-B (08:01)
+        text:
+          "Price broke below the Asian low of 1.2790 and reached 1.2783 in roughly " +
+          "four minutes. The 5-second tick chart visible here shows the speed of the " +
+          "move and the spread holding at 2.5 pips — both factors affect what an entry " +
+          "at this moment would have cost in realized terms.",
+      },
+      {
+        simTimeMs: 1_200_000,  // T_SWEEP_LOW — sweep nadir and first reversal candle (08:05)
+        text:
+          "Price is at the sweep low. At this point the move looks like a breakout " +
+          "continuation. The diagnostic question is candle structure: compare the wick " +
+          "length below 1.2790 to the candle body — the ratio will be visible on the " +
+          "5-minute chart once this candle closes.",
+      },
+      {
+        simTimeMs: 1_320_000,  // T_REVERSAL — confirmed rejection, DP-C (08:07)
+        text:
+          "The reversal candle has closed. A long lower wick with a body back above " +
+          "1.2800 is the structural signature of a sweep: price left the broken level " +
+          "immediately rather than consolidating below it. The spread has normalized to " +
+          "1.5 pips — entry cost is quantifiably different here than at the sweep nadir.",
+      },
+      {
+        simTimeMs: 1_800_000,  // T_PULLBACK1 — first pullback, DP-D (08:15)
+        text:
+          "First pullback to 1.2835 during trend leg 1. A stop placed below the sweep " +
+          "low (1.2775) was not reached. Process question for any open position: was " +
+          "this pullback anticipated in the original plan, and did the stop move?",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------

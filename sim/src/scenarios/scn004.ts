@@ -173,6 +173,51 @@ export const scn004: ScenarioDef = {
       "scn004:good-process-can-lose",
       "scn004:common-errors",
     ],
+    // Pre-authored replay annotations (Screen 6 lane, scenario_authored).
+    // Observational tone only — no buy/sell directives, no price targets
+    // (SIM_ENGINE_SPEC §5.3 content rule).
+    replayAnnotations: [
+      {
+        simTimeMs: 0, // T_SETUP — deposit decision window
+        text:
+          "GLIMMER is priced at 4.20 USVC with a tight pool spread. " +
+          "Before any deposit, the LP Position Panel shows the HODL baseline " +
+          "and current pool value — at deposit price they are identical.",
+      },
+      {
+        simTimeMs: 1_500_000, // T_DPB — first divergence leg, +21%
+        text:
+          "GLIMMER has risen roughly 21% from the deposit price. The LP " +
+          "Position Panel now shows a small gap opening between pool value and " +
+          "the HODL baseline — this is impermanent loss beginning to accumulate " +
+          "against cumulative fee income.",
+      },
+      {
+        simTimeMs: 2_700_000, // T_DPC — major divergence, +63%, IL ~2.9%
+        text:
+          "At +63% divergence from deposit price, the LP Position Panel shows " +
+          "net-vs-HODL roughly −1.5%: IL (~2.9%) now exceeds cumulative fees " +
+          "(~1.4%). Process question at this moment: was a withdrawal trigger " +
+          "defined before the deposit, and does the current panel reading " +
+          "cross it?",
+      },
+      {
+        simTimeMs: 3_600_000, // T_DPD — plateau, highest fee window
+        text:
+          "Price has plateaued near 6.85. Fee accrual is at its highest rate " +
+          "here — the pool handles elevated volume while divergence holds " +
+          "roughly flat. Net-vs-HODL is narrowing as fees accumulate against a " +
+          "stable IL figure.",
+      },
+      {
+        simTimeMs: 4_620_000, // T_DPE — partial correction, net briefly positive
+        text:
+          "GLIMMER has corrected toward 5.40. The LP Position Panel's " +
+          "net-vs-HODL is now briefly positive (cumulative fees ~2.5% vs. IL " +
+          "~0.8%). This is a data point about where the position stands — the " +
+          "panel does not indicate what happens next.",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { buildReplayModel, fmtSimTime } from "../src/ui/engine/replay.js";
 import { scn001 } from "../src/scenarios/scn001.js";
+import { allScenarios } from "../src/scenarios/registry.js";
 import type { SimEvent } from "../src/engine/events.js";
 
 function tick(tickIndex: number, timestamp: number, close: number): SimEvent {
@@ -66,13 +67,22 @@ describe("buildReplayModel", () => {
     expect(scen[0]?.label).toBe("[Scenario]");
   });
 
-  it("scenario annotations carry no directive language (§5.3 content rule)", () => {
-    for (const a of scn001.manifest.replayAnnotations ?? []) {
-      const t = a.text.toLowerCase();
-      for (const banned of ["buy ", "sell ", "you should", "target price", "signal to"]) {
-        expect(t, `annotation at ${a.simTimeMs} contains "${banned}"`).not.toContain(banned);
+  it("ALL scenarios' authored annotations carry no directive language (§5.3 content rule)", () => {
+    let swept = 0;
+    for (const def of allScenarios()) {
+      for (const a of def.manifest.replayAnnotations ?? []) {
+        swept++;
+        const t = a.text.toLowerCase();
+        // Directive constructions only — structural vocabulary like "sell-side
+        // prints" or "protective stops" is legitimate market mechanics (§5.3
+        // bans SIGNALS, not descriptions).
+        for (const banned of ["buy the", "sell the", "buy now", "sell now", "should buy", "should sell", "you should", "target price", "signal to", "will go", "guaranteed", "time to buy", "time to sell"]) {
+          expect(t, `${def.manifest.id} annotation at ${a.simTimeMs} contains "${banned}"`).not.toContain(banned);
+        }
       }
     }
+    // Every scenario ships annotation content (the lane is never empty).
+    expect(swept).toBeGreaterThanOrEqual(allScenarios().length * 4);
   });
 
   it("annotations and markers are time-sorted", () => {
