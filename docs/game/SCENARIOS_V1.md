@@ -134,7 +134,7 @@ face the clearest version of the IL-vs-fees comparison.
 
 | Player action | What it teaches |
 |---------------|-----------------|
-| Withdraw now; crystallize the ~−4.4% net loss vs. HODL | Teaches: cutting a losing LP position when divergence has materially exceeded fee income. Valid process if divergence threshold was pre-stated. |
+| Withdraw now; crystallize the ~−1.5% net deficit vs. HODL | Teaches: cutting a losing LP position when divergence has materially exceeded fee income. Valid process if divergence threshold was pre-stated. |
 | Hold and journal: "I will hold because fee accrual rate is high and I believe price will correct" | Teaches: the thesis-based hold. Full XP if the reasoning is written and a withdraw trigger is defined (e.g., "I will withdraw if divergence exceeds 80% from deposit price"). |
 | Hold without journaling a trigger | Teaches: holding an LP position with no exit plan. Coaching flag fires: "Holding without a defined exit converts a strategy into hope." No XP for this action. |
 | Withdraw and go long GLIMMER spot separately | Teaches: unbundling the LP position into directional exposure — a valid but more complex decision flagged as "see the carry lesson for unbundling mechanics." Out of scope for this scenario; coaching note fires. |
@@ -144,14 +144,14 @@ face the clearest version of the IL-vs-fees comparison.
 | Player action | What it teaches |
 |---------------|-----------------|
 | Hold; update journal entry noting fee accrual rate vs. IL cost | Teaches: quantitative position monitoring. The lesson is reading the rate-of-change, not the absolute level. |
-| Withdraw; accept the −3.7% net vs. HODL outcome | Teaches: exiting when the hold thesis is unclear. Valid if documented. |
+| Withdraw; accept the ~−0.65% net vs. HODL outcome | Teaches: exiting when the hold thesis is unclear. Valid if documented. |
 | Set a conditional exit note: "I will withdraw if GLIMMER falls below 6.00" | Teaches: defining a price-based exit trigger for an LP position. XP for the journal action. This is treated as equivalent to a stop in process terms. |
 
 **Decision Point E — T+72, partial correction, net briefly positive**
 
 | Player action | What it teaches |
 |---------------|-----------------|
-| Withdraw while net vs. HODL is positive (+0.4%) | Teaches: exiting when the LP has recovered and fees have compensated. Valid process — debrief notes this is the "fees won" outcome. |
+| Withdraw while net vs. HODL is positive (≈ +1.7%) | Teaches: exiting when the LP has recovered and fees have compensated. Valid process — debrief notes this is the "fees won" outcome. |
 | Hold looking for more fee accrual | Teaches: the continuing LP trade. Valid if a new trigger is defined. Debrief compares the T+90 outcome to the T+72 exit. |
 | Journal: "I had no withdrawal trigger defined and I am not sure what to do" | Teaches: the planning gap. Full XP for honest self-assessment in journal. Debrief addresses this directly. |
 
@@ -184,7 +184,7 @@ an assumption this scenario shows is not guaranteed.
 **Explicit callout — good process can still lose money here:**
 A player who deposits at T0 with a journal entry stating "I will withdraw if net vs. HODL
 falls below −3%," who monitors the panel at each checkpoint, and who withdraws at Decision
-Point C when net vs. HODL reaches approximately −4.4% has followed good process and taken
+Point C when net vs. HODL reaches approximately −1.5% has followed good process and taken
 a net loss vs. a HODL position. The debrief shows this outcome, marks it as correct process,
 and awards full XP. The loss vs. HODL is the cost of the strategy under the price conditions
 that occurred. It is not a process failure.
