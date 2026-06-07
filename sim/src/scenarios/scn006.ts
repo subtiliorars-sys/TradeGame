@@ -173,7 +173,7 @@ export const scn006: ScenarioDef = {
       },
       {
         metricId: "patience_observation",
-        xpOnPass: 125,
+        xpOnPass: 135,
         label: "Observation-only run (option C) with full journal",
       },
       {

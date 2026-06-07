@@ -137,3 +137,56 @@ describe("ProgressStore rank-up marker (§4.5 congratulation card hook)", () => 
     expect(up?.to.rankId).toBe("practitioner");
   });
 });
+
+// ---------------------------------------------------------------------------
+// xp-parity red-team regressions (F1 ghost submit, F2 post-end freeze)
+// ---------------------------------------------------------------------------
+
+describe("F1: ghost submit cannot stack above the equal ceiling", () => {
+  it("journal + rejected forex submit + end → patience path only, no journal_before_trade", () => {
+    // Red-team probe B: SCN-003, submit without leverage ack → reject; the
+    // submit stays in the log but nothing fills.
+    const adapter = makeAdapter("SCN-003");
+    adapter.clock.advance(3);
+    adapter.log.append(adapter.clock.state.simTimeMs, {
+      type: "journal_entry",
+      entryId: "j-ghost",
+      tags: ["observation"],
+      wordCount: 12,
+      tickIndex: adapter.clock.state.tickIndex,
+      timestamp: adapter.clock.state.simTimeMs,
+    });
+    const outcome = adapter.submitOrder({ side: "buy", quantity: 75, stopPrice: 1.27 });
+    expect(outcome.rejectReason).toBe("leverage_ack_required");
+    adapter.clock.advance(2);
+    adapter.endSession();
+    const debrief = adapter.completeDebrief();
+    const journalRow = debrief?.rubricRows.find((r) => r.metricId === "journal_before_trade");
+    const patienceRow = debrief?.rubricRows.find((r) => r.metricId === "patience_observation");
+    expect(journalRow?.status, "no fill → journal_before_trade inapplicable").toBe("na");
+    expect(patienceRow?.status).toBe("pass");
+    expect(patienceRow?.xpEarned).toBe(135);
+    // Total never exceeds the observation ceiling (patience + debrief here).
+    expect(debrief?.xpTotal).toBe(135 + 30);
+  });
+});
+
+describe("F2: the session freezes after endSession", () => {
+  it("submitOrder after endSession is rejected without touching the log", () => {
+    const adapter = makeAdapter("SCN-001");
+    adapter.clock.advance(2);
+    adapter.endSession();
+    const before = adapter.log.entries.length;
+    const outcome = adapter.submitOrder({ side: "buy", quantity: 10, stopPrice: 0.9 });
+    expect(outcome.rejectReason).toBe("session_ended");
+    expect(adapter.log.entries.length).toBe(before);
+  });
+
+  it("un-pausing a scored session is refused", () => {
+    const adapter = makeAdapter("SCN-001");
+    adapter.clock.advance(2);
+    adapter.endSession();
+    expect(adapter.setCompression("1x")).toBe(false);
+    expect(adapter.setCompression("paused")).toBe(true);
+  });
+});

@@ -356,12 +356,24 @@ describe("policy_match", () => {
 // ---------------------------------------------------------------------------
 
 describe("journal_before_trade", () => {
-  it("SM-005: pass — journal at tick 5, order at tick 10", () => {
+  it("SM-005: pass — journal at tick 5, order at tick 10, fill at tick 11", () => {
+    // Applicability gates on a FILL since the equal-ceiling pass (xp-parity
+    // red-team F1): a submit that never fills stays on the patience path.
+    const events: SimEvent[] = [
+      makeJournalEntry(5000, ["pre_trade", "hypothesis"]),
+      makeEntrySubmit(10000),
+      makeEntryFill(11000),
+    ];
+    expect(journal_before_trade(buildInput(events)).passed).toBe(true);
+  });
+
+  it("SM-005b: ghost submit (no fill) — inapplicable, patience path owns the session", () => {
     const events: SimEvent[] = [
       makeJournalEntry(5000, ["pre_trade", "hypothesis"]),
       makeEntrySubmit(10000),
     ];
-    expect(journal_before_trade(buildInput(events)).passed).toBe(true);
+    const r = journal_before_trade(buildInput(events));
+    expect(r.applicable).toBe(false);
   });
 
   it("SM-006: fail — order at tick 10, journal at tick 12", () => {

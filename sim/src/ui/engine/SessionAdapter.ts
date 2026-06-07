@@ -331,6 +331,14 @@ export class SessionAdapter {
     /** Forex: whether leverage_risk_acknowledged has been emitted. */
     leverageAckReceived?: boolean;
   }): SubmitOutcome {
+    // Session frozen after endSession() (xp-parity red-team F2): a submit
+    // accepted post-scoring would mutate the already-scored log and let the
+    // completeDebrief re-score pay on top of banked patience XP. Rejected
+    // BEFORE any log append.
+    if (this.sessionEnded) {
+      return { orderId: `ui-ord-${++this.orderSeq}`, rejectReason: "session_ended" };
+    }
+
     const { tickIndex, simTimeMs } = this.clock.state;
     const orderId = `ui-ord-${++this.orderSeq}`;
     const orderType = spec.orderType ?? "market";
@@ -669,6 +677,9 @@ export class SessionAdapter {
   }
 
   setCompression(mode: CompressionMode): boolean {
+    // No un-pausing a scored session (xp-parity red-team F2): resumed ticks
+    // could fill a pending order AFTER scoring, splitting the XP books.
+    if (this.sessionEnded && mode !== "paused") return false;
     return this.clock.setCompression(mode);
   }
 

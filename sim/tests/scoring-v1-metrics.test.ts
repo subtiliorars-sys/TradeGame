@@ -133,6 +133,7 @@ const CANONICAL_XP: Record<string, number> = {
 // Metrics only a session WITH fills can earn (the trade-only set).
 const TRADE_ONLY = new Set([
   "journal_before_trade",
+  "leverage_ack", // UI-reachable only via the order flow (red-team F3)
   "size_compliance",
   "stop_before_entry",
   "stop_honored",

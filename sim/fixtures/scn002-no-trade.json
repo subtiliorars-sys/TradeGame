@@ -71,5 +71,5 @@
       "xpAmount": 30
     }
   ],
-  "notes": "SCN-002 no-trade run. Player writes plan journal at DP-A (09:00, tick 120, timestamp 3,600,000 ms > sessionOpenTs 0 → plan_declared does NOT fire), observes the open spike (tick 180), the gap-and-fade trap at DP-C (tick 190), and the fade confirmation at DP-D (tick 210). Never enters. patience_observation fires (+40 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) are not applicable on the no-trade path — no XP, no penalty (applicability semantics per SCENARIOS_V0). sessionHasWin=false. Total XP: 70. Regenerate with: npx vitest run tests/_gen_scn002_digests.test.ts"
+  "notes": "SCN-002 no-trade run. Player writes plan journal at DP-A (09:00, tick 120, timestamp 3,600,000 ms > sessionOpenTs 0 \u2192 plan_declared does NOT fire), observes the open spike (tick 180), the gap-and-fade trap at DP-C (tick 190), and the fade confirmation at DP-D (tick 210). Never enters. patience_observation fires (+125 XP (equal-ceiling P-8a)). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) are not applicable on the no-trade path \u2014 no XP, no penalty (applicability semantics per SCENARIOS_V0). sessionHasWin=false. Total XP: 70. Regenerate with: npx vitest run tests/_gen_scn002_digests.test.ts"
 }

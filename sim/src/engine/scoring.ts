@@ -158,12 +158,19 @@ export interface MetricResult {
  * committed capital."
  */
 export function journal_before_trade(input: MetricInput): MetricResult {
-  const firstOrder = firstEventIndexOf(input.events, "order_submit");
-
-  if (firstOrder === -1) {
-    // No order was ever submitted — metric not applicable on patience path.
+  // Applicability gates on a FILL, not a submit (xp-parity red-team F1):
+  // "you journaled before you committed capital" — capital is committed when
+  // an order fills. A rejected or never-filled submit leaves the session on
+  // the patience path; gating on submits let a ghost submit co-fire this
+  // metric AND patience_observation, stacking above both XP ceilings.
+  const firstFill = firstEventIndexOf(input.events, "order_fill");
+  if (firstFill === -1) {
     return { metricId: "journal_before_trade", passed: false, xpOnPass: 20, applicable: false };
   }
+
+  // The journal must precede the first SUBMIT (the decision to trade), not
+  // merely the fill — journaling after clicking SUBMIT is post-hoc.
+  const firstOrder = firstEventIndexOf(input.events, "order_submit");
 
   // Quality floor (red-team F6): an empty/near-empty entry is a click, not a
   // journal — it must not buy process XP. MIN_JOURNAL_WORDS is TUNABLE.
@@ -796,8 +803,11 @@ export function runScoreTracker(
     input.rubricMetricIds.includes(metricId);
   // Amounts: the scenario rubric is authoritative when present (equal-ceiling
   // ruling — see MetricInput.rubricXpById); extractor defaults otherwise.
+  // Flag metrics with extractor xpOnPass 0 (e.g. plan_declared_late, which
+  // PASSES when the plan was LATE) stay structurally unpayable — a rubric
+  // cannot override them into paying XP for a violation (red-team F4).
   const xpAmountFor = (r: MetricResult): number =>
-    input.rubricXpById?.[r.metricId] ?? r.xpOnPass;
+    r.xpOnPass === 0 ? 0 : input.rubricXpById?.[r.metricId] ?? r.xpOnPass;
   const xpEvents: XpEvent[] = results
     .filter(
       (r) =>

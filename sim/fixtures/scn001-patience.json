@@ -51,5 +51,5 @@
       "xpAmount": 30
     }
   ],
-  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path — no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 70. Regenerate with: npx vitest run tests/_gen_digests.test.ts"
+  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+95 XP (equal-ceiling P-8a)), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path \u2014 no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 125 (equal-ceiling P-8a). Regenerate with: npx vitest run tests/_gen_digests.test.ts"
 }
