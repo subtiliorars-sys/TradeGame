@@ -144,10 +144,10 @@ completed; `stop_before_entry` and `stop_honored` at 100% across last 3 scored r
 
 COSTLY: The position panel must display aggregate notional exposure across multiple
 open positions simultaneously. This is a new UI surface not present in V0/V1.
-SPEC GAP: SIM_ENGINE_SPEC §3.4 specifies position and margin models per market but
-does not specify a multi-position aggregate exposure display. This is an implicit
-requirement of advanced scenarios and needs to be added to the spec before ACN-001
-is implemented.
+SPEC GAP (SG-07, CLOSED 2026-06-07): SIM_ENGINE_SPEC §3.4 now specifies the
+multi-position aggregate exposure display (aggregate_notional as a sum of absolute
+values, exposure_pct, forex combined margin/pip value, and the ACN-006
+exposure-declaration process predicate). Build remains gated to the advanced tier.
 
 ---
 
@@ -241,10 +241,11 @@ a contextual indicator, not a tradeable instrument in this scenario)
 **Approx sim window:** 80 minutes at 1x (two sessions, each 40 minutes)
 **Prerequisite chain:** SCN-005 clean, ACN-003 concept familiar (regime labeling)
 
-SPEC GAP: SIM_ENGINE_SPEC does not define a non-tradeable index display surface. For
-ACN-004 to work as designed, the NMX 100 must be renderable as a read-only reference
-chart alongside the primary VLDI chart. This is a new UI panel requirement. Flag before
-authoring.
+SPEC GAP (SG-08, CLOSED 2026-06-07): SIM_ENGINE_SPEC §2.5 now defines reference
+(non-tradeable) instruments — `tradeable: false` config, engine-level order rejection,
+sub-seeded deterministic second feed, read-only chart panel, and the replayVersion-2
+`instrumentId` schema change. ACN-004 can be authored against that spec; build remains
+gated to the advanced tier.
 
 ---
 
@@ -489,8 +490,9 @@ rather than one configurable component. Recommend the shared-component approach.
 
 **OPEN:**
 1. KORVA instrument name: accept placeholder or owner names it now?
-2. NMX 100 as a non-tradeable reference chart (ACN-004): does this require a new
-   chart panel mode in Phaser, or is a second read-only IMarketFeed display sufficient?
+2. NMX 100 as a non-tradeable reference chart (ACN-004): RESOLVED at spec level
+   2026-06-07 — SIM_ENGINE_SPEC §2.5 specifies a second read-only IMarketFeed with
+   `tradeable: false`; the Phaser panel implementation detail stays with engineering.
 3. Correlation Awareness drill (Forex variant): not yet authored. ACN-006 requires it
    as a prerequisite. Add to drill backlog.
 4. Advanced tier rank names: "Strategist" and "Senior Strategist" are in the GDD

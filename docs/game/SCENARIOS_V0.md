@@ -163,6 +163,44 @@ If a player profits but violated the size rule or had no stop, the debrief shows
 coaching flag: "You won this trade. Your process had gaps that could have caused a
 large loss on the next one." The flag is informational; no XP is subtracted.
 
+#### Scoring semantics — applicability
+
+A metric result is either **applicable** or **not applicable** to a given session.
+This is distinct from pass/fail:
+
+| Result | XP emitted | Penalty | Meaning |
+|--------|-----------|---------|---------|
+| applicable + passed | yes | none | Opportunity existed; player executed correctly |
+| applicable + failed | no | none (debrief flag only) | Opportunity existed; player did not execute correctly |
+| not applicable | no | none | No opportunity existed for this metric to fire |
+
+**Rule:** trade-execution metrics (`journal_before_trade`, `size_compliance`,
+`stop_before_entry`, `stop_honored`, `no_stop_widen`) emit XP only when a trade was
+actually taken (i.e., at least one `order_submit` event is present in the session log).
+When no trade exists these metrics return `applicable: false` — the engine emits no XP
+event and records no process failure.  A no-trade decision is a complete policy, not a
+failure to satisfy trade-execution metrics.
+
+**Why not "auto-pass":** The prior design returned `passed: true` on the no-trade path,
+which caused trade-execution XP (90 XP across five metrics) to be awarded on patience
+runs.  A patience run then out-earned a clean trade run (180 vs 175), inverting the
+design intent.  The `applicable` flag decouples "did the opportunity exist" from "was the
+behavior correct" without introducing penalties.
+
+**Patience path XP composition:**
+
+| Metric | XP | Applicable on patience path? |
+|--------|----|------------------------------|
+| `patience_observation` | +40 | yes — this IS the patience metric |
+| `debrief_completed` | +30 | yes — always applicable |
+| `journal_before_trade` | +20 | NO — no trade, no applicability |
+| `size_compliance` | +30 | NO |
+| `stop_before_entry` | +25 | NO |
+| `stop_honored` | +20 | NO |
+| `no_stop_widen` | +15 | NO |
+
+Patience-path total: **70 XP** (patience_observation 40 + debrief_completed 30).
+
 TUNABLE: XP values above are first-pass. Playtest target: a clean run (all behaviors)
 should yield ~175 XP; a patience-only run (no trades) should yield ~70 XP; a reckless
 winner should yield ≤50 XP (process metrics missed).

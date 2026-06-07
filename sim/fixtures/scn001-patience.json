@@ -33,15 +33,10 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "23b5efeb66ef3c90d8161ecb490be6dd113e1f11952ea7862568a9a329244283",
+  "expectedLogDigest": "a8dc52974045983b249db0cf0c1b89dd7a67c1cb7c425546ea99b3685d6898ce",
   "expectedXpEvents": [
-    { "metricId": "journal_before_trade", "xpAmount": 20 },
-    { "metricId": "size_compliance",      "xpAmount": 30 },
-    { "metricId": "stop_before_entry",    "xpAmount": 25 },
-    { "metricId": "stop_honored",         "xpAmount": 20 },
-    { "metricId": "no_stop_widen",        "xpAmount": 15 },
     { "metricId": "patience_observation", "xpAmount": 40 },
     { "metricId": "debrief_completed",    "xpAmount": 30 }
   ],
-  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP). sessionHasWin=false. No reckless_winner_flag. Total XP: 180 (no-trade metrics auto-pass per spec design). Regenerate with: npx vitest run tests/_gen_digests.test.ts"
+  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path — no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 70. Regenerate with: npx vitest run tests/_gen_digests.test.ts"
 }

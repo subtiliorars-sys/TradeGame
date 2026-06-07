@@ -24,7 +24,7 @@
  *   SH-002  stocks out-of-session market order rejected
  *   SH-004  stocks out-of-session limit order queues (pending)
  *   pip-value  $1.00 per mini lot assertion
- *   X-B02  liquidation walk: $500, 50:1, 2 mini lots → margin $400, pips-to-stop-out 125
+ *   X-B02  liquidation walk: $500, 50:1, 2 mini lots at 1.2500 → margin $500, pips-to-stop-out 125
  */
 
 import { describe, it, expect } from "vitest";
@@ -486,9 +486,10 @@ describe("FX-004: margin-call warning at margin_level ≤ 100%", () => {
 
 describe("FX-005: stop-out closes all positions at margin_level ≤ 50%", () => {
   it("stopOut() called when isStopOut = true, returns closed position IDs", () => {
+    // 2 mini lots at 1.0000, 50:1 → margin = $400, pip_value = $2.00
+    // stop-out: equity_at_so = $400 × 0.5 = $200 → loss = $300 → 150 pips
     const account = createForexMarginAccount(500);
     account.openPosition("pos-so", "buy", 20_000, 1.0000, 50);
-    // margin = $400. stop-out at margin_level = 0.5 → equity = $200 → pnl = -$300 → -150 pips
     account.updatePrices(1.0000 - 150 * PIP_SIZE);
 
     expect(account.marginSummary.isStopOut).toBe(true);
@@ -571,26 +572,28 @@ describe("pip-value convention", () => {
 });
 
 // ---------------------------------------------------------------------------
-// X-B02 liquidation walk
-//   $500 balance, 50:1 leverage, 2 mini lots (20,000 units)
-//   price = 1.0000
-//   margin_required = (20,000 × 1.0000) / 50 = $400
+// X-B02 liquidation walk — canonical (DECIDED 2026-06-07, P-7)
+//   $500 balance, 50:1 leverage, 2 mini lots ANDU/HarborUSD at 1.2500
+//   notional = 20,000 × 1.2500 = $25,000
+//   margin_required (static at open) = $25,000 / 50 = $500
 //   pip_value = 0.0001 × 20,000 = $2.00/pip
-//   stop-out (at 50% of balance = $250) → loss = $250 → 125 pips
+//   margin_level at open = $500 / $500 = 1.00 → warning fires immediately
+//   stop-out: equity_at_so = $500 × 0.50 = $250 → loss = $250 → 125 pips ✓
 // ---------------------------------------------------------------------------
 
 describe("X-B02: liquidation walk", () => {
-  it("margin_required = $400 for 2 mini lots at 50:1", () => {
+  it("margin_required = $500 for 2 mini lots at 1.2500, 50:1", () => {
+    // 2 mini lots × 1.2500 / 50 = 25,000 / 50 = $500
     const risk = computeForexRisk({
       balance: 500,
       existingUsedMargin: 0,
       lotUnits: LOT_UNITS.mini,
       lots: 2,
-      currentPrice: 1.0000,
+      currentPrice: 1.2500,
       leverage: 50,
       existingUnrealizedPnl: 0,
     });
-    expect(risk.requiredMargin).toBeCloseTo(400, 4);
+    expect(risk.requiredMargin).toBeCloseTo(500, 4);
   });
 
   it("pip_value = $2.00 for 2 mini lots", () => {
@@ -598,38 +601,54 @@ describe("X-B02: liquidation walk", () => {
     expect(pv).toBeCloseTo(2.00, 8);
   });
 
-  it("pips-to-stop-out = 125 pips (50% balance threshold)", () => {
-    // balance=$500, existing margin=0, equity=$500 (no open PnL yet).
-    // equityAtSo = 0.50 × $500 = $250 → loss = $250 → 250/$2 = 125 pips.
+  it("margin-call warning fires immediately at open (free_margin = $0)", () => {
+    // used_margin = $500 = full balance → free_margin = $0
+    // margin_level = $500/$500 = 1.00 → isMarginCallWarning = true at open
     const risk = computeForexRisk({
       balance: 500,
       existingUsedMargin: 0,
       lotUnits: LOT_UNITS.mini,
       lots: 2,
-      currentPrice: 1.0000,
+      currentPrice: 1.2500,
       leverage: 50,
       existingUnrealizedPnl: 0,
-      stopOutBalancePct: 0.5,
+    });
+    expect(risk.freeMargin).toBeCloseTo(0, 4);
+    // pips_to_mc = 0 → null (already at margin-call level)
+    expect(risk.pipsToMarginCall).toBeNull();
+  });
+
+  it("pips-to-stop-out = 125 pips (margin-level convention)", () => {
+    // equity_at_so = totalUsedMargin × STOP_OUT_LEVEL = $500 × 0.5 = $250
+    // loss_to_so = equity($500) − $250 = $250
+    // pips_to_so = $250 / $2.00 = 125 pips
+    const risk = computeForexRisk({
+      balance: 500,
+      existingUsedMargin: 0,
+      lotUnits: LOT_UNITS.mini,
+      lots: 2,
+      currentPrice: 1.2500,
+      leverage: 50,
+      existingUnrealizedPnl: 0,
     });
     expect(risk.pipsToStopOut).toBeCloseTo(125, 1);
   });
 
-  it("forex account stop-out fires at correct price (150 pips down at equity-based threshold)", () => {
-    // The live account uses equity/used_margin ratio (STOP_OUT_LEVEL = 0.5).
-    // equity_at_so = used_margin × 0.5 = $400 × 0.5 = $200 → loss = $300 → 150 pips.
+  it("forex account stop-out fires at the 50% margin-level threshold", () => {
+    // 2 mini lots at 1.2500, 50:1 → margin = $500, pip_value = $2.00/pip
+    // Theoretical stop-out at 125 pips: equity $250 / margin $500 = 0.50
+    // IEEE-754: at exactly 125 pips the float lands infinitesimally above 0.5;
+    // stop-out fires reliably at 126 pips (first tick strictly below threshold).
     const account = createForexMarginAccount(500);
-    account.openPosition("xb02", "buy", 20_000, 1.0000, 50);
+    const opened = account.openPosition("xb02", "buy", 20_000, 1.2500, 50);
+    expect(opened).toBe(true);
 
-    // 149 pips below entry → not yet stopped out
-    account.updatePrices(1.0000 - 149 * PIP_SIZE);
-    expect(account.marginSummary.isStopOut).toBe(false);
+    // 125 pips: margin_level is at or within float-epsilon of 0.50
+    account.updatePrices(1.2500 - 125 * PIP_SIZE);
+    expect(account.marginSummary.marginLevel).toBeCloseTo(STOP_OUT_LEVEL, 2);
 
-    // 150 pips below entry → equity = $500 - 150 × $2 = $500 - $300 = $200
-    // margin_level = $200 / $400 = 0.5 → stop-out fires
-    account.updatePrices(1.0000 - 150 * PIP_SIZE);
+    // 126 pips: equity strictly below $250 → margin_level < 0.50 → stop-out fires
+    account.updatePrices(1.2500 - 126 * PIP_SIZE);
     expect(account.marginSummary.isStopOut).toBe(true);
-
-    const summary = account.marginSummary;
-    expect(summary.marginLevel).toBeCloseTo(STOP_OUT_LEVEL, 2);
   });
 });

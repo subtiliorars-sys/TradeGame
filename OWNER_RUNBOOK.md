@@ -369,13 +369,11 @@ decided above — no owner action remains on this item.)*
 
 ### P-7. Forex stop-out convention (added 2026-06-07, Phase 2 build)
 
-**Trigger:** Before the forex trading screen ships (vertical slice UI).
+**DECIDED 2026-06-07: margin-level convention is canonical.**
 
-**Decision:** Two internally-consistent stop-out conventions exist in the engine
-(reconciled in `sim/src/orders/account.ts` + `risk.ts` comments): the standard
-broker margin-level convention (equity / used margin ≤ 50%) vs the simplified
-balance-based one the X-B02 lesson teaches (50% of starting balance → 125 pips
-in the worked example). The sim UI must show ONE. Recommend: teach the
-margin-level convention in the UI (it's what real brokers use) and update the
-X-B02 lesson's skeleton to match; the lesson's "no buffer at max leverage"
-point survives either way.
+Margin-level (equity / used_margin) is the single stop-out story across code,
+tests, and the X-B02 lesson. The balance-based variant (stopOutBalancePct) has
+been removed from risk.ts. The X-B02 worked example is recomputed at price
+1.2500 so used_margin = $500 = full balance, giving an immediate margin-call
+warning at open and stop-out at exactly 125 pips — the same 125-pip number
+survives, now derived correctly from the margin-level formula.

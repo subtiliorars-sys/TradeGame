@@ -87,10 +87,9 @@ SIM_ENGINE_SPEC §8 (Phase 2 vertical-slice cutline — three scenarios ship).
 - Difficulty label ("Intermediate") is displayed but no numerical star rating or
   score ranking is shown. The difficulty label is informational, not gamified.
 
-SPEC GAP: SIM_ENGINE_SPEC §6.2 specifies what account data is stored but does not
-specify a rank or XP display format. The wireframe assumes a progress bar and rank
-label pulled from the XP total and rank threshold table (GDD §7). Engineering will
-need to define the rank threshold lookup interface.
+SPEC GAP (SG-01, CLOSED 2026-06-07): rank/XP display format and the rank threshold
+lookup interface are now specified in SIM_ENGINE_SPEC §4.5 (`RankService`); this
+wireframe's progress-bar + rank-label assumption is confirmed there.
 
 ---
 
@@ -168,14 +167,14 @@ as blocking modal), SCENARIOS_V0.md UI Beats, GDD §4 (Practice phase of core lo
   shown as a score; shown as a factual position status), stop level, and the process
   metric compliance indicator (green checkmark if stop was placed before entry).
 
-SPEC GAP: SIM_ENGINE_SPEC §3.2 specifies fill price display requirements but does not
-specify the timing or dismissal behavior of the fill confirmation overlay. Suggest:
-auto-dismiss after 3 seconds, player can click to dismiss early; overlay does not
-block chart or journal interaction.
+SPEC GAP (SG-02, CLOSED 2026-06-07): fill confirmation overlay behavior is now
+specified in SIM_ENGINE_SPEC §3.2 — 3s TUNABLE wall-clock auto-dismiss, click to
+dismiss early, non-modal, stacks up to 3, and the §1.3 speed-control lock spans
+submit → overlay dismissal.
 
-SPEC GAP: The Position Panel's process metric compliance indicator (stop-placed-before-
-entry visual feedback) is implied by the scoring engine design but not explicitly
-specced as a UI surface in SIM_ENGINE_SPEC. Flagged here so the UI sprint includes it.
+SPEC GAP (SG-03, CLOSED 2026-06-07): the Position Panel compliance indicator is now
+specified in SIM_ENGINE_SPEC §4.2 (process-metric UI surface block) — including the
+rule that it reads the ScoreTracker's live evaluation, never UI-side re-derivation.
 
 ---
 
@@ -320,7 +319,7 @@ scenarios after backport). The mode is set in the scenario config.
   inline fields (e.g., "[___] price level" for SCN-002) or removes the inline field
   entirely if the scenario does not require a numerical assumption.
 
-SPEC GAP (CLOSED 2026-06-07): The policy_match metric was specified in SCENARIOS_V1.md
+SPEC GAP (SG-04, CLOSED 2026-06-07): The policy_match metric was specified in SCENARIOS_V1.md
 SCN-006's scoring rubric but missing from SIM_ENGINE_SPEC §4.2's metric table. RESOLVED —
 `policy_match` is now defined in SIM_ENGINE_SPEC §4.2 (+25 XP, EventLog-deterministic).
 See SG-04 in the Spec Gaps Summary.
@@ -534,11 +533,10 @@ emission), §4.4 (what scoring engine never emits — no PnL rank anywhere), GDD
   is visible but greyed with "Coming in a future update" — deferred per Phase 2
   cutline (requires server-side persistence).
 
-SPEC GAP: SIM_ENGINE_SPEC §4.3 defines the `RecklessWinnerFlag` event structure and
-says the UI renders a coaching alert, but does not specify where in the debrief screen
-this alert appears. Wireframe places it in the right panel coaching alerts section.
-Confirm with engineering that this placement is accessible and visible without
-scrolling on a standard desktop viewport.
+SPEC GAP (SG-05, CLOSED 2026-06-07): SIM_ENGINE_SPEC §4.3 now specifies the debrief
+placement — right-panel COACHING ALERT region below the XP summary, above-the-fold at
+the minimum supported viewport (TUNABLE 1280×720), reckless-winner flag takes the top
+slot, labeled "COACHING OBSERVATION," no forced acknowledgment.
 
 ---
 
@@ -619,7 +617,7 @@ Phase 2: player can view their own replay and see any pre-authored scenario anno
   choice: the replay is shareable format, and journal text is sensitive even to
   the player in a shareable context (SIM_ENGINE_SPEC §5.1 journal text privacy).
 
-SPEC GAP (CLOSED 2026-06-07): SIM_ENGINE_SPEC §5.3 originally did not distinguish
+SPEC GAP (SG-06, CLOSED 2026-06-07): SIM_ENGINE_SPEC §5.3 originally did not distinguish
 pre-authored scenario annotations from user-generated coach annotations. RESOLVED —
 §5.3 now defines `annotationType: 'scenario_authored' | 'coach'` on `CoachAnnotation`:
 `scenario_authored` entries are pre-vetted at authoring time and bypass the runtime
@@ -741,11 +739,15 @@ All spec gaps identified inline above are consolidated here for engineering tria
 
 | # | Screen | Gap description | Blocking? |
 |---|--------|-----------------|-----------|
-| SG-01 | Main Menu | Rank/XP display format not specified in SIM_ENGINE_SPEC §6.2; wireframe assumes a progress bar and rank label. | No — design can proceed; spec addition needed before implementation. |
-| SG-02 | Trading Screen | Fill confirmation overlay timing/dismissal not specified in SIM_ENGINE_SPEC §3.2. Wireframe assumes 3-second auto-dismiss, non-blocking. | No — low-risk spec gap; suggest filling before UI sprint. |
-| SG-03 | Trading Screen | Process metric compliance indicator (stop-before-entry visual feedback) in Position Panel not explicitly specced as a UI surface in SIM_ENGINE_SPEC. | No — implied by scoring engine design; needs explicit spec addition. |
+| SG-01 | Main Menu | Rank/XP display format not specified in SIM_ENGINE_SPEC §6.2; wireframe assumes a progress bar and rank label. | CLOSED 2026-06-07 — SIM_ENGINE_SPEC §4.5 (RankService interface + display format). |
+| SG-02 | Trading Screen | Fill confirmation overlay timing/dismissal not specified in SIM_ENGINE_SPEC §3.2. Wireframe assumes 3-second auto-dismiss, non-blocking. | CLOSED 2026-06-07 — SIM_ENGINE_SPEC §3.2 (overlay behavior block; 3s TUNABLE, non-blocking, stacking, §1.3 clarified). |
+| SG-03 | Trading Screen | Process metric compliance indicator (stop-before-entry visual feedback) in Position Panel not explicitly specced as a UI surface in SIM_ENGINE_SPEC. | CLOSED 2026-06-07 — SIM_ENGINE_SPEC §4.2 (compliance indicator block; ScoreTracker is single source of truth). |
 | SG-04 | News Policy Card | `policy_match` metric not in SIM_ENGINE_SPEC §4.2 metric table. Required for SCN-006 scoring rubric to be implementable. | CLOSED 2026-06-07 — added to SIM_ENGINE_SPEC §4.2. |
-| SG-05 | Debrief Screen | `RecklessWinnerFlag` placement not specified in SIM_ENGINE_SPEC §4.3 beyond "UI renders a coaching alert." | No — wireframe places it in right panel; confirm viewport visibility. |
+| SG-05 | Debrief Screen | `RecklessWinnerFlag` placement not specified in SIM_ENGINE_SPEC §4.3 beyond "UI renders a coaching alert." | CLOSED 2026-06-07 — SIM_ENGINE_SPEC §4.3 (right-panel placement, above-the-fold rule at 1280×720, priority order). |
 | SG-06 | Replay Viewer | Pre-authored scenario annotations not distinguished from user-generated coach annotations in SIM_ENGINE_SPEC §5.3. Content filter rule distinction unclear. | CLOSED 2026-06-07 — added to SIM_ENGINE_SPEC §5.3. |
-| SG-07 | Multi-position | Aggregate notional exposure display (needed for Advanced tier ACN-001, ACN-006) not in SIM_ENGINE_SPEC §3.4. | No — not Phase 2 blocking; needed before advanced scenarios ship. |
-| SG-08 | ACN-004 | Non-tradeable index display surface (NMX 100 as reference chart) not in SIM_ENGINE_SPEC. | No — not Phase 2 blocking; needed before ACN-004 ships. |
+| SG-07 | Multi-position | Aggregate notional exposure display (needed for Advanced tier ACN-001, ACN-006) not in SIM_ENGINE_SPEC §3.4. | CLOSED 2026-06-07 — SIM_ENGINE_SPEC §3.4 (aggregate exposure block). Implementation still gated to advanced tier. |
+| SG-08 | ACN-004 | Non-tradeable index display surface (NMX 100 as reference chart) not in SIM_ENGINE_SPEC. | CLOSED 2026-06-07 — SIM_ENGINE_SPEC §2.5 (reference instruments). Implementation still gated to advanced tier (replayVersion 2). |
+
+All eight gaps are spec-closed. Implementation status is tracked by the Phase 2
+cutline (SIM_ENGINE_SPEC §8) and the advanced-tier brief — "closed" here means the
+spec is no longer ambiguous, not that the surface is built.
