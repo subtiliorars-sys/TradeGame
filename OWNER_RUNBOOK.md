@@ -168,6 +168,9 @@ merge or close it before it accumulates conflicts.
 
 ### N-7. Review PR #8 — the playable game (added 2026-06-08, overnight build)
 
+**DONE 2026-06-08 — owner merged PR #8.** Follow-up: PR #9 (equal-ceiling
+ruling implementation) now awaits the same review path.
+
 **What:** PR #8 stacks the Phase-2 vertical slice: all six scenarios (SCN-001
 through SCN-006) playable in the Phaser sim, rank/XP system (§4.5), News
 Policy Card, scenario gating, debrief/replay flow. Three red-team passes ran
@@ -400,6 +403,11 @@ survives, now derived correctly from the margin-level formula.
 ---
 
 ### P-8. XP path parity — trade vs. observation ceilings (added 2026-06-08)
+
+**DECIDED 2026-06-08: option (a) — EQUAL CEILINGS.** Implemented same day
+(PR #9): patience_observation tuned per scenario to the rubric's trade-only
+sum; manifest rubric is the authoritative XP source; property-test enforced.
+SCENARIOS_V0/V1 superseded-target notes added.
 
 **Trigger:** Before any XP economy re-tune, and no later than the Tier-B
 persistence gate.

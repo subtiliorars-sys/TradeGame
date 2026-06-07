@@ -94,6 +94,16 @@ export interface MetricInput {
    */
   readonly rubricMetricIds?: readonly string[];
   /**
+   * Authored XP amounts by metric ID from the scenario's xpRubric.  When
+   * supplied, XP emission uses these amounts (the manifest is the single
+   * source of truth for scenario economy numbers); the extractor's hardcoded
+   * xpOnPass is only the default for rubric-less (sandbox) sessions.
+   * Introduced for the owner's equal-ceiling ruling (2026-06-08, runbook
+   * P-8): patience_observation is tuned PER SCENARIO so the observation
+   * path's ceiling equals the trade path's ceiling.
+   */
+  readonly rubricXpById?: Readonly<Record<string, number>>;
+  /**
    * Scenario-authored no-entry windows (sim-ms ranges) for no_entry_window —
    * e.g. SCN-005's first-15-minutes-of-D1-open, SCN-006's whipsaw window.
    */
@@ -784,13 +794,20 @@ export function runScoreTracker(
   const rubricGate = (metricId: MetricId): boolean =>
     input.rubricMetricIds === undefined ||
     input.rubricMetricIds.includes(metricId);
+  // Amounts: the scenario rubric is authoritative when present (equal-ceiling
+  // ruling — see MetricInput.rubricXpById); extractor defaults otherwise.
+  const xpAmountFor = (r: MetricResult): number =>
+    input.rubricXpById?.[r.metricId] ?? r.xpOnPass;
   const xpEvents: XpEvent[] = results
-    .filter((r) => r.applicable && r.passed && r.xpOnPass > 0 && rubricGate(r.metricId))
+    .filter(
+      (r) =>
+        r.applicable && r.passed && xpAmountFor(r) > 0 && rubricGate(r.metricId)
+    )
     .map((r) => ({
       type: "xp" as const,
       sessionId,
       metricId: r.metricId,
-      xpAmount: r.xpOnPass,
+      xpAmount: xpAmountFor(r),
       tradeIndex: null,
       timestamp: simTimeMs,
     }));

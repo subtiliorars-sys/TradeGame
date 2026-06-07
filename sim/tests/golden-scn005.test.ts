@@ -219,7 +219,7 @@ describe("GR-010: SCN-005 observe run — patience path", () => {
     }
   });
 
-  it("patience_observation (+40) and no_entry_window (+15) both fire without trades", () => {
+  it("patience_observation (+125, equal-ceiling P-8a) and no_entry_window (+15) both fire without trades", () => {
     const result = runScenario(fixtureToConfig(fixture));
     const patience = result.xpSummary.events.find(
       (e) => e.metricId === "patience_observation"
@@ -227,7 +227,7 @@ describe("GR-010: SCN-005 observe run — patience path", () => {
     const window = result.xpSummary.events.find(
       (e) => e.metricId === "no_entry_window"
     );
-    expect(patience?.xpAmount).toBe(40);
+    expect(patience?.xpAmount).toBe(125);
     expect(window?.xpAmount).toBe(15);
   });
 

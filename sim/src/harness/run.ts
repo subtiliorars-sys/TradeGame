@@ -529,6 +529,10 @@ export function runScenario(config: HarnessConfig): HarnessResult {
       sessionStartEquity: accountEquity,
       // Applicability gate for scenario-specific metrics (rubric-authored only).
       rubricMetricIds: manifest.xpRubric.map((r) => r.metricId),
+      // Authored amounts — the manifest rubric is the economy source of truth.
+      rubricXpById: Object.fromEntries(
+        manifest.xpRubric.map((r) => [r.metricId, r.xpOnPass])
+      ),
     },
     manifest.noEntryWindows !== undefined
       ? {

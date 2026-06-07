@@ -176,6 +176,11 @@ export const scn003: ScenarioDef = {
         label: "Stop not widened after entry",
       },
       {
+        metricId: "patience_observation",
+        xpOnPass: 125,
+        label: "No trade taken + journal observation written",
+      },
+      {
         metricId: "debrief_completed",
         xpOnPass: 30,
         label: "Scenario debrief completed",

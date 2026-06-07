@@ -161,7 +161,7 @@ export const scn005: ScenarioDef = {
       },
       {
         metricId: "patience_observation",
-        xpOnPass: 40,
+        xpOnPass: 125,
         label: "Observation-only run with full driver labeling",
       },
       {

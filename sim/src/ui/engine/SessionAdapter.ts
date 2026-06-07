@@ -569,6 +569,10 @@ export class SessionAdapter {
         sessionStartEquity: 10_000,
         // Applicability gate for scenario-specific metrics (rubric-authored only).
         rubricMetricIds: (this.manifest?.xpRubric ?? []).map((r) => r.metricId),
+        // Authored amounts — the manifest rubric is the economy source of truth.
+        rubricXpById: Object.fromEntries(
+          (this.manifest?.xpRubric ?? []).map((r) => [r.metricId, r.xpOnPass])
+        ),
       },
       this.manifest?.noEntryWindows !== undefined
         ? {

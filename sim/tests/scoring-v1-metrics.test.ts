@@ -108,6 +108,9 @@ const ALL_V1_IDS = [
 // breaks loudly if either side is re-tuned without the other.
 // ---------------------------------------------------------------------------
 
+// patience_observation is intentionally absent: per the owner's equal-ceiling
+// ruling (2026-06-08, runbook P-8 option a) its amount is tuned PER SCENARIO
+// to equal the rubric's trade-only sum — covered by the property test below.
 const CANONICAL_XP: Record<string, number> = {
   journal_before_trade: 20,
   size_compliance: 30,
@@ -115,7 +118,6 @@ const CANONICAL_XP: Record<string, number> = {
   stop_honored: 20,
   exit_journal: 15,
   no_stop_widen: 15,
-  patience_observation: 40,
   leverage_ack: 10,
   debrief_completed: 30,
   session_reviewed: 10,
@@ -128,10 +130,23 @@ const CANONICAL_XP: Record<string, number> = {
   policy_declared_card: 30,
 };
 
+// Metrics only a session WITH fills can earn (the trade-only set).
+const TRADE_ONLY = new Set([
+  "journal_before_trade",
+  "size_compliance",
+  "stop_before_entry",
+  "stop_honored",
+  "no_stop_widen",
+  "exit_journal",
+  "il_estimate_written",
+  "trigger_updated",
+]);
+
 describe("rubric ↔ extractor XP parity (one set of books)", () => {
-  it("every registered scenario's xpRubric amounts match the canonical metric XP", () => {
+  it("every fixed-amount rubric entry matches the canonical metric XP", () => {
     for (const scn of allScenarios()) {
       for (const entry of scn.manifest.xpRubric) {
+        if (entry.metricId === "patience_observation") continue; // per-scenario
         expect(
           CANONICAL_XP[entry.metricId],
           `${scn.manifest.id}: rubric metric '${entry.metricId}' is not in the canonical XP table`
@@ -141,6 +156,27 @@ describe("rubric ↔ extractor XP parity (one set of books)", () => {
           `${scn.manifest.id}: rubric '${entry.metricId}' xpOnPass diverges from the extractor's canonical amount`
         ).toBe(CANONICAL_XP[entry.metricId]);
       }
+    }
+  });
+});
+
+describe("equal XP ceilings — owner ruling P-8 option (a), 2026-06-08", () => {
+  it("every scenario: patience_observation equals the rubric's trade-only sum", () => {
+    for (const scn of allScenarios()) {
+      const rubric = scn.manifest.xpRubric;
+      const patience = rubric.find((r) => r.metricId === "patience_observation");
+      expect(
+        patience,
+        `${scn.manifest.id}: every scenario must author a patience row — observation is equal process (SIM_ENGINE_SPEC §4)`
+      ).toBeDefined();
+      const tradeOnlySum = rubric
+        .filter((r) => TRADE_ONLY.has(r.metricId))
+        .reduce((sum, r) => sum + r.xpOnPass, 0);
+      expect(
+        patience?.xpOnPass,
+        `${scn.manifest.id}: observation ceiling must equal trade ceiling — ` +
+          `patience_observation must be ${tradeOnlySum}`
+      ).toBe(tradeOnlySum);
     }
   });
 });
