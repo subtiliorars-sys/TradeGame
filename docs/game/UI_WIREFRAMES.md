@@ -575,10 +575,11 @@ Phase 2: player can view their own replay and see any pre-authored scenario anno
 │  │  written                         │    │  T+08:42  [Coach]                │
 │  │                                  │    │  "The spread indicator turned    │
 │  └──────────────────────────────────┘    │   amber here — that was the      │
-│                                          │   cost-of-entry signal. Your     │
-│  PLAYBACK CONTROLS                       │   position was sized correctly   │
-│  [ |< ] [ < ] [PLAY] [ > ] [ >| ]       │   for this spread cost."         │
-│  Speed: [1x] [4x] [16x]                 │  < Coach annotation — process    │
+│                                          │   cost-of-entry consideration.   │
+│  PLAYBACK CONTROLS                       │   Your position was sized        │
+│  [ |< ] [ < ] [PLAY] [ > ] [ >| ]       │   correctly for this spread      │
+│  Speed: [1x] [4x] [16x]                 │   cost."                          │
+│                                          │  < Coach annotation — process    │
 │                                          │   observation, no signals >      │
 │  Timeline scrubber:                      │                                  │
 │  |─────●─────────────────────|          │  T+16:00  [Scenario]             │

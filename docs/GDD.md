@@ -360,4 +360,10 @@ Supporting documents that expand on sections of this GDD. Read on demand, not up
 | `docs/game/TEST_PLAN.md` | QA test plan covering order mechanics, fee/spread calculations, coaching-filter rules, and process-scoring correctness |
 | `docs/game/FICTIONAL_CANON.md` | Authoritative registry of all fictional instruments used in TradeGame content; collision-check records and standing rules |
 | `docs/CURRICULUM.md` | Full curriculum map: Foundation Track, three Pillar tracks (Crypto/Stocks/Forex), and Advanced track; lesson IDs and sequencing |
-| `docs/lessons/` | Individual lesson source files (FOUNDATION.md, PILLAR_INTROS.md, and future lesson docs) |
+| `docs/game/ADVANCED_TIER_BRIEF.md` | Advanced tier definition, 6 scenario concepts (ACN-001 through ACN-006), NG+ hook, prereq philosophy, and News Policy Card backport decision |
+| `docs/game/UI_WIREFRAMES.md` | UI wireframes for core game screens: scenario replay viewer, journal panel, debrief screen, order panel |
+| `docs/lessons/FOUNDATION.md` | Foundation Track lesson source (F-01 through F-09) — prerequisite to all three pillar tracks |
+| `docs/lessons/PILLAR_INTROS.md` | Pillar introduction lessons for all three markets (Crypto, Stocks, Forex) |
+| `docs/lessons/STOCKS_INTERMEDIATE.md` | Stocks Intermediate lesson source (S-I01 through S-I04+) |
+| `docs/lessons/FOREX_INTERMEDIATE.md` | Forex Intermediate lesson source (X-I01 through X-I04+) |
+| `docs/lessons/BEGINNER_COMPLETIONS.md` | Beginner completion lessons across tracks — grid strategies, DCA math, and supporting content |

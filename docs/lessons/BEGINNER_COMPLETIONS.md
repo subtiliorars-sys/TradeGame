@@ -26,7 +26,7 @@ A grid strategy automates the trader's oldest instinct: buy lower, sell higher, 
 
 **The structure.** You define three things: the range (an upper and lower price boundary), the number of grid levels, and the amount to trade at each level. The bot places buy limit orders at equal intervals below the current price, and sell limit orders at equal intervals above. When price drops to a buy level, it fills. When price recovers to the corresponding sell level above that buy, it fills the sell. The difference between the buy and sell level is the per-cycle profit for that grid line — minus the spread paid on both fills.
 
-**Worked example.** GLIMMER/HarborUSD is at $50.00. You set a grid from $44.00 to $56.00 with 6 levels, spacing every $2.00. Grid lines (buy levels): $44, $46, $48. Grid lines (sell levels): $52, $54, $56. Starting level sells: $50, $52.
+**Worked example.** GLIMMER/HarborUSD is at $50.00. You set a grid from $44.00 to $56.00 with $2.00 spacing — 7 levels total: $44, $46, $48, $50, $52, $54, $56. Buy limit orders sit below the current price: $44, $46, $48. Sell limit orders sit above the current price: $52, $54, $56. The $50.00 level (current price) has a sell order placed at open to capture any immediate upside.
 
 A buy fills at $48.00. Price recovers to $50.00. The corresponding sell fills at $50.00. Per-cycle gross: $2.00 per unit. Repeat.
 
@@ -118,7 +118,7 @@ The Foundation Track taught you drawdown math (F-06) — how a 50% loss requires
 
 This is not a projection for the NMX 100. It is an illustration of the mathematical structure. The lesson is about the calculation, not the rate.
 
-**Cost basis with multiple buys.** DCA means you put a fixed dollar amount in at regular intervals regardless of price. The math produces a lower average cost than if you had tried to time a single perfect entry.
+**Cost basis with multiple buys.** DCA means you put a fixed dollar amount in at regular intervals regardless of price. The math produces a lower average cost than a single lump-sum entry at the start.
 
 Worked example. You invest $200 in the NMX 100 ETF on three separate occasions:
 
@@ -126,9 +126,9 @@ Worked example. You invest $200 in the NMX 100 ETF on three separate occasions:
 - Buy 2: ETF at $80/unit → 2.5 units purchased
 - Buy 3: ETF at $110/unit → 1.818 units purchased
 
-Total invested: $600. Total units: 6.318. Average cost basis: $600 / 6.318 = $94.96 per unit.
+Total invested: $600. Total units: 6.318. Average cost basis: $600 / 6.318 = $94.97 per unit.
 
-If you had put the full $600 in at the first buy ($100/unit), your cost basis would be $100. By buying across three prices — including one lower price — your average dropped to $94.96. The second buy at $80 pulled the average down more than the third buy at $110 pushed it up, because the $200 at $80 bought more units than the $200 at $110.
+If you had put the full $600 in at the first buy ($100/unit), your cost basis would be $100. By buying across three prices — including one lower price — your average dropped to $94.97. The second buy at $80 pulled the average down more than the third buy at $110 pushed it up, because the $200 at $80 bought more units than the $200 at $110.
 
 **Why this works mechanically.** A fixed dollar amount buys more units when the price is lower. That is the arithmetic advantage of DCA: price volatility is not purely an enemy. A lower price at a DCA interval date means more units per dollar. Over many intervals, the average cost basis tends to be below the arithmetic average of the prices paid — because more units are accumulated during the lower-price periods.
 
@@ -167,9 +167,9 @@ X-B03 showed you that spread varies across the trading day — widest during thi
 
 **The spread as an entry cost.** When you buy ANDU/HarborUSD, you fill at the ask price. If you were to close immediately, you would fill at the bid — which is lower than the ask by the spread. On a 1.5 pip spread, you are already 1.5 pips in the red the instant your entry fills. Price must move 1.5 pips in your favor before you break even. This is true regardless of your stop distance, your target, or your analysis.
 
-**Worked example — standard session.** ANDU/HarborUSD during the London/New York overlap. Spread: 1.5 pips. You enter long with 2 mini lots. Pip value per mini lot: $0.76.
+**Worked example — standard session.** ANDU/HarborUSD during the London/New York overlap. Spread: 1.5 pips. You enter long with 2 mini lots. Pip value per mini lot: $1.00.
 
-Spread cost: 1.5 pips × $0.76 × 2 lots = $2.28.
+Spread cost: 1.5 pips × $1.00 × 2 lots = $3.00.
 
 Your stop is 30 pips. Your target is 60 pips. Stated R:R: 1:2. 
 
@@ -177,7 +177,7 @@ But the break-even pip move is 1.5 pips — you need price to travel 1.5 pips in
 
 **Worked example — off-peak session.** Same setup, but entered after the New York close when spread widens to 6 pips.
 
-Spread cost: 6 pips × $0.76 × 2 lots = $9.12.
+Spread cost: 6 pips × $1.00 × 2 lots = $12.00.
 
 Break-even pip move: 6 pips. Adjusted entry-to-stop: 36 pips. Adjusted entry-to-target: 54 pips. Adjusted R:R: 36 : 54 = 1 : 1.5.
 
@@ -194,7 +194,7 @@ The trade you thought was 1 : 2 is now 1 : 1.5 simply because you entered at the
 **Sim Drill:** Position sizing puzzle — forex (GDD §5.4). The drill presents three scenarios with different spread conditions (1.5, 4, and 8 pips) on ANDU/HarborUSD. For each: calculate (a) the spread dollar cost for the given lot size, (b) the break-even pip move, and (c) the adjusted R:R given the stated stop and target. Confirm that adjusted R:R still meets your minimum threshold before entering the sim position. Log the calculation for each scenario.
 
 **Self-Check:**
-1. ANDU/HarborUSD has a 3 pip spread. You plan to enter 1 mini lot with a 25-pip stop and a 50-pip target. Pip value for 1 mini lot: $0.76. What is your spread cost in dollars, and what is your adjusted R:R after accounting for spread?
+1. ANDU/HarborUSD has a 3 pip spread. You plan to enter 1 mini lot with a 25-pip stop and a 50-pip target. Pip value for 1 mini lot: $1.00. What is your spread cost in dollars, and what is your adjusted R:R after accounting for spread?
 2. You enter the same trade during an off-peak session with a 9 pip spread instead of 3. How does that change your break-even pip move and your adjusted R:R?
 3. Your trading plan requires a minimum 1 : 1.8 adjusted R:R (after spread) to take a trade. The spread is currently 5 pips. Your stop is 20 pips, your target is 40 pips. Does this trade meet your rule? Show the calculation.
 

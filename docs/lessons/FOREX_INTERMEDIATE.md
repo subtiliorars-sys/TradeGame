@@ -107,11 +107,11 @@ Every currency belongs to an economy with a central bank and an interest rate. W
 
 Total carry credit: 3 lots × $0.42 × 10 days = $12.60.
 
-Over the same 10 days, ANDU/HarborUSD drops 45 pips. Pip value for 3 mini lots: approximately $2.28/pip.
+Over the same 10 days, ANDU/HarborUSD drops 45 pips. Pip value for 3 mini lots: $3.00/pip.
 
-Price loss: 45 × $2.28 = $102.60.
+Price loss: 45 × $3.00 = $135.00.
 
-Net position: $12.60 carry − $102.60 price loss = −$90.00.
+Net position: $12.60 carry − $135.00 price loss = −$122.40.
 
 The carry did not protect you. It contributed 12% of the loss back, which is indistinguishable from noise at this scale. In a real account this is the calculation you would face; in the sim you will observe the same dynamic directly across the scenario's timeline.
 
@@ -122,7 +122,7 @@ The carry did not protect you. It contributed 12% of the loss back, which is ind
 **Sim Drill:** Session/carry sim (GDD §5.3) — run a synthetic carry trade on ANDU/HarborUSD across two simulated periods: (a) a trending period where ANDU strengthens, with daily swaps accumulating; (b) a ranging-then-reversal period. Log separately: daily carry credit, price PnL, and net. Journal the condition at which the carry trade became a net loser in scenario (b).
 
 **Self-Check:**
-1. ANDU/HarborUSD pays a daily swap of $0.55 per mini lot. You hold 2 mini lots for 14 days. The pair moves 30 pips against you. Pip value for 2 mini lots is $1.52/pip. What is your net position, and did the carry help you?
+1. ANDU/HarborUSD pays a daily swap of $0.55 per mini lot. You hold 2 mini lots for 14 days. The pair moves 30 pips against you. Pip value for 2 mini lots is $2.00/pip. What is your net position, and did the carry help you?
 2. Name the specific market condition — in one sentence — that turns a positive-carry trade into a net loser without requiring a large directional move.
 3. Why does increasing lot size to "feel" the carry more materially increase a risk that is separate from the carry itself?
 
@@ -150,7 +150,7 @@ These numbers are not cherry-picked pessimism. They are mandatory public disclos
 What the numbers mean structurally:
 
 - The losing-account percentage is not evenly distributed over time. Accounts that close quickly (within the first 90 days) inflate the loss rate. This is consistent with the leverage mechanism taught in X-B02: an under-margined account at high leverage reaches stop-out on normal volatility.
-- The numbers describe closed accounts, not all open accounts. An account that is technically open but has lost 80% of its value and is no longer actively traded does not appear in the "closed losing account" count. The actual loss rate across all accounts is likely higher than disclosed.
+- The disclosures cover active retail client accounts over a defined trailing period (the exact period varies by regulator; quarterly reporting is common in the EU/UK framework). They do not capture all accounts ever opened or all accounts currently open. Caveat: whether this reporting window overstates or understates the long-run loss rate for retail participants is an open empirical question — the disclosures are a starting point for honest accounting, not a complete picture.
 - Broker profitability from retail flow is partially derived from spread and partly from the structure of the market-maker model in which the broker takes the other side of some retail trades. This is disclosed in broker documentation as "we may be your counterparty." It does not mean the broker is manipulating your trade; it means there is a structural conflict of interest between a broker's revenue and your success as a retail trader.
 
 **What the structural disadvantages are.** Beyond leverage, three forces work against retail forex participants specifically:

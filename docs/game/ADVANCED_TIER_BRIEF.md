@@ -7,6 +7,10 @@ correctly before V1 locks.
 minimum), NG+ hook, prereq philosophy, and the News Policy Card backport decision.
 **Ethics rail:** All definitions, concepts, and scenario frames here comply with
 GDD ethics pillars P2 and P5. No signals product. No PnL scoring. No gambling loops.
+Standing rule (added ACN-002 red-team): Scenario success conditions must be process
+predicates, never account-value predicates. A scenario may use PnL thresholds as
+narrative context (to frame the situation the player is in) but never as a pass/fail
+condition. Pass/fail is always determined by the process rubric.
 
 ---
 
@@ -56,9 +60,7 @@ predict price. The no-signals-product rule is permanent across all tiers.
 
 The GDD's rank progression (`Observer → Trainee → Practitioner → Journeyman →
 Strategist → Senior Strategist`) positions Advanced scenarios as the Strategist and
-Senior Strategist tiers. The GDD's gamification notes (memory: MeniscusMaximus
-gamification design) reference a recursive NG+ loop — the idea that completion
-unlocks a replayable layer with harder conditions.
+Senior Strategist tiers. The GDD §7 Progression & Coaching (Ranks and Replay Sharing & Coaching Hooks) establishes that ranks are earned by XP and process — not by PnL milestones. The NG+ / recursive progression concept referenced there describes a replayable layer with harder conditions unlocked on completion.
 
 The Advanced tier plugs directly into that loop:
 
@@ -154,12 +156,28 @@ is implemented.
 **Teaching target:** Structured drawdown recovery without revenge-trading or
 overleveraging. The player begins the scenario with a simulated account at -18% from
 a prior peak (the session opens with this context stated explicitly — it is not a
-consequence of play within the scenario, it is the starting condition). The player
-must reach -8% or better (a partial recovery) over the scenario window without
-triggering a stop-out at -25%. The lesson is that drawdown recovery requires sizing
-DOWN, not up — the math of drawdown means a loss of 20% requires a gain of 25% to
-recover, and adding leverage to accelerate recovery amplifies the risk of going further
-into drawdown first.
+consequence of play within the scenario, it is the starting condition). The narrative
+context: the account is in a -18% hole; a -25% drawdown triggers a sim stop-out; a
+partial recovery toward -8% represents the kind of measured, step-by-step progress
+the scenario is designed to illustrate. These numbers are narrative framing, NOT pass
+conditions. A player who never reaches -8% still passes if their process was sound.
+A player who reaches -8% via undisciplined sizing or averaging down does not pass.
+
+**Success condition (process rubric — these are the actual pass criteria):**
+- Sizing-down observed: each new position is equal to or smaller than the prior one
+  in absolute account-risk percentage (no sizing-up during the session).
+- No averaging down: the player does not add to a losing position at any point.
+- Stops honored: every opened position has a stop placed before entry; no stop is
+  manually cancelled while the position is open.
+- Journal kept: at least one journal entry written per position, stating the entry
+  driver and the risk taken in percentage terms.
+
+A disciplined player who observes all four process criteria and never reaches -8% earns
+full scenario completion. The drawdown-recovery narrative is context, not a target.
+
+The lesson is that drawdown recovery requires sizing DOWN, not up — the math of
+drawdown means a loss of 20% requires a gain of 25% to recover, and adding leverage
+to accelerate recovery amplifies the risk of going further into drawdown first.
 **Multi-position element:** The player may run at most one open position at a time in
 this scenario. The constraint is designed to prevent the common error of "running
 multiple positions to recover faster."
@@ -170,11 +188,10 @@ sizing and exposure to each without the option of simply riding a single trend.
 **Prerequisite chain:** ACN-001 clean (or Intermediate crypto campaign complete);
 Drawdown Survival drill at Practitioner level
 
-TUNABLE: The -18% starting drawdown and -8% recovery target and -25% stop-out level
-are first-pass. The numbers must be calibrated so that an aggressive "average down"
-strategy reliably fails the scenario more than 60% of the time, while a disciplined
-sized approach reliably succeeds more than 50% of the time. These are the playtest
-calibration targets.
+TUNABLE: The -18% starting drawdown and -25% stop-out level are first-pass narrative
+parameters. Calibrate so that an aggressive "average down" strategy reliably fails the
+process rubric more than 60% of the time, while a disciplined approach reliably passes
+more than 50% of the time. Calibrate the rubric thresholds, not the PnL target.
 
 ---
 
@@ -266,7 +283,7 @@ and margin model before ACN-005 can be implemented.
 ### ACN-006: The Correlation Crisis — ANDU and a Second Pair
 **Market:** Forex
 **Teaching target:** Two concurrent forex positions in pairs that look independent
-(ANDU and a second fictional major, here designated SOLU — a fictional pair with a
+(ANDU and a second fictional major, here designated KORVA (fictional; see FICTIONAL_CANON.md) — a fictional pair with a
 high-liquidity profile) are revealed to share a common factor exposure during a
 simulated macro stress event. The player holds both positions and must manage combined
 pip exposure, not just the individual positions. The lesson: forex position sizing
@@ -277,21 +294,18 @@ is required to calculate — and journal — their total account exposure in per
 terms across both positions before proceeding.
 **Regime arc:** A two-phase structure: a normal-session phase where the positions appear
 independent, followed by a macro-event phase where correlation becomes visible.
-**Canon instruments:** ANDU; SOLU (fictional major pair — new addition to canon,
-described as fictional in the scenario, not modeled on or named after a real pair)
+**Canon instruments:** ANDU; KORVA — fictional major pair, new addition to canon, described as fictional in the scenario, not modeled on or named after a real pair
 **Approx sim window:** 90 minutes at 1x
 **Prerequisite chain:** ACN-005 clean; Correlation Awareness drill (Forex variant,
 to be authored); `stop_before_entry` and `stop_honored` at 100% across last 3 forex
 scored runs
 
-COSTLY: SOLU is a new canon fictional instrument. Its introduction requires a second
+COSTLY: KORVA is a new canon fictional instrument (see FICTIONAL_CANON). Its introduction requires a second
 forex adapter config and a new instrument entry in the fictional instrument registry.
 Moderate cost — reuses the forex synthetic generator, just needs a new seed profile
 and pip value.
 
-OPEN: Should SOLU be named here or left as a placeholder for the owner to name? The
-pattern from existing canon (HarborUSD, GLIMMER, NGSM, VLDI, ANDU, NMX 100) suggests
-a name before authoring begins. Defer to owner.
+NOTE: KORVA name is now registered in FICTIONAL_CANON (formerly placeholder SOLU, renamed to avoid collision with SOL/Solana per Standing Rule 4).
 
 ---
 
@@ -312,7 +326,7 @@ b. The multi-position aggregate display surface (flagged as a new UI requirement
    retrofitted later. If the spec team knows this panel is coming, they can stub it
    in Phase 2.
 
-c. The NMX 100 fictional instrument and SOLU fictional instrument can be registered in
+c. The NMX 100 fictional instrument and KORVA fictional instrument can be registered in
    the fictional instrument registry alongside existing canon names before any scenario
    references them, preventing naming drift.
 
@@ -357,8 +371,10 @@ Plan Card text:
 > or this could be the beginning of a structural break. Before T0 (first price deviation):
 > choose one option and write your reasoning (minimum 20 characters).
 > (A) I will not trade unless the second confirmation leg appears (T+6 or later).
-> (B) I will enter with a position at most 1% account risk, stop pre-defined, if a clear
->     signal appears at T0.
+> (B) I will enter a position at most 1% account risk. My entry condition is:
+>     [player writes their own criteria — e.g., price level, volume observation,
+>     spread threshold]. My stop will be at: [player states level]. I will define
+>     both before T0 and will not enter without them.
 > (C) I will observe only and journal. I will not trade this scenario."
 
 Policy-adherence metric: same pattern as SCN-006. If the player selects A and trades
@@ -399,8 +415,10 @@ observation is prompted. Add a Plan Card at the end of the lesson card, before t
 Plan Card text:
 > "The Asian session range is marked. London opens in approximately 15 minutes. Session
 > opens often test the Asian range extremes.
-> (A) I will wait for a sweep below 1.2790 and a confirmed rejection before considering
->     any entry. I will not trade during the spread spike at 08:00.
+> (A) I have a plan for this session. My entry condition is: [player writes their own
+>     level and criteria]. My stop will be at: [player states level]. I will not trade
+>     during the spread spike at 08:00 — my earliest considered entry is after:
+>     [player states their time or condition].
 > (B) I will observe only. I expect spread cost to be high at open and will not trade
 >     until spread normalizes.
 > (C) I have no hypothesis yet. I will observe and journal what I see."
@@ -440,7 +458,7 @@ rather than one configurable component. Recommend the shared-component approach.
   recognition across longer arcs, drawdown-recovery campaigns; no "advanced signals").
 - Six scenario concepts covering all three markets (two crypto: ACN-001, ACN-002;
   two stocks: ACN-003, ACN-004; two forex: ACN-005, ACN-006) using only canon fictional
-  instruments plus one new instrument placeholder (SOLU).
+  instruments plus one new instrument placeholder (KORVA).
 - NG+ recursive loop hook: parameterized difficulty replay and Blind Replay mode for
   Senior Strategist rank.
 - Prerequisite philosophy: process-metric gates not PnL, specific metric thresholds,
@@ -467,10 +485,10 @@ rather than one configurable component. Recommend the shared-component approach.
   flagged COSTLY in SCN-005/V1; confirm engine capability before advanced authoring).
 - Overnight carry cost in the forex order model (new mechanic, not in
   SIM_ENGINE_SPEC §3.4; needed for ACN-005).
-- SOLU instrument registration (new forex config; moderate cost — reuses generator).
+- KORVA instrument registration (new forex config; moderate cost — reuses generator).
 
 **OPEN:**
-1. SOLU instrument name: accept placeholder or owner names it now?
+1. KORVA instrument name: accept placeholder or owner names it now?
 2. NMX 100 as a non-tradeable reference chart (ACN-004): does this require a new
    chart panel mode in Phaser, or is a second read-only IMarketFeed display sufficient?
 3. Correlation Awareness drill (Forex variant): not yet authored. ACN-006 requires it

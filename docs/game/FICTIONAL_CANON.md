@@ -168,7 +168,33 @@ Note the check result in the entry.
 
 ---
 
-### 11. ANDU (crypto reference) — see entry 9
+### 11. KORVA
+
+| Field | Value |
+|-------|-------|
+| **Name** | KORVA |
+| **Ticker** | KORVA (base currency in pair KORVA/HarborUSD) |
+| **Type** | Fictional forex base currency |
+| **Profile** | High-liquidity fictional forex major pairing with HarborUSD as the quote currency. Structurally similar to ANDU — four-decimal quoting, standard lot sizing — but introduced as a second concurrent pair in ACN-006 to teach correlation exposure. No real-world country or currency backstory. |
+| **Used in** | `docs/game/ADVANCED_TIER_BRIEF.md` (ACN-006 — correlation crisis scenario) |
+| **Collision check** | No known forex pair, exchange ticker, or token named KORVA. Distinct from KRW (Korean Won ISO code). No known ticker or token "KORVA" on CoinGecko/CMC top-1000 or major US/international equity listings. Clear. (Former placeholder name SOLU was renamed here to avoid collision with SOL/Solana per Standing Rule 4.) |
+
+---
+
+### 12. CALD — Calder Utilities
+
+| Field | Value |
+|-------|-------|
+| **Name** | Calder Utilities |
+| **Ticker** | CALD |
+| **Type** | Fictional US-listed equity (defensive, dividend-paying) |
+| **Profile** | Fictional mature utility company with a stable dividend yield. Used as the archetypal defensive sector name in the stocks curriculum — the counterpart to NGSM (growth) in sector-rotation and dividend lessons. Dividend paid quarterly. No protocol or operational backstory required beyond the defensive/yield profile. |
+| **Used in** | `docs/lessons/STOCKS_INTERMEDIATE.md` (S-I03 sector rotation worked example, S-I04 dividends sim drill) |
+| **Collision check** | "CALD" is not a recognized US-listed equity ticker. Distinct from CALM (Cal-Maine Foods, real ticker) and CAL (real ticker, various). "Calder" as a standalone name has no major exchange collision. Clear. |
+
+---
+
+### 13. ANDU (crypto reference) — see entry 9
 
 *ANDU appears once in `docs/COACH_ONBOARDING.md` in a coaching-filter example
 ("do you think ANDU is a good hold") — this is covered by the standing ANDU entry above.*

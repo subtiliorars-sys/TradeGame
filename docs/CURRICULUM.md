@@ -112,6 +112,7 @@ exist; entries note "(scenario catalog)" where a matching scenario should be aut
 | S-I02 | Earnings gap mechanics | How gaps form; why stops can't protect you through a gap | Scenario replay — earnings gap scenario (GDD §5.2) | Do you have a policy on holding positions through earnings? |
 | S-I03 | Sector rotation | Defensive vs. growth rotation; how to observe rather than chase | Scenario replay — sector rotation scenario (GDD §5.2) | Are you reacting to rotation or observing it and waiting for your setup? |
 | S-I04 | Dividends | How dividend yield works; ex-dividend date mechanics; yield vs. growth tradeoff | DCA/rebalance sim — compare yield-focused vs. growth-focused allocation over simulated time | Can you explain why dividend yield alone is not a buy signal? |
+| S-I05 | Index inclusion and passive flows | How index membership triggers mechanical buying from passive funds; announcement-to-inclusion price dynamics; distinguishing mechanical flow from business-change drivers | paired scenario SCN-005 | Can you label a price move's driver (mechanical flow vs. business change) before trading it? |
 
 #### Advanced (S-A)
 

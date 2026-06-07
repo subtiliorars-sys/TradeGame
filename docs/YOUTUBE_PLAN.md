@@ -56,6 +56,8 @@ scheduling.
 | No "what we're trading" | No current-market framing of any kind |
 | No false urgency | No "before it's too late," "don't miss," "act now," or time-pressure language |
 | Fictional instruments named correctly | HBD/GLIMMER/NGSM/VLDI/NMX 100/ANDU used exactly — no ticker that could be confused with a real asset |
+| No pre-build live-trading or gameplay implication | Title or description implies live trading footage or in-game footage before a playable build exists |
+| No signal/secret-knowledge implication | Any framing resembling "what brokers don't want you to see," "the secret method," or similar hidden-knowledge patterns |
 
 **Thumbnail rules:**
 
@@ -63,6 +65,7 @@ scheduling.
 |---|---|
 | No dollar or percentage figures | Any number that reads as a profit, loss, or return figure |
 | No green/red arrows implying direction on a real chart | Chart overlays on thumbnails must be clearly fictional or diagrammatic — not readable as a real market call |
+| No direction-implying arrow compositions | Arrow overlays (pointing up or down) on any chart — real or fictional — are banned in thumbnails. Arrows are read as directional calls regardless of the accompanying label. Use diagrammatic annotations (brackets, zones, text labels) instead. |
 | No rocket, moon, or "to the moon" imagery | Standard pump-culture shorthand is off-brand and legally adjacent to earnings claims |
 | No member face with a dollar amount | Testimonial-adjacent thumbnail compositions require the same FTC treatment as text testimonials |
 | Fictional instruments labeled | Any chart shown carries a visible fictional ticker label |
@@ -498,7 +501,7 @@ you enter. This is not negotiable for XP.
 Stop honored — not manually cancelled: 20 XP. You followed the rule when it was
 inconvenient to follow it.
 
-And here is the one that surprised some testers: no trade taken, observation journaled:
+And here is the one we expect to surprise people: no trade taken, observation journaled:
 40 XP. Sitting out an unclear scenario and writing down what you observed earns more
 XP than an impulsive trade. Because patience is a skill, and we wanted the leaderboard
 to say so."
@@ -584,17 +587,17 @@ of my account is gone?"
 
 [VISUAL: diagram — account balance as a bar, 2% slice highlighted]
 
-"If the answer is more than two percent, your position is too large. Recalculate before
-you enter.
+"If the answer is more than your written risk rule — in the sim we default that rule to
+two percent — your position is too large. Recalculate before you enter.
 
 Not because two percent is magic. Because two percent means you can lose ten trades in
-a row and still have 80 percent of your account left to learn from.
+a row and still have barely over eighty percent of your account left to learn from.
 
-Twenty percent per trade? Three losses and you are down 60 percent. Recovery from that
-requires winning back more than you lost. The math works against you."
+Twenty percent per trade? Three losses and you are at barely half your account.
+Recovery from that requires winning back more than you lost. The math works against you."
 
-[VISUAL: simple table — 2% per trade: 10 losses = 80% remaining. 20% per trade: 3
-losses = 48% remaining.]
+[VISUAL: simple table — 2% per trade: 10 losses = 81.7% remaining (0.98^10). 20% per trade: 3
+losses = 51.2% remaining (0.8^3).]
 
 "This is position sizing. It is not a trading signal. It does not tell you what to
 trade or when. It tells you how much to put at risk when you do trade.

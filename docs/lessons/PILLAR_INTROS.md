@@ -277,26 +277,26 @@ When you "go long" ANDU/HarborUSD, you are buying ANDU and selling HarborUSD. If
 - Mini lot: 10,000 units
 - Micro lot: 1,000 units
 
-**Pip value calculation.** For a pair where HarborUSD is the quote currency (the second), pip value in HarborUSD is straightforward:
+**Pip value calculation.** For a pair where HarborUSD is the quote currency (the second), one pip on one unit of base is simply 0.0001 HarborUSD, so:
 
-> Pip value = (0.0001 / current price) × lot size
+> Pip value (in HarborUSD) = 0.0001 × lot size
 
-For ANDU/HarborUSD at 1.2450, standard lot (100,000 units):
+For ANDU/HarborUSD, any price, standard lot (100,000 units):
 
-> (0.0001 / 1.2450) × 100,000 = $8.03 per pip
+> 0.0001 × 100,000 = $10.00 per pip
 
-For a micro lot (1,000 units):
+For a mini lot (10,000 units): $1.00 per pip. For a micro lot (1,000 units):
 
-> (0.0001 / 1.2450) × 1,000 = $0.08 per pip
+> 0.0001 × 1,000 = $0.10 per pip
 
-**Position sizing with a pip-based stop.** Your account: $2,000. Risk per trade: 1% = $20. Your stop: 40 pips. Pip value (micro lot): $0.08.
+**Position sizing with a pip-based stop.** Your account: $2,000. Risk per trade: 1% = $20. Your stop: 40 pips. Pip value (micro lot): $0.10.
 
-Dollar risk per micro lot = 40 pips × $0.08 = $3.20.
-Micro lots you can trade: $20 / $3.20 = 6.25 → round down to 6 micro lots.
+Dollar risk per micro lot = 40 pips × $0.10 = $4.00.
+Micro lots you can trade: $20 / $4.00 = 5 micro lots exactly.
 
 This calculation — not intuition, not a "gut" size — is what the position sizing drill (F-03) exists to build into muscle memory. Forex position sizing always starts here.
 
-**Note on pip value variation.** When HarborUSD is not the quote currency, pip value must be converted using a cross rate. The formula shifts slightly. The sandbox will walk you through both variants in the position sizing puzzle. For now, internalize the structure; the drill handles the variation.
+**Note on pip value variation.** When HarborUSD is the BASE currency instead of the quote, or your account is denominated in something else, pip value must be converted at the current rate — that is where the (0.0001 / price) × lot-size form appears, giving pip value denominated in the base currency. The sandbox will walk you through both variants in the position sizing puzzle. For now, internalize the structure; the drill handles the variation.
 
 ---
 
@@ -304,7 +304,7 @@ This calculation — not intuition, not a "gut" size — is what the position si
 
 **Self-Check:**
 1. ANDU/HarborUSD is quoted at 1.3100. The pair moves to 1.3145. How many pips did it move, and in which direction for a long position?
-2. Your account is $3,000. You risk 1% per trade ($30). Your stop is 25 pips. Pip value for a mini lot on ANDU/HarborUSD at 1.3100 is $0.76. How many mini lots can you trade?
+2. Your account is $3,000. You risk 1% per trade ($30). Your stop is 25 pips. Pip value for a mini lot on ANDU/HarborUSD is $1.00. How many mini lots can you trade?
 3. A friend tells you to "just buy 1 standard lot of everything — it's only forex." What is wrong with this approach from a position sizing perspective?
 
 **Process Check:** Can you calculate your pip value and position size manually, without a tool, before you enter any forex position?
@@ -331,17 +331,15 @@ This lesson exists because retail forex has one distinguishing feature that no o
 
 - Required margin (at 50:1): $2,500 — but wait, you only have $500. At 50:1 you can actually open a position where $500 controls $25,000. Let us use a smaller example that illustrates the math precisely.
 
-Revised: You have $500. Required margin for 1 mini lot (10,000 units) at 50:1 = 10,000 / 50 = $200 margin required. You open 2 mini lots. Required margin: $400. Free margin: $100.
+Revised: You have $500. One mini lot (10,000 units of ANDU) at 1.2500 is a notional position of 10,000 × 1.2500 = $12,500. Required margin at 50:1 = $12,500 / 50 = $250. You open 2 mini lots. Required margin: $500 — your ENTIRE account. Free margin: $0.
 
-ANDU/HarborUSD moves 50 pips against you. Pip value for 2 mini lots (at approximately $0.76 each): $0.76 × 2 × 50 = $76 loss. Account equity: $500 - $76 = $424.
+Pip value for 2 mini lots: $1.00 × 2 = $2.00 per pip. From the very first pip against you, account equity ($500 − $2) is below required margin ($500) — you are in margin-call territory the moment the position opens and the spread is paid.
 
-The broker's margin call level is 100% margin (i.e., account equity cannot fall below the required margin of $400). You receive a margin call warning.
+The broker's stop-out level is 50% (account equity falls to 50% of required margin = $250).
 
-The broker's stop-out level is 50% (account equity falls to 50% of required margin = $200).
+At stop-out: loss required = $500 − $250 = $250. At $2.00 per pip, that is $250 / $2.00 = 125 pips against you.
 
-At stop-out: loss required = $500 - $200 = $300. At $0.76 per pip per mini lot × 2 lots = $1.52 per pip, that is $300 / $1.52 = 197 pips against you.
-
-At 50:1 with 2 mini lots and only $100 free margin, a margin call warning arrives at roughly 66 pips. Stop-out arrives at 197 pips — if not automatically closed earlier. The numbers shift with every broker, every leverage ratio, every lot size. The calculation above is the skeleton. In a real account you would need to run it for your specific setup; in the sim, the platform calculates it for you — but the point is that you can do it manually.
+At maximum leverage there is no buffer at all: the warning is immediate, and stop-out arrives at 125 pips — if not automatically closed earlier. The numbers shift with every broker, every leverage ratio, every lot size. The calculation above is the skeleton. In a real account you would need to run it for your specific setup; in the sim, the platform calculates it for you — but the point is that you can do it manually.
 
 **The aggregate picture.** Regulated brokers in multiple jurisdictions are required to disclose the percentage of retail accounts that lose money. Across publicly available disclosures, the numbers cluster in the 70–80% range, with some brokers disclosing higher. Forex is not uniquely difficult in terms of mechanics — pairs, pips, and sessions are learnable. The loss rate is attributable to leverage use combined with inadequate position sizing. X-I04 will walk through the disclosed numbers with you directly.
 

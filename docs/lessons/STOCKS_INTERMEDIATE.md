@@ -134,9 +134,9 @@ The process-correct response to observing a rotation is to update your notes ("I
 
 **What rotation is not.** Rotation is not a guaranteed cycle with predictable endpoints. "Defensive outperforms for 6 months, then growth outperforms for 12 months" is a retrospective pattern, not a prospective clock. Treating historical rotation timing as a forward signal produces trades based on the last cycle, not the current one.
 
-**Worked example.** Over six weeks, NGSM (growth, tech-adjacent) has underperformed the NMX 100 by 12 percentage points. A fictional defensive name, VRXC, has outperformed the index by 8 points over the same period. You note this in your journal as "possible defensive rotation underway."
+**Worked example.** Over six weeks, NGSM (growth, tech-adjacent) has underperformed the NMX 100 by 12 percentage points. A fictional defensive name, Calder Utilities (ticker CALD), has outperformed the index by 8 points over the same period. You note this in your journal as "possible defensive rotation underway."
 
-Your strategy: swing long with a defined stop below recent support. VRXC has pulled back 3% after its recent run. You identify a potential entry at VRXC's support, stop below that level, risk 1% of account. The driver in your journal: "VRXC is in a sector that appears to be receiving institutional inflows; this is context, not the entry reason. Entry reason: price has pulled back to a defined support level with narrowing range (compression), and volume on the pullback is declining."
+Your strategy: swing long with a defined stop below recent support. CALD has pulled back 3% after its recent run. You identify a potential entry at CALD's support, stop below that level, risk 1% of account. The driver in your journal: "CALD is in a sector that appears to be receiving institutional inflows; this is context, not the entry reason. Entry reason: price has pulled back to a defined support level with narrowing range (compression), and volume on the pullback is declining."
 
 The sector context is a backdrop observation. The actual entry is built on chart structure and your strategy rules. You are not chasing the rotation; you are waiting for a setup within it.
 
@@ -179,7 +179,7 @@ To receive a dividend, you must hold shares before the ex-dividend date. If you 
 
 **Worked example.** NGSM is at $80 the day before the ex-dividend date. The quarterly dividend is $0.60. On the ex-dividend date morning, NGSM opens at approximately $79.40 (the $80 minus the $0.60 dividend). If you held shares before the ex-date, you receive the $0.60 payment — so your total value is still $79.40 in price + $0.60 in cash = $80.00. You did not lose money; the payment was transferred from the share price to your cash account.
 
-If you buy on the ex-dividend date at $79.40 and immediately sell, you will not receive the dividend. The $0.40 discount from $80 does not represent a free opportunity to collect a dividend.
+If you buy on the ex-dividend date at $79.40 and immediately sell, you will not receive the dividend. The $0.60 discount from $80 does not represent a free opportunity to collect a dividend.
 
 **The dividend capture myth.** A common beginner error is "dividend capture" — buying just before the ex-date to collect the dividend and then selling. In a perfectly efficient market, the share price adjusts by the dividend amount on the ex-date, and you receive a cash payment equal to what you lost in price. Transaction costs and slippage typically make this a negative-expectancy trade. It is not a free income strategy.
 
@@ -197,7 +197,7 @@ Before treating yield as a positive attribute, the process question is: is the d
 
 ---
 
-**Sim Drill:** DCA/rebalance sim — compare a yield-focused allocation (including a fictional VRXC dividend-payer) against a growth-focused allocation (NGSM, growth profile) over a simulated six-month period with one rate-change event. Log: the income received in each allocation, the price return in each, and the total return. Note which allocation you would prefer under each scenario and why.
+**Sim Drill:** DCA/rebalance sim — compare a yield-focused allocation (including Calder Utilities, ticker CALD, a fictional defensive dividend-paying stock) against a growth-focused allocation (NGSM, growth profile) over a simulated six-month period with one rate-change event. Log: the income received in each allocation, the price return in each, and the total return. Note which allocation you would prefer under each scenario and why.
 
 **Self-Check:**
 1. NGSM pays an annual dividend of $3.20. Its price is $64. What is the yield? If the price falls to $40 (and the dividend is unchanged), what is the new yield? What might explain why a rising yield is sometimes a warning sign?

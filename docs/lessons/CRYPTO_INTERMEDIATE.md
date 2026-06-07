@@ -139,19 +139,15 @@ These are not abstract numbers — they are the exact divergence levels in SCN-0
 
 **Worked example.** You deposit 420 HarborUSD and 100 GLIMMER into the ArcSwap pool when GLIMMER = $4.20 per token. Your deposit value: $840 (420 + 100 × $4.20). Pool total: 10,000 HarborUSD and 2,381 GLIMMER (k ≈ 23,810,000). Your share: ~4.2% of the pool.
 
-GLIMMER rises to $6.85 (r = 6.85 / 4.20 ≈ 1.631). The pool now holds a different token ratio because arbitrageurs have bought GLIMMER out of the pool. Your 4.2% LP share now represents approximately 443 HarborUSD and 82 GLIMMER.
+GLIMMER rises to $6.85 (r = 6.85 / 4.20 ≈ 1.631). Arbitrageurs buy GLIMMER out of the pool until its reserves re-balance to the new price: pool reserves become √(k × P) ≈ 12,771 HarborUSD and √(k / P) ≈ 1,864 GLIMMER. Your 4.2% LP share now represents approximately 536 HarborUSD and 78.3 GLIMMER.
 
-- LP position value: 443 + (82 × $6.85) ≈ 443 + 561 = **$1,004**
+- LP position value: 536 + (78.3 × $6.85) ≈ 536 + 536 = **$1,073**
 - HODL baseline (held outright): 420 + (100 × $6.85) = 420 + 685 = **$1,105**
-- IL in dollar terms: $1,105 − $1,004 = **$101** (~9.1% of HODL baseline)
+- IL in dollar terms: $1,105 − $1,073 = **$32** (≈ 2.9% of the HODL baseline)
 
-Wait — but the formula gives 2.9% IL at r = 1.63. The discrepancy arises because the 2.9% figure is IL as a percentage of the LP position value, not of the deposit value. Let's verify:
+Cross-check against the formula: IL = |2 × √1.631 / (1 + 1.631) − 1| = |2.554 / 2.631 − 1| ≈ 0.029 = **2.9%** — the dollar example and the formula agree. (A constant-product LP position always splits 50/50 by value, which is why 536 HarborUSD sits beside $536 of GLIMMER.)
 
-- IL as % of LP position value: $101 / $1,004 ≈ 10%. Hmm.
-
-Let me apply the formula directly: IL = |2 × √1.631 / (1 + 1.631) − 1| = |2 × 1.277 / 2.631 − 1| = |2.554 / 2.631 − 1| = |0.971 − 1| = 0.029, or **2.9%**.
-
-The 2.9% figure is the standard IL calculation as a percentage of the HODL value. In dollar terms at $6.85: 2.9% of $1,105 HODL = $32. The gap between the IL formula result and the full worked dollar example above reflects that IL alone is ~2.9% of HODL, but the LP position grew in value substantially from the base deposit — the LP position at $6.85 is worth much more than the original $840 because GLIMMER's price rose. The SCN-004 scenario tracks "Net position vs. HODL" which is the IL comparison that matters: you are comparing your LP outcome to simply having held the same assets.
+Note that your LP position still GREW from $840 to $1,073 — IL is not an absolute loss; it is the gap versus simply holding. The SCN-004 LP Position Panel tracks exactly this "Net vs. HODL" comparison in real time.
 
 The practical takeaway: at 63% price divergence, your LP position is worth about 2.9% less than holding the assets outright would have been — before fees. Whether fees compensate depends on the pool's trading volume.
 
