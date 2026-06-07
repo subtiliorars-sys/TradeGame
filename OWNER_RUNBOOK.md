@@ -188,6 +188,37 @@ the same night; every finding was fixed in-stack with regression tests
 
 ---
 
+### N-8. Merge the away-window PR queue (added 2026-06-08, unattended loop)
+
+**What:** Ten PRs accumulated while you were away — all green, every
+scoring-adjacent change red-teamed, two dependency stacks. Merge in this
+order and everything lands clean (any order works EXCEPT inside the stacks):
+
+| Order | PR | What | Notes |
+|---|---|---|---|
+| 1 | **#16** | RISK_REGISTER §16a broker covenant | docs; the one you approved + red-teamed wording |
+| 2 | **#17** | SCN-004 DP-C IL-estimate checkpoint | code |
+| 3 | **#19** | SCN-004 T-05 panel explainer | **stacked on #17** — merge #17 first |
+| 4 | **#18** | Drill system (waves A-D, red-teamed) | code; makes drills REQUIRED before scenarios |
+| 5 | **#21** | Drill tier-2 + procedural re-roll | **stacked on #18** |
+| 6 | **#20** | Consolidation (widened lint-pnl, GR-013) | tests/guard |
+| 7 | **#22** | Debrief content SCN-002..006 | content |
+| 8 | **#23** | GR-014 flag-is-coaching fixture | tests |
+| 9 | **#24** | Live-drill engine brief | docs (design) |
+| 10 | **#25** | Lesson-system brief | docs (design) |
+| 11 | **#26** | Lessons wave 1 (nine lessons live) | **stacked on #25** |
+| — | **Preview #3** | Public README refresh (sanitized) | other repo, independent |
+
+If any later merge shows a conflict (several touch TradingScene/main.ts),
+tell the agent "rebase #N" — each is a minutes-long mechanical fix.
+
+**After the queue lands:** one confirmed cleanup is parked to avoid stack
+conflicts — drawOrderTicket leaks display objects per redraw (fix pattern:
+the journal drawer's tag-and-destroy). The loop will take it once the
+TradingScene stack is merged.
+
+---
+
 ## GATES — Required before public-facing activity or any revenue
 
 Do not open Discord to the public, post social content, or accept any money
