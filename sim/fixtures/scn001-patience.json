@@ -10,7 +10,10 @@
       "type": "journal_entry",
       "ticksAfter": 60,
       "payload": {
-        "tags": ["observation", "hypothesis"],
+        "tags": [
+          "observation",
+          "hypothesis"
+        ],
         "wordCount": 18
       }
     },
@@ -18,14 +21,18 @@
       "type": "journal_entry",
       "ticksAfter": 48,
       "payload": {
-        "tags": ["observation"],
+        "tags": [
+          "observation"
+        ],
         "wordCount": 12
       }
     },
     {
       "type": "advance_ticks",
       "ticksAfter": 0,
-      "payload": { "count": 132 }
+      "payload": {
+        "count": 132
+      }
     },
     {
       "type": "debrief_complete",
@@ -35,8 +42,14 @@
   ],
   "expectedLogDigest": "a8dc52974045983b249db0cf0c1b89dd7a67c1cb7c425546ea99b3685d6898ce",
   "expectedXpEvents": [
-    { "metricId": "patience_observation", "xpAmount": 40 },
-    { "metricId": "debrief_completed",    "xpAmount": 30 }
+    {
+      "metricId": "patience_observation",
+      "xpAmount": 40
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    }
   ],
-  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path — no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 70. Regenerate with: npx vitest run tests/_gen_digests.test.ts"
+  "notes": "SCN-001 patience run. Player observes only: journals at T0 (tick 60) and during cascade (tick 108), advances to end, completes debrief. No order_submit events; patience_observation fires (+40 XP), debrief_completed fires (+30 XP). Trade-execution metrics (journal_before_trade, size_compliance, stop_before_entry, stop_honored, no_stop_widen) emit applicable=false on the no-trade path \u2014 no XP, no penalty. sessionHasWin=false. No reckless_winner_flag. Total XP: 70. Regenerate with: npx vitest run tests/_gen_digests.test.ts"
 }

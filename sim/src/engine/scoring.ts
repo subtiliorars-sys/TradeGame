@@ -220,12 +220,15 @@ export function stop_honored(input: MetricInput): MetricResult {
   // of the session was honored, not abandoned.  (Without this exemption a
   // stop that never triggers — e.g. SCN-004's withdrawal trigger on the
   // up-divergence path — could never pass.)
+  // ">=" not ">": a manual cancel logged at the same simTimeMs as the entry
+  // fill (same-tick cancel-then-enter) is still abandoning the stop
+  // (red-team finding R2-7).
   const stopCancelledAfterEntry = input.events.some(
     (e): e is OrderCancelEvent =>
       e.type === "order_cancel" &&
       e.orderId === stopSubmit.orderId &&
       e.reason !== "session_end" &&
-      e.timestamp > entryFill.timestamp
+      e.timestamp >= entryFill.timestamp
   );
 
   return {
@@ -440,13 +443,38 @@ export function policy_match(input: MetricInput): MetricResult {
     return { metricId: "policy_match", passed: false, xpOnPass: 0, applicable: false };
   }
 
+  // A declaration made AFTER the card deadline carries no predictive
+  // content — adherence to a retroactive "policy" is not process
+  // (red-team finding R2-5a).  No deadline configured → no gate.
+  if (
+    input.policyDeadlineMs !== undefined &&
+    declaration.timestamp > input.policyDeadlineMs
+  ) {
+    return { metricId: "policy_match", passed: false, xpOnPass: 0, applicable: true };
+  }
+
   const declarationTick = declaration.tickIndex;
   const declaredOption = declaration.option;
 
-  // Events after the declaration tick (the "event window").
+  // The adherence window runs from the declaration to the end of the last
+  // scenario-authored no-entry window (the event itself).  Behaviour after
+  // the event — e.g. option A's planned re-entry on confirmation — is not a
+  // policy violation.  Without authored windows, the window extends to the
+  // end of the session (conservative).
+  const windowEndMs =
+    input.noEntryWindows !== undefined && input.noEntryWindows.length > 0
+      ? Math.max(...input.noEntryWindows.map((w) => w.endMs))
+      : Number.POSITIVE_INFINITY;
+
+  // Order submits between the declaration and the end of the event window.
+  // ">=" on timestamp: an action fired on the SAME tick as the declaration
+  // (pause → declare → act) is inside the adherence window, not before it
+  // (red-team finding NEW-1).
   const windowSubmits = input.events.filter(
     (e): e is OrderSubmitEvent =>
-      e.type === "order_submit" && e.tickIndex > declarationTick
+      e.type === "order_submit" &&
+      e.timestamp >= declaration.timestamp &&
+      e.timestamp <= windowEndMs
   );
 
   // Events at or before the declaration tick.
@@ -464,15 +492,32 @@ export function policy_match(input: MetricInput): MetricResult {
   let passed = false;
 
   if (declaredOption === "A_flat") {
-    // A_flat: no order_submit events in the window after declaration.
+    // A_flat: no order_submit events between declaration and event-window end.
     passed = windowSubmits.length === 0;
   } else if (declaredOption === "B_hold_with_stop") {
-    // B_hold_with_stop: position was held (at least one fill before declaration)
-    // AND a stop order was present at or before the declaration tick.
+    // B_hold_with_stop: position was held (at least one fill before declaration),
+    // a stop order was present at or before the declaration tick, the stop was
+    // not manually cancelled through the event window, and no new orders were
+    // fired into the event window.  "Declare B, then dump your stop and trade
+    // the whipsaw" is a mismatch, not adherence (red-team finding R2-5b).
+    const stopIds = new Set(preDeclarationStopSubmits.map((s) => s.orderId));
+    const stopAbandonedInWindow = input.events.some(
+      (e): e is OrderCancelEvent =>
+        e.type === "order_cancel" &&
+        stopIds.has(e.orderId) &&
+        e.reason !== "session_end" &&
+        e.timestamp <= windowEndMs &&
+        // ">=": a same-tick declare-then-cancel is abandonment (NEW-1).
+        e.timestamp >= declaration.timestamp
+    );
     passed =
-      preDeclarationFills.length > 0 && preDeclarationStopSubmits.length > 0;
+      preDeclarationFills.length > 0 &&
+      preDeclarationStopSubmits.length > 0 &&
+      !stopAbandonedInWindow &&
+      windowSubmits.length === 0;
   } else if (declaredOption === "C_observe_only") {
-    // C_observe_only: no order_submit events in the window after declaration.
+    // C_observe_only: no order_submit events between declaration and
+    // event-window end.
     passed = windowSubmits.length === 0;
   }
 
@@ -558,11 +603,48 @@ export function no_entry_window(input: MetricInput): MetricResult {
     return { metricId: "no_entry_window", passed: false, xpOnPass: 15, applicable: false };
   }
 
-  const enteredInWindow = input.events.some(
-    (e): e is OrderSubmitEvent =>
-      e.type === "order_submit" &&
-      windows.some((w) => e.timestamp >= w.startMs && e.timestamp <= w.endMs)
-  );
+  // Both submits AND fills are checked: a stop-entry placed before the
+  // window that fills inside it is still an entry during the window
+  // (red-team finding R2-6).
+  //
+  // EXCEPTION (red-team finding NEW-2): a protective stop EXIT that triggers
+  // inside the window is not an entry — punishing it would punish exactly
+  // the pre-stated-stop discipline this metric exists to reward (e.g.
+  // SCN-006 option B stopped out during the whipsaw).  A stop fill is
+  // treated as protective iff the stop was submitted before the earliest
+  // window opens AND an opposite-side non-stop fill precedes it (it closes
+  // an existing position).  A pre-placed stop ENTRY has no prior opposite
+  // fill and still fails the metric.
+  const inAnyWindow = (ts: number): boolean =>
+    windows.some((w) => ts >= w.startMs && ts <= w.endMs);
+  const earliestWindowStart = Math.min(...windows.map((w) => w.startMs));
+
+  const submitByOrderId = new Map<string, OrderSubmitEvent>();
+  for (const e of input.events) {
+    if (e.type === "order_submit" && !submitByOrderId.has(e.orderId)) {
+      submitByOrderId.set(e.orderId, e);
+    }
+  }
+
+  const isProtectiveStopFill = (fill: OrderFillEvent, fillIdx: number): boolean => {
+    const submit = submitByOrderId.get(fill.orderId);
+    if (submit === undefined || submit.orderType !== "stop") return false;
+    if (submit.timestamp >= earliestWindowStart) return false;
+    // Closes an existing position: an earlier opposite-side non-stop fill.
+    return input.events.some((e, i): boolean => {
+      if (i >= fillIdx || e.type !== "order_fill") return false;
+      const s = submitByOrderId.get((e as OrderFillEvent).orderId);
+      return s !== undefined && s.orderType !== "stop" && s.side !== submit.side;
+    });
+  };
+
+  const enteredInWindow = input.events.some((e, i): boolean => {
+    if (e.type === "order_submit") return inAnyWindow(e.timestamp);
+    if (e.type === "order_fill") {
+      return inAnyWindow(e.timestamp) && !isProtectiveStopFill(e, i);
+    }
+    return false;
+  });
 
   const earliestStart = Math.min(...windows.map((w) => w.startMs));
   const preStated = input.events.some(
@@ -672,8 +754,22 @@ export function runScoreTracker(
 
   // XP emission — one event per metric that is applicable, passed, and has xpOnPass > 0.
   // Metrics with applicable === false emit no XP event (not a failure — just no opportunity).
+  //
+  // RUBRIC GATE (red-team finding R2-1): when the caller supplies
+  // rubricMetricIds, only metrics the scenario AUTHORS in its xpRubric emit
+  // XP.  This keeps the harness XP summary, the debrief xpTotal, and the
+  // ProgressStore rank economy on one set of books — a scenario pays exactly
+  // what it authors, nothing more.  Callers that pass no rubric (sandbox
+  // sessions) keep the emit-all behavior.
+  //
+  // FOOTGUN: an EMPTY array is not "no rubric" — it authors zero XP and
+  // silently zeroes the economy.  Pass undefined (not `xpRubric ?? []`)
+  // for rubric-less sessions.
+  const rubricGate = (metricId: MetricId): boolean =>
+    input.rubricMetricIds === undefined ||
+    input.rubricMetricIds.includes(metricId);
   const xpEvents: XpEvent[] = results
-    .filter((r) => r.applicable && r.passed && r.xpOnPass > 0)
+    .filter((r) => r.applicable && r.passed && r.xpOnPass > 0 && rubricGate(r.metricId))
     .map((r) => ({
       type: "xp" as const,
       sessionId,
@@ -704,13 +800,20 @@ export function runScoreTracker(
   }
 
   // policy_mismatch flag — emitted when declaration was present but behaviour
-  // did not match. Inert (no declaration) → no flag.
+  // did not match. Inert (no declaration) → no flag.  A declaration that
+  // missed the card deadline is a LATENESS failure (policy_declared_card's
+  // fail row), not a behaviour mismatch — no mismatch flag for it
+  // (red-team finding NEW-4).
   const policyResult = results.find((r) => r.metricId === "policy_match");
   const declaration = input.events.find(
     (e): e is PolicyDeclaredEvent => e.type === "policy_declared"
   );
+  const declarationOnTime =
+    declaration !== undefined &&
+    (input.policyDeadlineMs === undefined ||
+      declaration.timestamp <= input.policyDeadlineMs);
   let policyMismatchFlag: PolicyMismatchFlag | null = null;
-  if (declaration && policyResult && !policyResult.passed) {
+  if (declaration && declarationOnTime && policyResult && !policyResult.passed) {
     policyMismatchFlag = {
       type: "policy_mismatch",
       declaredOption: declaration.option,

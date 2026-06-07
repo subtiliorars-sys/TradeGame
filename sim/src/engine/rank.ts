@@ -95,16 +95,20 @@ export function currentRank(
 
   const drillSet = new Set(completedDrillIds);
 
-  // Walk the ladder from the highest threshold downward; take the first rank
-  // for which both XP and drills are satisfied.
+  // Walk the ladder from the bottom up, stopping at the FIRST unmet gate.
+  // Gates are cumulative: every intermediate rank's XP and drill requirements
+  // must be satisfied to advance past it — a top-down "first satisfied" walk
+  // would let high XP vault an intermediate rank's unmet drill gate
+  // (red-team finding R2-4; GDD §7: XP alone is insufficient).
   let earnedIndex = 0;
-  for (let i = ladder.length - 1; i >= 0; i--) {
+  for (let i = 1; i < ladder.length; i++) {
     const candidate = ladder[i]!;
     if (
       xpTotal >= candidate.xpRequired &&
       candidate.drillsRequired.every((id) => drillSet.has(id))
     ) {
       earnedIndex = i;
+    } else {
       break;
     }
   }

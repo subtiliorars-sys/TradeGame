@@ -49,7 +49,7 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "1b03a01242f6267964a685f6b42a93d229fec717929490ed8a1d52a44a3e9cea",
+  "expectedLogDigest": "9dd3e5a34b537b0b7fcf5a05fc7201627830cd5d33ce9e520273d4bd8d890343",
   "expectedXpEvents": [
     {
       "metricId": "patience_observation",
@@ -58,10 +58,6 @@
     {
       "metricId": "debrief_completed",
       "xpAmount": 30
-    },
-    {
-      "metricId": "plan_declared",
-      "xpAmount": 20
     },
     {
       "metricId": "policy_match",

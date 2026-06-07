@@ -178,8 +178,10 @@ export class SessionAdapter {
 
   /**
    * Whether the sim determined the session had at least one "winning" trade.
-   * Set externally by the UI layer because the engine enforces the structural
-   * PnL guard — the adapter receives only a boolean (see MetricInput.sessionHasWin).
+   * Derived inside endSession() from entry fills vs. the final close —
+   * mirroring harness/run.ts exactly — so the reckless-winner coaching flag
+   * is live in real play (red-team finding R4-2).  Only this boolean reaches
+   * the scorer (structural PnL guard, MetricInput.sessionHasWin).
    */
   sessionHasWin = false;
 
@@ -454,6 +456,30 @@ export class SessionAdapter {
 
     // Build MetricInput from the event log (structural PnL guard: only boolean win).
     const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
+
+    // Derive sessionHasWin from entry fills vs. final close — identical logic
+    // to harness/run.ts (long wins if close > fill; short wins if close < fill).
+    // No dollar amount is computed; only the boolean leaves this block.
+    // An externally-set true (test harness / future engine signal) is kept.
+    const finalClose = this.latestTick?.close;
+    if (finalClose !== undefined && !this.sessionHasWin) {
+      const submitSideById = new Map<string, "buy" | "sell">();
+      const stopOrderIds = new Set<string>();
+      for (const ev of allEvents) {
+        if (ev.type === "order_submit") {
+          submitSideById.set(ev.orderId, ev.side);
+          if (ev.orderType === "stop") stopOrderIds.add(ev.orderId);
+        }
+      }
+      this.sessionHasWin = allEvents.some((ev) => {
+        if (ev.type !== "order_fill" || stopOrderIds.has(ev.orderId)) return false;
+        const side = submitSideById.get(ev.orderId);
+        if (side === undefined) return false;
+        return side === "buy"
+          ? finalClose > ev.fillPrice
+          : finalClose < ev.fillPrice;
+      });
+    }
     const metricInput: MetricInput = Object.assign(
       {
         events: allEvents,

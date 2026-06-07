@@ -74,27 +74,15 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "9e426d959379f346fbe1dbac77d821b1dafb336686b471b8f96753163326c664",
+  "expectedLogDigest": "f19016f33f2332dedfc7ec1651982536b340e4ae95aeb358616137d77da550bf",
   "expectedXpEvents": [
     {
       "metricId": "journal_before_trade",
       "xpAmount": 20
     },
     {
-      "metricId": "size_compliance",
-      "xpAmount": 30
-    },
-    {
-      "metricId": "stop_before_entry",
-      "xpAmount": 25
-    },
-    {
       "metricId": "stop_honored",
       "xpAmount": 20
-    },
-    {
-      "metricId": "no_stop_widen",
-      "xpAmount": 15
     },
     {
       "metricId": "debrief_completed",

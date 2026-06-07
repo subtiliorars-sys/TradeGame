@@ -182,16 +182,14 @@ describe("currentRank — drill gate (synthetic ladder)", () => {
     expect(r.drillsMissing).toHaveLength(0);
   });
 
-  it("XP at Gamma threshold but drill-A missing → Beta (drill-A done) takes precedence", () => {
-    // At 300 XP without drill-A: Beta requires drill-A so Beta is blocked;
-    // Alpha has no drill gate → but wait, we can reach Beta with drill-A, or fall back to Alpha.
-    // Without drill-A: Alpha is earned (no gate), Beta is blocked (drill), Gamma is reached
-    // via XP (300 >= 300) but Gamma has no drill gate — however Beta must be traversed first.
-    // Rule: walk from highest threshold down; Gamma has xpRequired=300, drillsRequired=[].
-    // So at 300 XP with no drills: Gamma is reachable (xp OK, drills OK for Gamma itself).
+  it("XP at Gamma threshold but Beta's drill-A missing → stuck at Alpha (gates are cumulative)", () => {
+    // GDD §7: XP alone is insufficient — a player cannot vault an
+    // intermediate rank's unmet drill gate with raw XP.  At 300 XP without
+    // drill-A the ladder walk stops at Beta's unmet gate, even though
+    // Gamma's own requirements would be satisfiable.
     const r = currentRank(300, [], SYNTH_LADDER);
-    // Gamma itself has no drillsRequired, so it is earned even without drill-A.
-    expect(r.rank.rankId).toBe("gamma");
+    expect(r.rank.rankId).toBe("alpha");
+    expect(r.drillsMissing).toEqual(["drill-A"]);
   });
 });
 

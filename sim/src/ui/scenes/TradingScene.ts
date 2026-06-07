@@ -1175,8 +1175,17 @@ export class TradingScene extends Phaser.Scene {
       color: CSS.DIM,
     }));
 
-    // Tags
-    const tagsList = ["pre_trade", "hypothesis", "exit", "observation", "post_trade"];
+    // Tags — il_estimate / trigger_update are the SCN-004 LP-scenario
+    // rubric tags (il_estimate_written, trigger_updated metrics).
+    const tagsList = [
+      "pre_trade",
+      "hypothesis",
+      "exit",
+      "observation",
+      "post_trade",
+      "il_estimate",
+      "trigger_update",
+    ];
     addJ(label(this, jx + 12, jy + 52, "Tags:", {
       fontSize: "11px",
       color: CSS.DIM,

@@ -78,7 +78,7 @@
       "payload": {}
     }
   ],
-  "expectedLogDigest": "2b25b5ecd8841eaea1b469d5cbbb78683b2f9bf260fa49da2b8980eeb777cf24",
+  "expectedLogDigest": "327d1e38afca17df064f69852d0b9c89d94077bed507928387931f27e7885620",
   "expectedXpEvents": [
     {
       "metricId": "journal_before_trade",
@@ -111,10 +111,6 @@
     {
       "metricId": "debrief_completed",
       "xpAmount": 30
-    },
-    {
-      "metricId": "plan_declared",
-      "xpAmount": 20
     },
     {
       "metricId": "policy_match",

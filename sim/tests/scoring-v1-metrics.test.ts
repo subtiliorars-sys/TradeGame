@@ -20,6 +20,7 @@ import {
   type MetricInput,
 } from "../src/engine/scoring.js";
 import type { SimEvent } from "../src/engine/events.js";
+import { allScenarios } from "../src/scenarios/registry.js";
 
 // ---------------------------------------------------------------------------
 // Event factories (minimal fields the extractors read)
@@ -97,6 +98,52 @@ const ALL_V1_IDS = [
   "no_entry_window",
   "policy_declared_card",
 ];
+
+// ---------------------------------------------------------------------------
+// Rubric ↔ extractor XP parity (red-team finding NEW-3)
+//
+// XP amounts are dual-sourced: XpEvents carry the extractor's hardcoded
+// xpOnPass; debrief rows carry the manifest rubric's xpOnPass.  runScoreTracker
+// rubric-gates emission so both books MUST stay equal — this canonical table
+// breaks loudly if either side is re-tuned without the other.
+// ---------------------------------------------------------------------------
+
+const CANONICAL_XP: Record<string, number> = {
+  journal_before_trade: 20,
+  size_compliance: 30,
+  stop_before_entry: 25,
+  stop_honored: 20,
+  exit_journal: 15,
+  no_stop_widen: 15,
+  patience_observation: 40,
+  leverage_ack: 10,
+  debrief_completed: 30,
+  session_reviewed: 10,
+  plan_declared: 20,
+  plan_declared_late: 0,
+  policy_match: 25,
+  il_estimate_written: 25,
+  trigger_updated: 15,
+  no_entry_window: 15,
+  policy_declared_card: 30,
+};
+
+describe("rubric ↔ extractor XP parity (one set of books)", () => {
+  it("every registered scenario's xpRubric amounts match the canonical metric XP", () => {
+    for (const scn of allScenarios()) {
+      for (const entry of scn.manifest.xpRubric) {
+        expect(
+          CANONICAL_XP[entry.metricId],
+          `${scn.manifest.id}: rubric metric '${entry.metricId}' is not in the canonical XP table`
+        ).toBeDefined();
+        expect(
+          entry.xpOnPass,
+          `${scn.manifest.id}: rubric '${entry.metricId}' xpOnPass diverges from the extractor's canonical amount`
+        ).toBe(CANONICAL_XP[entry.metricId]);
+      }
+    }
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Rubric gating — the V0-digest-protection invariant
