@@ -477,6 +477,7 @@ The ScoreTracker monitors the EventLog in real time and extracts:
 | `leverage_ack` (forex only) | Player acknowledged leverage risk before entry | EventLog: `leverage_risk_acknowledged` event precedes first forex fill |
 | `debrief_completed` | Player completed the debrief screen | EventLog: `debrief_complete` event |
 | `session_reviewed` | Player replayed the session post-completion | EventLog: `replay_started` event in a post-session context |
+| `policy_match` (News/Plan Card scenarios only) | Player's declared policy option matches their actual in-scenario behavior during the event window | Reads the `pre_event_declaration` tag and declared option (A/B/C) from the `JournalEntryEvent` logged at card confirmation; compares to actual behavior: option A = `PositionLedger` shows no open positions at T-01 (no orders in window); option B = position held through window with a stop set and a `leverage_ack` logged (held with declared stop); option C = no `order_submit` events during the event window (observe-only). Match: emits +25 XP event per SCENARIOS_V1 SCN-006 rubric. Mismatch: no XP, emits `policy_mismatch` debrief flag. Computed deterministically from the EventLog alone; no runtime judgment required. |
 
 ---
 
@@ -670,8 +671,26 @@ interface CoachAnnotation {
   anchorRef:     string;        // tickIndex, orderId, or decisionPointId
   text:          string;        // process observation only — no signals, no price targets
   createdAt:     number;        // wall clock (not sim time)
+  annotationType: 'scenario_authored' | 'coach';
+  // 'scenario_authored' — part of scenario content; pre-vetted at authoring time;
+  //   NOT run through the runtime content filter.
+  // 'coach' — user-generated (coach account); ALWAYS run through the content filter
+  //   before display to any other user.
 }
 ```
+
+**Annotation-type distinction:**
+- `scenario_authored` annotations are authored by the game content team, embedded in the
+  scenario config, and pre-vetted at authoring time. They are loaded alongside the
+  EventLog but are not subject to the runtime content filter — vetting happens at
+  scenario authoring and review, not at runtime.
+- `coach` annotations are user-generated from a coach account, created post-session.
+  They must always pass through the server-side content filter before being stored or
+  displayed to any other user. The content filter rules (no price targets, no
+  buy/sell/go-long/short-here directives) apply without exception.
+- The replay viewer renders the two types in visually distinct lanes, per UI_WIREFRAMES
+  Replay Viewer (Screen 6): `scenario_authored` annotations display as `[Scenario]`
+  entries; `coach` annotations display as `[Coach]` entries.
 
 **Coach annotation content rule (enforced in UI, not just policy):**
 The coach annotation input field must not accept text containing price targets or
@@ -787,7 +806,7 @@ Mobile-responsive layout deferred per GDD §10.
 | Pixi.js | Fast WebGL renderer, lightweight (~2MB), good 2D sprite support, active community | No built-in chart primitives; financial chart components must be custom-built | Viable if team has canvas/WebGL experience |
 | Phaser 3 | Full game framework, scene management, audio, input all built in; strong community | Larger bundle (~1MB core + plugins), designed for games not financial charts; chart layer still custom | Viable if game feel (audio, transitions, UI effects) is a priority |
 
-**Recommendation: Phaser 3**
+**Recommendation: Phaser 3 — DECIDED 2026-06-07: Phaser 3.**
 
 Rationale:
 - TradeGame is a game, not a charting tool. Phaser's scene management, audio hooks, and

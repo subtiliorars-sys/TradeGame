@@ -423,7 +423,7 @@ Helper assigns @Verified role
 @New Arrival removed; full server access unlocked
 ```
 
-NEEDS-HUMAN: configure a bot (MEE6, Carl-bot, or Discord's built-in reaction roles) to auto-assign @Verified when a member reacts with a checkmark to the #rules pinned message, OR keep the assignment fully manual. Either path works; the intro in #verify is always manually reviewed regardless.
+NEEDS-HUMAN: configure Carl-bot (decided 2026-06-07; MEE6 and Discord's built-in reaction roles remain as fallback options) to auto-assign @Verified when a member reacts with a checkmark to the #rules pinned message, OR keep the assignment fully manual. Either path works; the intro in #verify is always manually reviewed regardless.
 
 ### Role-pick prompts (market pillar interests)
 

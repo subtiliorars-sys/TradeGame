@@ -26,7 +26,7 @@ None are available to Observer rank — minimum Trainee.
 
 ### Overview
 
-A synthetic stablecoin (HarborUSD / HBD) loses its 1.00 USD peg during a period of
+A synthetic stablecoin (HarborUSD) loses its 1.00 USD peg during a period of
 market stress. The depeg unfolds over approximately 40 minutes of compressed sim time.
 Players must decide whether to act, when to act, and how to size any position — in a
 market where speed, panic, and uncertainty are the structural hazards.
@@ -36,7 +36,7 @@ market where speed, panic, and uncertainty are the structural hazards.
 **Archetype:** Algorithmic stablecoin depeg cascade (historical archetype — no specific protocol or date named)
 **Data source:** Synthetic generator (regime-switching, depeg event hook)
 **Time window:** 40 minutes sim time (compressible to 10 min at 4x)
-**Pair displayed:** HBD/USVC (USVC = a second fictional stable used as quote currency)
+**Pair displayed:** HarborUSD/USVC (USVC = a second fictional stable used as quote currency)
 
 > Note: HarborUSD is a fictional asset. Any resemblance to real tokens is incidental.
 > The scenario teaches depeg mechanics as a category of market event, not analysis of
@@ -62,9 +62,9 @@ market where speed, panic, and uncertainty are the structural hazards.
 
 Granularity: 1-minute candles displayed; underlying tick data at 10-second resolution.
 
-| Clock | Phase | Price (HBD/USVC) | Volume | What happens |
+| Clock | Phase | Price (HarborUSD/USVC) | Volume | What happens |
 |-------|-------|-----------------|--------|--------------|
-| T-10 to T0 | Pre-event context | 0.9990 – 1.0005 | Low-normal | Normal ranging. Price holds near 1.00. Spread is tight (0.001). Order book balanced. A lesson card is shown: "HBD is an algorithmic stable. Read the depth chart — what holds the peg?" |
+| T-10 to T0 | Pre-event context | 0.9990 – 1.0005 | Low-normal | Normal ranging. Price holds near 1.00. Spread is tight (0.001). Order book balanced. A lesson card is shown: "HarborUSD is an algorithmic stable. Read the depth chart — what holds the peg?" |
 | T0 | First deviation | 0.9975 | Spike | A single large sell order prints. Price dips to 0.9975. Volume 3x normal. This is Decision Point A. |
 | T+2 to T+5 | Partial recovery attempt | 0.9978 – 0.9990 | Elevated | Protocol mechanism attempts peg defense. Price recovers partially. Looks like a false alarm. Spread widens slightly. |
 | T+6 | Second leg down | 0.9930 | High | A second sell cascade. Bid side thins. Spread jumps to 0.008. Decision Point B. |
@@ -81,10 +81,10 @@ Granularity: 1-minute candles displayed; underlying tick data at 10-second resol
 
 | Player action | What it teaches |
 |---------------|-----------------|
-| Short HBD immediately, full account risk | Teaches: oversizing into uncertain signal. Coaching flag for violating size rule. |
-| Short HBD with ≤1% account risk, stop at 1.005 | Teaches: early entry requires a tight stop — honors size rule, risk contained. |
+| Short HarborUSD immediately, full account risk | Teaches: oversizing into uncertain signal. Coaching flag for violating size rule. |
+| Short HarborUSD with ≤1% account risk, stop at 1.005 | Teaches: early entry requires a tight stop — honors size rule, risk contained. |
 | Do nothing, journal observation | Teaches: patience — single tick anomaly is insufficient signal. Full XP. |
-| Buy HBD expecting mean reversion | Teaches: mean-reversion assumption in a depeg is a common mistake — covered in debrief. |
+| Buy HarborUSD expecting mean reversion | Teaches: mean-reversion assumption in a depeg is a common mistake — covered in debrief. |
 
 **Decision Point B — T+6, second leg**
 
@@ -109,7 +109,7 @@ Granularity: 1-minute candles displayed; underlying tick data at 10-second resol
 ### Debrief Screen Content
 
 **What happened:**
-HarborUSD (HBD) lost its algorithmic peg when selling pressure exceeded the protocol's
+HarborUSD lost its algorithmic peg when selling pressure exceeded the protocol's
 reserve capacity. The initial dip at T0 was a genuine early warning, but protocol defense
 briefly restored price. The T+6 break confirmed structural failure; the T+16 bounce was
 short-covering in a broken market, not recovery. The terminal leg at T+26 completed the
@@ -195,9 +195,9 @@ winner should yield ≤50 XP (process metrics missed).
   signal, not a buy/sell prompt).
 - **T+8–T+15:** Candle speed increases visually (10-second resolution visible). Screen
   text: "Market is moving fast. Check your plan."
-- **T+16:** News ticker fires: "HBD protocol defense mechanism under stress — status
+- **T+16:** News ticker fires: "HarborUSD protocol defense mechanism under stress — status
   unclear." No price prediction. Factual only.
-- **T+26:** News ticker fires: "HBD protocol posts notice of reserve depletion." The
+- **T+26:** News ticker fires: "HarborUSD protocol posts notice of reserve depletion." The
   collapse accelerates.
 - **T+38:** Trade entry disabled. Text: "Scenario ending — review your positions."
 - **Post-scenario:** Journal prompt must be completed before debrief unlocks.

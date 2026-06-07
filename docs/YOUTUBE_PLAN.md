@@ -32,7 +32,7 @@ it is inconvenient. The game is the framing device. Process is the content.
 - Market commentary of any kind. No "what the market is doing this week." No read on
   current conditions in crypto, stocks, or forex.
 - Live-asset analysis. No named real tickers, tokens, or pairs ever appear in content.
-  All scenarios use fictional instruments: HarborUSD (HBD), GLIMMER, NGSM, VLDI,
+  All scenarios use fictional instruments: HarborUSD, GLIMMER, NGSM, VLDI,
   NMX 100, ANDU. These names appear on screen and in scripts exactly as written.
 - Performance promises. No earnings claims, implied or explicit. No "what we made," no
   "what this strategy returns."
@@ -55,7 +55,7 @@ scheduling.
 | No "10x," "2x," or multipliers | Any multiplication-of-money framing is prohibited |
 | No "what we're trading" | No current-market framing of any kind |
 | No false urgency | No "before it's too late," "don't miss," "act now," or time-pressure language |
-| Fictional instruments named correctly | HBD/GLIMMER/NGSM/VLDI/NMX 100/ANDU used exactly — no ticker that could be confused with a real asset |
+| Fictional instruments named correctly | HarborUSD/GLIMMER/NGSM/VLDI/NMX 100/ANDU used exactly — no ticker that could be confused with a real asset |
 | No pre-build live-trading or gameplay implication | Title or description implies live trading footage or in-game footage before a playable build exists |
 | No signal/secret-knowledge implication | Any framing resembling "what brokers don't want you to see," "the secret method," or similar hidden-knowledge patterns |
 
@@ -140,9 +140,9 @@ tool, not a profit generator.
 ### Format C — Drill Shorts (under 60 seconds)
 
 **Purpose:** One process concept, demonstrated clearly, in a single short-form clip.
-These are the seed content for the short-form surface decision (YouTube Shorts as the
-primary candidate, with TikTok/Reels as the second surface once one is chosen per
-COMMUNITY.md §3).
+YouTube Shorts is the confirmed short-form surface (owner decision 2026-06-07). TikTok
+has broader reach for gamer-trader content and may be added as a secondary surface later,
+but Shorts is the launch surface per COMMUNITY.md §3.
 
 **Structure:**
 1. Name the concept in the first 3 seconds — no buildup.
@@ -181,7 +181,7 @@ all cleared.
 
 ## 3. Scripts — Four Ready for Owner Recording
 
-All scripts use ONLY fictional instruments: HarborUSD (HBD), GLIMMER, NGSM, VLDI,
+All scripts use ONLY fictional instruments: HarborUSD, GLIMMER, NGSM, VLDI,
 NMX 100, ANDU. No real tickers, no real assets, no real market events referenced.
 The §C disclaimer text is verbatim at the end of each script — spoken and on screen.
 Zero performance claims. No live-asset references.
@@ -200,16 +200,16 @@ Source: SCN-001 (SCENARIOS_V0.md)
 [OPEN — talking head or screen with fictional chart context card showing]
 
 "Today I want to walk through a scenario we built for TradeGame called the HarborUSD
-depeg. HarborUSD — we call it HBD in the sim — is a completely fictional stablecoin. It
-does not exist. We made it up so we could teach a specific category of market event
-without referencing any real token or protocol.
+depeg. HarborUSD is a completely fictional stablecoin. It does not exist. We made it up
+so we could teach a specific category of market event without referencing any real token
+or protocol.
 
 The event type is a stablecoin depeg. And the lesson the scenario is designed to teach
 is not 'here is how to trade a depeg.' The lesson is: when volatility is extreme and
 direction is genuinely unknown, how does your position sizing rule protect you?"
 
 [VISUAL: scenario title card — "SCN-001: The HarborUSD Depegging" — Fictional Asset:
-HBD/USVC]
+HarborUSD/USVC]
 
 "Let me walk you through what happens in the scenario."
 
@@ -217,17 +217,17 @@ HBD/USVC]
 
 [SECTION: Setup]
 
-"Before the depeg starts — from roughly T-minus-10 to T0 on the scenario clock — HBD is
-doing what a stable does. Price is hovering between 0.9990 and 1.0005 against USVC,
+"Before the depeg starts — from roughly T-minus-10 to T0 on the scenario clock — HarborUSD
+is doing what a stable does. Price is hovering between 0.9990 and 1.0005 against USVC,
 which is a second fictional stable we use as the quote currency in the sim. Volume is
 normal. Spread is tight. Everything looks routine.
 
-The game shows you a lesson card here: 'HBD is an algorithmic stable. Read the depth
-chart — what holds the peg?' Players have to dismiss that card before they can place any
-trade. That is intentional. We want players to engage with the setup before they start
-clicking."
+The game shows you a lesson card here: 'HarborUSD is an algorithmic stable. Read the
+depth chart — what holds the peg?' Players have to dismiss that card before they can
+place any trade. That is intentional. We want players to engage with the setup before
+they start clicking."
 
-[VISUAL: diagram of T-minus-10 price bar chart, fictional data, labeled HBD/USVC]
+[VISUAL: diagram of T-minus-10 price bar chart, fictional data, labeled HarborUSD/USVC]
 
 ---
 
@@ -238,13 +238,13 @@ times normal. And here is Decision Point A.
 
 What do you do?
 
-Option one: short HBD immediately at full account risk. The thinking is: 'it is breaking,
+Option one: short HarborUSD immediately at full account risk. The thinking is: 'it is breaking,
 I need to be in.' This is the most common response in the scenario. And it is also the
 highest-process-risk choice, because at T0, all you know is that one order hit the bid.
 You do not know if this is a mechanical glitch, a whale exit, or the start of a collapse.
 Full account risk into a single data point is not sizing — it is a guess at maximum size.
 
-Option two: short HBD with one percent or less of your account at risk, with a stop
+Option two: short HarborUSD with one percent or less of your account at risk, with a stop
 above 1.005. Same direction, same thesis, fraction of the exposure. If this is a false
 alarm, you lose a small defined amount. If this is the real thing, you are in.
 
@@ -290,7 +290,7 @@ bounce. The debrief names this error explicitly.
 
 At T+26, the terminal leg arrives. 0.9650 to 0.7800. Any stop placed above 0.96 is
 triggered. Protocol fails publicly — the scenario fires a news-ticker overlay at this
-point: 'HBD protocol posts notice of reserve depletion.' Not a buy or sell signal. Just
+point: 'HarborUSD protocol posts notice of reserve depletion.' Not a buy or sell signal. Just
 what a real news event looks like, represented as fictional."
 
 [VISUAL: scenario timeline showing the dead-cat — labeled, fictional data]
@@ -572,7 +572,7 @@ results are not real trading. No signals, ever."
 
 Format: Drill Short (under 60 seconds)
 Runtime target: 40–50 seconds
-Surface: YouTube Shorts primary; TikTok/Reels if second surface is activated
+Surface: YouTube Shorts (confirmed 2026-06-07)
 
 ---
 
@@ -652,7 +652,7 @@ publish until resolved.
 | RISK_REGISTER §17 check: does this video reference any member outcome, testimonial, or implied earnings claim? If yes, DISCLOSURE_BLOCK §A verbatim applied. | |
 | RISK_REGISTER §6 check: does any moment in the video contain a specific entry, exit, or position-size directive tied to a real asset? If yes, remove it — this is a hard block. | |
 | No real tickers, no real tokens, no real companies named | |
-| All fictional instruments labeled correctly (HBD, GLIMMER, NGSM, VLDI, NMX 100, ANDU) | |
+| All fictional instruments labeled correctly (HarborUSD, GLIMMER, NGSM, VLDI, NMX 100, ANDU) | |
 | §C disclaimer spoken aloud and displayed on screen in the video | |
 | §C disclaimer in video description (verbatim) | |
 
@@ -723,7 +723,7 @@ NEEDS-HUMAN: Channel creation (YouTube account access). Scheduling and uploading
 videos. Recording sessions (owner on camera). Entity formation to clear the publishing
 gate (RISK_REGISTER §19).
 
-OPEN: Short-form surface decision — COMMUNITY.md §3 specifies YouTube plus one
-short-form TBD (TikTok or Reels/Shorts). Drill Shorts scripts are written for both
-surfaces. Owner should decide which second surface to activate before the first Drill
-Short is published, since the account setup and bio disclaimer placement differ.
+DECIDED (2026-06-07): YouTube Shorts is the confirmed short-form surface. TikTok is the
+comparison reference (broader reach for gamer-trader content) and may be added later as
+a secondary surface, but is not the launch surface. Account setup and bio disclaimer
+placement for Shorts should be completed before the first Drill Short is published.

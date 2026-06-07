@@ -94,13 +94,12 @@ TradeGame's current policy during the Discord phase:
 
 ## 6. Data Retention
 
-[PLACEHOLDER — counsel/owner: default retention period is 365 days after last login
-(SIM_ENGINE_SPEC §6.3 TUNABLE value). Owner must confirm this period before
-publication. Implementation: soft-delete flag set on account record; hard-delete
-executed by scheduled job at day 365.]
+Retention period: 365 days after last login (owner-confirmed 2026-06-07; counsel to
+validate). Implementation: soft-delete flag set on account record; hard-delete
+executed by scheduled job at day 365. (SIM_ENGINE_SPEC §6.3 TUNABLE value.)
 
 Active accounts: data retained while the account is active.
-Inactive accounts: data deleted [PLACEHOLDER: 365 days] after last login.
+Inactive accounts: data deleted 365 days after last login.
 Erasure requests: honored within the timeline described in §7.
 
 ---

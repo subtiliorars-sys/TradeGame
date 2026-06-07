@@ -256,6 +256,8 @@ event arrives.
 
 **Trigger:** When game development begins in earnest (Phase 2 prep).
 
+**DECIDED 2026-06-07: Phaser 3.**
+
 **Decision:** Which rendering/game framework for the web-based sim?
 Phaser (batteries-included, larger community) vs. Pixi.js (faster renderer,
 more manual). The GDD does not currently lock this.
@@ -268,6 +270,8 @@ stack.
 ### P-2. Verification bot selection
 
 **Trigger:** When the Discord server is ready for member-facing rollout.
+
+**DECIDED 2026-06-07: Carl-bot.**
 
 **Decision:** MEE6, Carl-bot, or Discord's built-in reaction roles for the
 checkmark-to-Verified auto-assignment flow? Either path is acceptable per the
@@ -282,6 +286,8 @@ Blueprint; the intro post in #verify is always manually reviewed regardless.
 **Trigger:** When the community has enough active members to make a monthly
 AMA worth running.
 
+**DECIDED 2026-06-07: Quarterly until a Mentor exists, then revisit monthly.**
+
 **Decision:** Monthly is the baseline in COMMUNITY.md. You may find bi-monthly
 or quarterly works better at small community scale. Decide when you have
 attendance data.
@@ -295,6 +301,8 @@ attendance data.
 **Trigger:** Before launching short-form social content (Phase 4 or earlier if
 social revival runs ahead of game).
 
+**DECIDED 2026-06-07: YouTube Shorts.**
+
 **Decision:** SOCIAL_REVIVAL_PLAN recommends picking one short-form platform
 at launch. TikTok has broader reach for gamer-trader content; Reels/Shorts
 integrates with the FB page if the revival succeeds. Pick based on where your
@@ -307,6 +315,8 @@ seed audience actually is.
 ### P-5. Retention period for mod logs and session recordings
 
 **Trigger:** Before Phase 2 (when Tier B data governance goes live).
+
+**DECIDED 2026-06-07: 365 days confirmed (counsel to validate).**
 
 **Decision:** How long do you keep #mod-log records, session recordings, and
 cohort notes? This feeds the data-retention schedule required at Phase 2.
@@ -345,6 +355,12 @@ COMMUNITY.md §2, docs/templates/COACH_AGREEMENT.md.*
 ### P-6. Fictional-instrument name confirmations (added 2026-06-07, wave 4-5)
 
 **Trigger:** Whenever convenient; before Phase 2 content freeze at the latest.
+
+**DECIDED 2026-06-07:**
+- **KORVA** — KEPT.
+- **CALD / Calder Utilities** — KEPT.
+- **HBD shorthand** — RETIRED. Always write "HarborUSD" in full. Real-ticker
+  collision with Hive Backed Dollar is the reason; see FICTIONAL_CANON.md entry.
 
 **Decision:** Three naming calls in `docs/game/FICTIONAL_CANON.md`:
 - **KORVA** — new fictional forex base currency (replaced the SOLU placeholder,
