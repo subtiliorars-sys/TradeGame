@@ -1,0 +1,604 @@
+{
+  "server": {
+    "name": "TradeGame",
+    "verificationLevel": "MEDIUM",
+    "communityFeatures": {
+      "enabled": true,
+      "announcementChannels": true,
+      "autoMod": true,
+      "serverInsights": true,
+      "rulesScreening": true
+    },
+    "defaultNotifications": "ONLY_MENTIONS",
+    "explicitMediaFilter": "MEMBERS_WITHOUT_ROLES",
+    "nsfw": false,
+    "systemMessages": {
+      "joinAnnouncements": false,
+      "leaveAnnouncements": false
+    },
+    "_note": "Owner must disable DM from server members on their own account (operational security, RISK_REGISTER §11). 18+ coaching posture per RISK_REGISTER §10; Discord floor is 13+ but coaching features are gated."
+  },
+
+  "categories": [
+    {
+      "name": "WELCOME",
+      "position": 0,
+      "description": "Orientation, rules, and account verification. Read #rules before anything else.",
+      "permissions": {
+        "_note": "@everyone can read. @New Arrival can read and post in #verify only."
+      },
+      "channels": [
+        {
+          "name": "announcements",
+          "type": "text",
+          "announcementType": true,
+          "topic": "Server news, feature releases, event dates. Admin-post only. Follow this channel from other servers to get updates.",
+          "gated": false,
+          "gateCondition": null,
+          "pinnedMessage": "Welcome to TradeGame.\n\nThis channel carries server-wide announcements: new features, community events, cohort openings, and important updates.\n\nOnly Admin accounts post here. If someone else posts here, report it to #scam-reports.\n\nReact with any emoji to follow this channel and get announcements in your own server's feed."
+        },
+        {
+          "name": "rules",
+          "type": "text",
+          "topic": "Server rules, education-not-advice policy, and anti-signals rule. Read this first.",
+          "gated": false,
+          "gateCondition": null,
+          "pinnedMessage": "_note: Full rules text pinned here (longer form than rules screening). Owner drafts full version; condensed version is the rules screening text in server settings."
+        },
+        {
+          "name": "start-here",
+          "type": "text",
+          "topic": "How this server works: channels, ladder, game, coaching. Links to game and resources.",
+          "gated": false,
+          "gateCondition": null,
+          "pinnedMessage": "_note: Orientation guide — owner drafts based on game link when available. Include role-pick prompt for market interests (Crypto / Stocks / Forex) after verification."
+        },
+        {
+          "name": "verify",
+          "type": "text",
+          "topic": "Post your intro here to unlock Member access: your game handle, which market(s) you want to learn, and one question you have. A Helper or above will approve you.",
+          "gated": false,
+          "gateCondition": null,
+          "pinnedMessage": "To unlock full server access, post a brief intro in this channel:\n1. Your game handle (or the name you want to go by here)\n2. Which market(s) you want to learn: Crypto / Stocks / Forex (pick any or all)\n3. One question you have about trading, the game, or the community\n\nA Helper or Moderator will review your post and give you the Member role, usually within 24 hours.\n\nNote: This server's coaching content is intended for adults (18+). By completing verification, you confirm you are 18 or older and understand that nothing here is financial advice.\n\nNo shortcuts — bots cannot replace the intro requirement. This keeps the community real."
+        }
+      ]
+    },
+    {
+      "name": "CRYPTO — EDUCATION NOT FINANCIAL ADVICE",
+      "position": 1,
+      "description": "This category is for education and community learning only. Nothing posted here constitutes financial advice. All analysis is shared for discussion and skill development. No calls, signals, or recommendations are permitted.",
+      "permissions": {
+        "_note": "@Member (Verified) and above can read and post. @New Arrival cannot see."
+      },
+      "channels": [
+        {
+          "name": "crypto-learn",
+          "type": "text",
+          "topic": "Concepts, resources, and glossary for crypto markets. Share explainers, ask how things work, build vocabulary. No advice, no calls.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "crypto-charts-analysis",
+          "type": "text",
+          "topic": "Chart discussion and technical analysis education. See pinned disclaimer before posting.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": "Posts here are educational discussion only. Nothing posted in this channel constitutes financial advice, a trading recommendation, or an investment analysis report. TradeGame is not a registered investment adviser or commodity trading adviser.\n\nRemoval rule: a post that combines a chart with marked price levels AND language implying a specific trade action (\"watching this zone,\" \"entry here,\" \"setting alerts at,\" or equivalent) will be removed without warning. The combination of annotated levels plus directional language = an actionable trade idea, regardless of how it is labelled. This is a structural rule, not a judgment call.\n\nFirst removal: post removed + DM warning. Second offense: ban, no appeal.",
+          "_pinnedNote": "VERBATIM — do not edit this disclaimer text."
+        },
+        {
+          "name": "crypto-strategy",
+          "type": "text",
+          "topic": "Risk frameworks, position-sizing concepts, system discussion. No entry or exit calls.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "crypto-journal",
+          "type": "text",
+          "topic": "Log your sim sessions: wins and losses both. Process reflection required — what did you learn, not just what happened.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        }
+      ]
+    },
+    {
+      "name": "STOCKS — EDUCATION NOT FINANCIAL ADVICE",
+      "position": 2,
+      "description": "This category is for education and community learning only. Nothing posted here constitutes financial advice. All analysis is shared for discussion and skill development. No calls, signals, or recommendations are permitted.",
+      "permissions": {
+        "_note": "@Member (Verified) and above can read and post. @New Arrival cannot see."
+      },
+      "channels": [
+        {
+          "name": "stocks-learn",
+          "type": "text",
+          "topic": "Concepts, resources, and glossary for equity markets. How stocks, ETFs, and market structure work. No advice, no calls.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "stocks-charts-analysis",
+          "type": "text",
+          "topic": "Chart discussion and technical analysis education. See pinned disclaimer before posting.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": "Posts here are educational discussion only. Nothing posted in this channel constitutes financial advice, a trading recommendation, or an investment analysis report. TradeGame is not a registered investment adviser or commodity trading adviser.\n\nRemoval rule: a post that combines a chart with marked price levels AND language implying a specific trade action (\"watching this zone,\" \"entry here,\" \"setting alerts at,\" or equivalent) will be removed without warning. The combination of annotated levels plus directional language = an actionable trade idea, regardless of how it is labelled. This is a structural rule, not a judgment call.\n\nFirst removal: post removed + DM warning. Second offense: ban, no appeal.",
+          "_pinnedNote": "VERBATIM — do not edit this disclaimer text."
+        },
+        {
+          "name": "stocks-strategy",
+          "type": "text",
+          "topic": "Risk frameworks, position-sizing concepts, system discussion for equity markets. No entry or exit calls.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "stocks-journal",
+          "type": "text",
+          "topic": "Log your sim sessions: wins and losses both. Process reflection required.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        }
+      ]
+    },
+    {
+      "name": "FOREX — EDUCATION NOT FINANCIAL ADVICE",
+      "position": 3,
+      "description": "This category is for education and community learning only. Nothing posted here constitutes financial advice. All analysis is shared for discussion and skill development. No calls, signals, or recommendations are permitted.",
+      "permissions": {
+        "_note": "@Member (Verified) and above can read and post. @New Arrival cannot see."
+      },
+      "channels": [
+        {
+          "name": "forex-learn",
+          "type": "text",
+          "topic": "Concepts, resources, and glossary for forex markets. Currency pairs, pip math, market sessions, risk management. Jurisdiction note pinned.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": "Forex leverage rules vary significantly by country. EU/UK members: ESMA/FCA leverage caps apply to your retail trading regardless of what you learn here. Members are responsible for knowing their local regulations."
+        },
+        {
+          "name": "forex-charts-analysis",
+          "type": "text",
+          "topic": "Chart discussion and technical analysis education. See pinned disclaimer before posting.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": "Posts here are educational discussion only. Nothing posted in this channel constitutes financial advice, a trading recommendation, or an investment analysis report. TradeGame is not a registered investment adviser or commodity trading adviser.\n\nRemoval rule: a post that combines a chart with marked price levels AND language implying a specific trade action (\"watching this zone,\" \"entry here,\" \"setting alerts at,\" or equivalent) will be removed without warning. The combination of annotated levels plus directional language = an actionable trade idea, regardless of how it is labelled. This is a structural rule, not a judgment call.\n\nFirst removal: post removed + DM warning. Second offense: ban, no appeal.",
+          "_pinnedNote": "VERBATIM — do not edit this disclaimer text."
+        },
+        {
+          "name": "forex-strategy",
+          "type": "text",
+          "topic": "Risk frameworks, position-sizing concepts, system discussion for forex markets. No entry or exit calls.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "forex-journal",
+          "type": "text",
+          "topic": "Log your sim sessions: wins and losses both. Process reflection required.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        }
+      ]
+    },
+    {
+      "name": "THE GAME",
+      "position": 4,
+      "description": "TradeGame sim runs, replays, and leaderboards. Process metrics only — no profit/loss rankings.",
+      "permissions": {
+        "_note": "@Member (Verified) and above can read and post. Held read-only/hidden until game vertical slice ships."
+      },
+      "channels": [
+        {
+          "name": "sim-runs",
+          "type": "text",
+          "topic": "Post your game session results and screenshots. What scenario did you run? What did the process look like?",
+          "gated": true,
+          "gateCondition": "role:Verified AND gameVerticalSliceShipped",
+          "pinnedMessage": null,
+          "preLaunchPlaceholder": "The game is in development. This channel opens when the first playable build is available. Check #announcements for updates.",
+          "_note": "Channel exists at soft-launch with placeholder; opens when owner confirms playable build available."
+        },
+        {
+          "name": "scenario-replays",
+          "type": "text",
+          "topic": "Share saved replays for community review. Include what you want feedback on — decision point, risk rule, or a moment that surprised you.",
+          "gated": true,
+          "gateCondition": "role:Verified AND gameVerticalSliceShipped",
+          "pinnedMessage": null
+        },
+        {
+          "name": "leaderboards",
+          "type": "text",
+          "topic": "Bot-updated process leaderboard. Scored on: journaling entries, scenario completions, rule-adherence checks, replay participation. No P&L ranking component.",
+          "gated": true,
+          "gateCondition": "role:Verified AND gameVerticalSliceShipped",
+          "pinnedMessage": "This leaderboard scores process, not outcomes.\n\nPoints: journal entries submitted, scenarios completed, risk-rule adherence tracked, replay sessions participated in.\n\nP&L is not scored and is not visible on this leaderboard. A high score here means you are doing the work — logging, reflecting, showing up. It does not mean you are \"winning\" at trading or that your sim results predict live-market performance.\n\nSimulated results are not real trading. Sim is practice, not proof."
+        }
+      ]
+    },
+    {
+      "name": "COACHING",
+      "position": 5,
+      "description": "Cohort program, office hours, and replay-review sessions. 18+ for coaching ladder participation. Coaching covers process: risk management, journaling, scenario analysis. Not financial advice.",
+      "permissions": {
+        "_note": "@Member and above for #cohort-announcements and #office-hours. Cohort threads in #replay-review visible to all Members; thread creation is Coach-only."
+      },
+      "channels": [
+        {
+          "name": "cohort-announcements",
+          "type": "text",
+          "topic": "Enrollment windows, cohort news, and graduation milestones. Process achievements — no PnL showcases.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "office-hours",
+          "type": "text",
+          "topic": "Weekly schedule and session notes. Voice channel held weekly — open to all Members. Topics: game mechanics, journaling, replay self-review. Not trade Q&A.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": "Office hours are held weekly in the voice channel above.\n\nTopics: game mechanics, journaling technique, how to understand risk concepts, how to self-review replays.\n\nOffice hours are NOT trade Q&A. If you ask \"should I trade X?\", the answer is the same every time: \"That is your decision — let us look at your process.\" You will be redirected to #rules.\n\nCoaches and Mentors never DM first. If someone DMs you claiming to be a coach offering personal advice or a \"special program,\" report it to #scam-reports — that is a scam."
+        },
+        {
+          "name": "replay-review",
+          "type": "text",
+          "topic": "Coach-led replay breakdowns. Each session is a thread. Discussion stays in the thread.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null,
+          "_note": "Thread creation restricted to Coach and above. Held empty until first cohort launches."
+        },
+        {
+          "name": "Office Hours Voice",
+          "type": "voice",
+          "topic": "Weekly office hours. Check #office-hours for schedule.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "Cohort Voice",
+          "type": "voice",
+          "topic": "Active cohort sessions. Coach-invite only.",
+          "gated": true,
+          "gateCondition": "role:Coach",
+          "pinnedMessage": null
+        }
+      ]
+    },
+    {
+      "name": "COMMUNITY",
+      "position": 6,
+      "description": "Off-topic, gaming nights, and feedback. Keep it friendly.",
+      "permissions": {
+        "_note": "@Member (Verified) and above."
+      },
+      "channels": [
+        {
+          "name": "off-topic",
+          "type": "text",
+          "topic": "Everything that is not trading or the game. Keep it civil.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "gaming-nights",
+          "type": "text",
+          "topic": "Schedule non-TradeGame game sessions with the community.",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        },
+        {
+          "name": "feedback",
+          "type": "text",
+          "topic": "Server improvement suggestions. What would make this community more useful?",
+          "gated": true,
+          "gateCondition": "role:Verified",
+          "pinnedMessage": null
+        }
+      ]
+    },
+    {
+      "name": "MOD",
+      "position": 7,
+      "description": "Internal mod coordination. Hidden from all non-mod roles.",
+      "permissions": {
+        "_note": "@Moderator and above only, except #scam-reports which @Member can read and post."
+      },
+      "channels": [
+        {
+          "name": "mod-log",
+          "type": "text",
+          "topic": "Internal: all moderation actions logged here. Signal removals, bans, scam reports, and decisions. Owner reviews weekly (RISK_REGISTER §6).",
+          "gated": true,
+          "gateCondition": "role:Moderator",
+          "pinnedMessage": "Every moderation action is logged here with:\n- Date and time\n- Channel where the action occurred\n- Action taken (post removed / warning / ban)\n- Reason (be specific — quote the content-based removal criteria if applicable)\n- Acting moderator\n\nOwner reviews this channel weekly. Signal removals must be logged within 24 hours of the action."
+        },
+        {
+          "name": "scam-reports",
+          "type": "text",
+          "topic": "Members report DM scams and impersonation here. SLA: acknowledge within 24h, resolve within 48h (RISK_REGISTER §11).",
+          "gated": false,
+          "gateCondition": "role:Verified",
+          "_note": "Readable and postable by all Members. Reading #mod-log and #mod-discussion is Moderator-only.",
+          "pinnedMessage": "Report DM scams and impersonation attempts here.\n\nTradeGame coaches and staff never DM first. If someone DMs you claiming to be from TradeGame and offers advice, a \"special program,\" or asks for payment — it is a scam.\n\nPost what happened: who contacted you, what they said, their username/profile link if you have it.\n\nWe acknowledge within 24 hours and take action within 48 hours."
+        },
+        {
+          "name": "mod-discussion",
+          "type": "text",
+          "topic": "Mod team coordination. Escalation: Helper flags → Coach reviews → Mentor decision → Admin final.",
+          "gated": true,
+          "gateCondition": "role:Moderator",
+          "pinnedMessage": null
+        }
+      ]
+    }
+  ],
+
+  "roles": [
+    {
+      "name": "Admin",
+      "communityEquivalent": "Admin",
+      "color": "#ED4245",
+      "hoist": true,
+      "position": 8,
+      "gateCondition": "Owner-assigned only"
+    },
+    {
+      "name": "Moderator",
+      "communityEquivalent": "Moderator",
+      "color": "#E67E22",
+      "hoist": true,
+      "position": 7,
+      "gateCondition": "Admin-assigned; not tied to coaching ladder"
+    },
+    {
+      "name": "Mentor",
+      "communityEquivalent": "Mentor",
+      "color": "#F1C40F",
+      "hoist": true,
+      "position": 6,
+      "gateCondition": "Coach for 90+ days; led at least two cohorts solo; Admin approval"
+    },
+    {
+      "name": "Coach",
+      "communityEquivalent": "Coach",
+      "color": "#57F287",
+      "hoist": true,
+      "position": 5,
+      "gateCondition": "signed COACH_AGREEMENT (docs/templates/COACH_AGREEMENT.md on file in HQ repo); Helper for 60+ days; completed one full cohort as co-facilitator; Mentor approval"
+    },
+    {
+      "name": "Helper",
+      "communityEquivalent": "Helper",
+      "color": "#1ABC9C",
+      "hoist": true,
+      "position": 4,
+      "gateCondition": "30+ days active; 20+ journal entries; consistent scenario completion with debrief quality; nominated by a Coach"
+    },
+    {
+      "name": "Verified",
+      "communityEquivalent": "Member",
+      "color": "#5865F2",
+      "hoist": false,
+      "position": 3,
+      "gateCondition": "Posted intro in #verify (game handle, market interest, one question); manually approved by Helper or above"
+    },
+    {
+      "name": "Learner",
+      "communityEquivalent": "Learner",
+      "color": "#7289DA",
+      "hoist": false,
+      "position": 2,
+      "gateCondition": "Verified + completed game tutorial"
+    },
+    {
+      "name": "New Arrival",
+      "communityEquivalent": "New Arrival",
+      "color": "#95A5A6",
+      "hoist": false,
+      "position": 1,
+      "gateCondition": "Auto-assigned on join"
+    }
+  ],
+
+  "permissionMatrix": {
+    "_note": "Y=allow, N=deny, inherit=no override. Rows are roles; columns are permission keys.",
+    "everyoneAndNewArrival": {
+      "readWelcome": "Y",
+      "postVerify": "Y",
+      "readMarketGameCommunity": "N",
+      "postMarketChannels": "N",
+      "postAnnouncements": "N",
+      "postCohortAnnouncements": "N",
+      "createReplayThreads": "N",
+      "readCoaching": "N",
+      "pinMessages": "N",
+      "applySlowMode": "N",
+      "manageMessages": "N",
+      "muteMembers": "N",
+      "kickMembers": "N",
+      "banMembers": "N",
+      "readModLog": "N",
+      "readScamReports": "N",
+      "postScamReports": "N",
+      "readPostModDiscussion": "N",
+      "manageChannels": "N",
+      "manageServer": "N"
+    },
+    "Verified": {
+      "readWelcome": "Y",
+      "postVerify": "N",
+      "readMarketGameCommunity": "Y",
+      "postMarketChannels": "Y",
+      "postAnnouncements": "N",
+      "postCohortAnnouncements": "N",
+      "createReplayThreads": "N",
+      "readCoaching": "Y",
+      "pinMessages": "N",
+      "applySlowMode": "N",
+      "manageMessages": "N",
+      "muteMembers": "N",
+      "kickMembers": "N",
+      "banMembers": "N",
+      "readModLog": "N",
+      "readScamReports": "Y",
+      "postScamReports": "Y",
+      "readPostModDiscussion": "N",
+      "manageChannels": "N",
+      "manageServer": "N"
+    },
+    "Learner": {
+      "_note": "Same as Verified; Learner is a display distinction for future cohort eligibility gating."
+    },
+    "Helper": {
+      "pinMessages": "Y",
+      "applySlowMode": "Y",
+      "_note": "Inherits Verified permissions plus pin and slow-mode in market channels."
+    },
+    "Coach": {
+      "manageMessages": "Y (coaching category only)",
+      "createReplayThreads": "Y",
+      "postCohortAnnouncements": "Y",
+      "_note": "Inherits Helper permissions."
+    },
+    "Mentor": {
+      "muteMembers": "Y",
+      "kickMembers": "Y",
+      "banMembers": "Y (with logged reason; second signal offense = immediate, notify Admin within 24h)",
+      "postCohortAnnouncements": "Y",
+      "_note": "Inherits Coach permissions."
+    },
+    "Moderator": {
+      "manageMessages": "Y",
+      "muteMembers": "Y",
+      "kickMembers": "Y",
+      "banMembers": "Y",
+      "readModLog": "Y",
+      "readPostModDiscussion": "Y",
+      "_note": "Admin-assigned operational role; not on coaching ladder."
+    },
+    "Admin": {
+      "postAnnouncements": "Y",
+      "manageChannels": "Y",
+      "manageServer": "Y",
+      "_note": "Full permissions. All bans final on second signal offense."
+    }
+  },
+
+  "autoModRules": [
+    {
+      "name": "Signal solicitation",
+      "keywords": ["signals", "signal group", "vip signals", "premium signals", "signal service"],
+      "action": "BLOCK_MESSAGE",
+      "alertChannel": "mod-log"
+    },
+    {
+      "name": "DM solicitation",
+      "keywords": ["dm me", "dm for info", "I'll dm you", "check your dms", "sent you a dm"],
+      "action": "BLOCK_MESSAGE",
+      "alertChannel": "mod-log"
+    },
+    {
+      "name": "Payment solicitation",
+      "keywords": ["cashapp", "venmo", "paypal", "send me", "pay me", "zelle"],
+      "action": "BLOCK_MESSAGE",
+      "alertChannel": "mod-log"
+    },
+    {
+      "name": "VIP group spam",
+      "keywords": ["vip group", "vip channel", "join my group", "join my channel", "telegram link", "t.me/"],
+      "action": "BLOCK_MESSAGE",
+      "alertChannel": "mod-log"
+    },
+    {
+      "name": "Signal channel names",
+      "keywords": ["calls", "alerts", "picks", "plays", "hot tips", "setups to watch"],
+      "action": "FLAG_FOR_REVIEW",
+      "alertChannel": "mod-log",
+      "_note": "Do not auto-block — context matters. Flag only."
+    },
+    {
+      "name": "Pump language",
+      "keywords": ["100x", "moonshot", "going to moon", "easy money", "guaranteed profit", "risk-free"],
+      "action": "BLOCK_MESSAGE",
+      "alertChannel": "mod-log"
+    },
+    {
+      "name": "Spam filter",
+      "keywords": [],
+      "action": "DISCORD_DEFAULT_SPAM_DETECTION",
+      "_note": "Enable Discord's default spam detection: repeated identical messages, mass @mentions."
+    }
+  ],
+
+  "phasedRollout": {
+    "softLaunch": [
+      "announcements",
+      "rules",
+      "start-here",
+      "verify",
+      "crypto-learn",
+      "crypto-charts-analysis",
+      "crypto-strategy",
+      "crypto-journal",
+      "stocks-learn",
+      "stocks-charts-analysis",
+      "stocks-strategy",
+      "stocks-journal",
+      "forex-learn",
+      "forex-charts-analysis",
+      "forex-strategy",
+      "forex-journal",
+      "off-topic",
+      "gaming-nights",
+      "feedback",
+      "mod-log",
+      "scam-reports",
+      "mod-discussion",
+      "cohort-announcements",
+      "office-hours",
+      "replay-review",
+      "Office Hours Voice",
+      "Cohort Voice"
+    ],
+    "gated": [
+      {
+        "channels": ["sim-runs", "scenario-replays", "leaderboards"],
+        "trigger": "gameVerticalSliceShipped",
+        "description": "THE GAME category opens when owner confirms first playable build is available. sim-runs carries placeholder message at soft-launch."
+      },
+      {
+        "channels": ["replay-review threads"],
+        "trigger": "firstCohortLaunches",
+        "description": "Channel exists at launch but empty. Threads created by Coach when first cohort begins."
+      },
+      {
+        "channels": ["Cohort Voice (scheduled)"],
+        "trigger": "firstCohortLaunches",
+        "description": "Voice channel exists; active scheduling begins with first cohort."
+      }
+    ],
+    "_hardGates": [
+      "Entity formation complete before any public-facing launch (RISK_REGISTER §19). No public Discord link, no social pointing to server before entity is formed.",
+      "COPPA analysis complete before any game account or session data collected from real users (RISK_REGISTER §10/§14, SIM_ENGINE_SPEC §8).",
+      "GDPR controller/processor posture confirmed under Discord's DPA for EU/UK members before public launch (RISK_REGISTER §14).",
+      "FB winning-trades review complete and Telegram public channels cleaned before any Discord invite link inserted into Telegram pin texts or FB page."
+    ]
+  }
+}
