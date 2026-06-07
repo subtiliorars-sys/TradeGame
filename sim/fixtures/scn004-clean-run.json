@@ -1,0 +1,117 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-007",
+  "scenarioId": "SCN-004",
+  "seed": 3235790852,
+  "accountEquity": 10000,
+  "declaredRiskPct": 10,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "hypothesis"
+        ],
+        "wordCount": 34
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 30,
+      "payload": {
+        "orderId": "trigger-004",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 238,
+        "stopPrice": 3.9,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "deposit-004",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 238,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 240,
+      "payload": {
+        "tags": [
+          "il_estimate"
+        ],
+        "wordCount": 18
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 90,
+      "payload": {
+        "tags": [
+          "trigger_update"
+        ],
+        "wordCount": 16
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 210
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "9e426d959379f346fbe1dbac77d821b1dafb336686b471b8f96753163326c664",
+  "expectedXpEvents": [
+    {
+      "metricId": "journal_before_trade",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "size_compliance",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "stop_before_entry",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "stop_honored",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "no_stop_widen",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "plan_declared",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "il_estimate_written",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "trigger_updated",
+      "xpAmount": 15
+    }
+  ],
+  "notes": "SCN-004 clean run. Deposit rationale + withdrawal trigger journaled at tick 0 (plan_declared); trigger stop 3.90 placed before the 10%-allocation GLIMMER deposit at T0; IL estimate journaled at DP-C; trigger updated in journal at DP-D; trigger rides untriggered to session end (session_end cancel exempt from stop_honored)."
+}

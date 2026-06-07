@@ -37,6 +37,8 @@ import {
   hline,
 } from "../engine/draw.js";
 import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
+import { currentRank } from "../../engine/rank.js";
+import * as ProgressStore from "../../engine/progress.js";
 
 // ---------------------------------------------------------------------------
 // Card-only display fields — not duplicated in the manifest
@@ -51,15 +53,12 @@ const CARD_EXTRAS: Record<string, CardExtras> = {
   "SCN-001": { subtitle: "" },
   "SCN-002": { subtitle: "Earnings Gap & Fade" },
   "SCN-003": { subtitle: "" },
+  "SCN-004": { subtitle: "AMM Liquidity & IL" },
+  "SCN-005": { subtitle: "Mechanical Flow & the Auction" },
+  "SCN-006": { subtitle: "Scheduled News & the Policy Card" },
 };
 
-// ---------------------------------------------------------------------------
-// XP display stub (no persistence yet — Tier B gates real storage)
-// ---------------------------------------------------------------------------
-
-const STUB_XP = 420;
-const STUB_XP_NEXT = 800;
-const STUB_RANK = "Trainee";
+// (XP display now uses live ProgressStore + RankService — stubs removed §4.5)
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -117,7 +116,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   // -------------------------------------------------------------------------
-  // Scenario card grid — 3 cards across one row
+  // Scenario card grid — 3 cards per row, wrapping (6 scenarios = 2 rows)
   // -------------------------------------------------------------------------
 
   private drawScenarioGrid(
@@ -126,14 +125,18 @@ export class MenuScene extends Phaser.Scene {
     _height: number
   ): void {
     const scenarios = allScenarios();
-    const totalW = scenarios.length * CARD_W + (scenarios.length - 1) * PAD;
+    const cols = Math.min(3, scenarios.length);
+    const totalW = cols * CARD_W + (cols - 1) * PAD;
     const startX = (width - totalW) / 2;
     const startY = PAD + 96;
 
     scenarios.forEach((scn, i) => {
-      const cx = startX + i * (CARD_W + PAD);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = startX + col * (CARD_W + PAD);
+      const cy = startY + row * (CARD_H + PAD);
       const extras = CARD_EXTRAS[scn.manifest.id] ?? { subtitle: "" };
-      this.drawCard(g, cx, startY, scn.manifest.id, scn.manifest, extras);
+      this.drawCard(g, cx, cy, scn.manifest.id, scn.manifest, extras);
     });
   }
 
@@ -215,35 +218,62 @@ export class MenuScene extends Phaser.Scene {
     width: number,
     _height: number
   ): void {
-    // Position: below card grid, above footer.
-    const barY = PAD + 96 + CARD_H + PAD + 12;
+    // Position: below card grid (which wraps at 3 columns), above footer.
+    const rows = Math.ceil(allScenarios().length / 3);
+    const barY = PAD + 96 + rows * (CARD_H + PAD) + 12;
 
-    label(
-      this,
-      PAD,
-      barY,
-      `Your Progress:  Rank: ${STUB_RANK}   XP: ${STUB_XP} / ${STUB_XP_NEXT} to Practitioner`,
-      {
+    const xp = ProgressStore.xpTotal();
+    const drills = ProgressStore.completedDrillIds();
+    const { rank, nextRank, xpIntoRank, xpToNextRank, drillsMissing } =
+      currentRank(xp, drills);
+
+    if (nextRank === null) {
+      // Top rank: no bar, no treadmill (GDD §4.5).
+      label(this, PAD, barY, `Your Progress:  Rank: ${rank.displayLabel}`, {
         fontSize: "13px",
         color: CSS.DIM,
-      }
-    );
+      });
+      return;
+    }
 
-    // Bar track
+    // Rank label + XP text (§4.5 display format — both numbers are cumulative).
+    const xpLine =
+      `Your Progress:  Rank: ${rank.displayLabel}` +
+      `   XP: ${xp} / ${nextRank.xpRequired} to ${nextRank.displayLabel}`;
+    label(this, PAD, barY, xpLine, {
+      fontSize: "13px",
+      color: CSS.DIM,
+    });
+
+    // Bar track — process XP only, no outcome component (§4.4).
     const barW = width - PAD * 2;
     const barH = 8;
     fillRect(g, PAD, barY + 22, barW, barH, C.SURFACE, 4);
     strokeRect(g, PAD, barY + 22, barW, barH, C.BORDER, 1, 4);
 
-    // Bar fill — process XP, no PnL
-    const fill = Math.min(1, STUB_XP / STUB_XP_NEXT);
-    fillRect(g, PAD, barY + 22, Math.round(barW * fill), barH, C.AMBER, 4);
-
-    label(this, PAD, barY + 38, "< Process XP only — no PnL component >", {
-      fontSize: "10px",
-      color: CSS.DIM,
-      fontStyle: "italic",
-    });
+    if (drillsMissing.length > 0) {
+      // Drill gate: bar shows full; explicit gate message (never a silent stall).
+      fillRect(g, PAD, barY + 22, barW, barH, C.AMBER, 4);
+      label(
+        this,
+        PAD,
+        barY + 38,
+        `Complete ${drillsMissing[0]} to advance`,
+        { fontSize: "10px", color: CSS.AMBER, fontStyle: "italic" }
+      );
+    } else {
+      // Normal fill: (xpTotal − rank.xpRequired) / (nextRank.xpRequired − rank.xpRequired).
+      const span = nextRank.xpRequired - rank.xpRequired;
+      const fill = span > 0 ? Math.min(1, xpIntoRank / span) : 0;
+      fillRect(g, PAD, barY + 22, Math.round(barW * fill), barH, C.AMBER, 4);
+      // xpToNextRank surfaced for completeness — drive is to-next, not from-start.
+      void xpToNextRank;
+      label(this, PAD, barY + 38, "< Process XP only — no outcome component >", {
+        fontSize: "10px",
+        color: CSS.DIM,
+        fontStyle: "italic",
+      });
+    }
   }
 
   // -------------------------------------------------------------------------

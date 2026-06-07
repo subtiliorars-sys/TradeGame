@@ -212,19 +212,25 @@ export class SessionAdapter {
       this.feed = createForexAdapter();
     }
 
-    this.feed.init({
-      prng,
-      startPrice: this.manifest.startPrice,
-      msPerTick: this.manifest.msPerTick,
-      instrument: {
-        symbol: this.manifest.instrument.symbol,
-        marketType: this.marketType,
-        tickSize: this.marketType === "forex" ? 0.0001 : 0.0001,
-        baseSpread: this.marketType === "forex" ? 0.00012 : 0.001,
-        pipSize: this.marketType === "forex" ? 0.0001 : 1,
+    this.feed.init(Object.assign(
+      {
+        prng,
+        startPrice: this.manifest.startPrice,
+        msPerTick: this.manifest.msPerTick,
+        instrument: {
+          symbol: this.manifest.instrument.symbol,
+          marketType: this.marketType,
+          tickSize: this.marketType === "forex" ? 0.0001 : 0.0001,
+          baseSpread: this.marketType === "forex" ? 0.00012 : 0.001,
+          pipSize: this.marketType === "forex" ? 0.0001 : 1,
+        },
+        script: resolvedDef.script,
       },
-      script: resolvedDef.script,
-    });
+      // exactOptionalPropertyTypes: include simDayMs only when authored.
+      this.manifest.simDayMs !== undefined
+        ? { simDayMs: this.manifest.simDayMs }
+        : {}
+    ));
 
     // Account model.
     if (this.marketType === "forex") {
@@ -448,12 +454,27 @@ export class SessionAdapter {
 
     // Build MetricInput from the event log (structural PnL guard: only boolean win).
     const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
-    const metricInput: MetricInput = {
-      events: allEvents,
-      sessionHasWin: this.sessionHasWin,
-      declaredRiskPct: 1, // default; Tier B: read from plan_declared journal entry
-      sessionStartEquity: 10_000,
-    };
+    const metricInput: MetricInput = Object.assign(
+      {
+        events: allEvents,
+        sessionHasWin: this.sessionHasWin,
+        declaredRiskPct: 1, // default; Tier B: read from plan_declared journal entry
+        sessionStartEquity: 10_000,
+        // Applicability gate for scenario-specific metrics (rubric-authored only).
+        rubricMetricIds: (this.manifest?.xpRubric ?? []).map((r) => r.metricId),
+      },
+      this.manifest?.noEntryWindows !== undefined
+        ? {
+            noEntryWindows: this.manifest.noEntryWindows.map((w) => ({
+              startMs: w.startMs,
+              endMs: w.endMs,
+            })),
+          }
+        : {},
+      this.manifest?.policyDeadlineMs !== undefined
+        ? { policyDeadlineMs: this.manifest.policyDeadlineMs }
+        : {}
+    );
 
     const scoreOut = runScoreTracker(
       this.log.sessionId,

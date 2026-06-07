@@ -602,6 +602,27 @@ The ScoreTracker monitors the EventLog in real time and extracts:
 | `session_reviewed` | Player replayed the session post-completion | EventLog: `replay_started` event in a post-session context |
 | `policy_match` (News/Plan Card scenarios only) | Player's declared policy option matches their actual in-scenario behavior during the event window | Reads the `pre_event_declaration` tag and declared option (A/B/C) from the `JournalEntryEvent` logged at card confirmation; compares to actual behavior: option A = `PositionLedger` shows no open positions at T-01 (no orders in window); option B = position held through window with a stop set and a `leverage_ack` logged (held with declared stop); option C = no `order_submit` events during the event window (observe-only). Match: emits +25 XP event per SCENARIOS_V1 SCN-006 rubric. Mismatch: no XP, emits `policy_mismatch` debrief flag. Computed deterministically from the EventLog alone; no runtime judgment required. |
 
+**Scenario-specific metrics (SCENARIOS_V1) — rubric-gated:**
+
+The V1 scenarios add four metrics that exist only where a scenario authors them.
+Each is applicable ONLY when listed in the running scenario's
+`manifest.xpRubric` (passed to the scorer as `MetricInput.rubricMetricIds`);
+on every other scenario the metric is inert — no XP event, no fail row, and
+no change to V0 golden digests.
+
+| Metric ID | Scenario | Description | Extraction logic |
+|-----------|----------|-------------|-----------------|
+| `il_estimate_written` (+25) | SCN-004 | LP Position Panel consulted and an IL estimate written at the major-divergence checkpoint | `journal_entry` tagged `il_estimate` after the first `order_fill` (the deposit). Inapplicable without a deposit — the patience path owns the journal XP. |
+| `trigger_updated` (+15) | SCN-004 | Withdrawal trigger updated after a decision to hold | `journal_entry` tagged `trigger_update` after the first `order_fill`. |
+| `no_entry_window` (+15) | SCN-005, SCN-006 | No entry during a scenario-authored no-entry window (D1 announcement open; news whipsaw) | No `order_submit` with timestamp inside any `manifest.noEntryWindows` range AND the discipline was pre-stated (a `plan`/`hypothesis` journal or a `policy_declared` event before the earliest window opens — per the V1 rubrics' "only if pre-stated"). |
+| `policy_declared_card` (+30) | SCN-006 | News Policy Card completed with journal rationale before T-01 | `policy_declared` event with `journalWordCount` ≥ 6 at or before `manifest.policyDeadlineMs` (deadline optional). The behavior-match half is the separate `policy_match` metric. |
+
+**Clarification — `stop_honored` and the session-end cancel:** the harness
+auto-cancels all pending orders at scenario end with reason `session_end`.
+That cancel is engine housekeeping, not a player action, and is exempt from
+`stop_honored` ("not MANUALLY cancelled"). A stop that rode untriggered to
+the end of the session was honored, not abandoned.
+
 **Process-metric compliance indicator (Position Panel UI surface) — closes SG-03:**
 
 The Position Panel displays a live per-position compliance indicator for the two

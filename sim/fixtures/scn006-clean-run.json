@@ -1,0 +1,133 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-011",
+  "scenarioId": "SCN-006",
+  "seed": 3235799046,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1,
+  "actions": [
+    {
+      "type": "leverage_ack",
+      "ticksAfter": 0,
+      "payload": {}
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "hypothesis"
+        ],
+        "wordCount": 30
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 100,
+      "payload": {
+        "orderId": "stop-006",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 75,
+        "stopPrice": 1.314,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "entry-006",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 75,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "policy_declare",
+      "ticksAfter": 79,
+      "payload": {
+        "policyId": "scn006-card",
+        "option": "B_hold_with_stop",
+        "journalWordCount": 14
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 940
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "exit"
+        ],
+        "wordCount": 16
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "2b25b5ecd8841eaea1b469d5cbbb78683b2f9bf260fa49da2b8980eeb777cf24",
+  "expectedXpEvents": [
+    {
+      "metricId": "journal_before_trade",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "size_compliance",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "stop_before_entry",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "stop_honored",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "exit_journal",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "no_stop_widen",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "leverage_ack",
+      "xpAmount": 10
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "plan_declared",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "policy_match",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "no_entry_window",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "policy_declared_card",
+      "xpAmount": 30
+    }
+  ],
+  "notes": "SCN-006 clean run, option B. Leverage ack + plan at tick 0; entry long 75 ANDU with stop 1.3140 (100 pips below pre-report) before the card; option B declared at DP-A before T-01; held through spike + whipsaw (stop survives by authored construction); policy-adherence exit journal; stop rides to session end."
+}

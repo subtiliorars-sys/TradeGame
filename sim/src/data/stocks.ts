@@ -107,29 +107,36 @@ const AFTERHOURS_CLOSE_MS = 720 * MS_PER_MIN;
 const AUCTION_START_MS = 470 * MS_PER_MIN;
 
 /**
- * Given simTimeMs and msPerTick, return the offset in milliseconds from
- * the current day's 08:00 ET anchor.
+ * Given simTimeMs and the active sim-day length, return the offset in
+ * milliseconds from the current day's 08:00 ET anchor.
  *
  * Day 0 anchor is at simTimeMs = 0.
- * Day N anchor is at simTimeMs = N × SIM_DAY_MS.
+ * Day N anchor is at simTimeMs = N × dayMs.
  */
-function dayOffsetMs(simTimeMs: number): number {
-  return ((simTimeMs % SIM_DAY_MS) + SIM_DAY_MS) % SIM_DAY_MS;
+function dayOffsetMs(simTimeMs: number, dayMs: number): number {
+  return ((simTimeMs % dayMs) + dayMs) % dayMs;
 }
 
 type SessionPhase = "before_premarket" | "premarket" | "regular" | "auction" | "afterhours" | "closed";
 
-function sessionPhase(simTimeMs: number): SessionPhase {
-  const offset = dayOffsetMs(simTimeMs);
+/**
+ * Session phase for a sim time, with the ET-clock phase boundaries scaled
+ * proportionally when the scenario uses a compressed sim day
+ * (MarketConfig.simDayMs — SCN-005's 72-minute days).  With the default
+ * 24h day, scale = 1 and behaviour is identical to the original model.
+ */
+function sessionPhase(simTimeMs: number, dayMs: number): SessionPhase {
+  const scale = dayMs / SIM_DAY_MS;
+  const offset = dayOffsetMs(simTimeMs, dayMs);
   // The sim day anchor is 08:00 ET; pre-market is before that.
-  // Since we map offset to [0, SIM_DAY_MS), pre-market is in the upper range.
-  // Premarket: [SIM_DAY_MS + PREMARKET_OPEN_MS, SIM_DAY_MS) ∪ [0, REGULAR_OPEN_MS)
-  const preMarketStart = SIM_DAY_MS + PREMARKET_OPEN_MS; // 20:00 (= 04:00 ET next day)
+  // Since we map offset to [0, dayMs), pre-market is in the upper range.
+  // Premarket: [dayMs + PREMARKET_OPEN_MS·scale, dayMs) ∪ [0, REGULAR_OPEN_MS·scale)
+  const preMarketStart = dayMs + PREMARKET_OPEN_MS * scale; // 20:00 (= 04:00 ET next day)
   if (offset >= preMarketStart) return "premarket";           // late day wraps to early premarket
-  if (offset < REGULAR_OPEN_MS) return "premarket";          // 08:00–09:30
-  if (offset >= AUCTION_START_MS && offset < REGULAR_CLOSE_MS) return "auction";
-  if (offset >= REGULAR_OPEN_MS && offset < REGULAR_CLOSE_MS) return "regular";
-  if (offset >= REGULAR_CLOSE_MS && offset < AFTERHOURS_CLOSE_MS) return "afterhours";
+  if (offset < REGULAR_OPEN_MS * scale) return "premarket";  // 08:00–09:30
+  if (offset >= AUCTION_START_MS * scale && offset < REGULAR_CLOSE_MS * scale) return "auction";
+  if (offset >= REGULAR_OPEN_MS * scale && offset < REGULAR_CLOSE_MS * scale) return "regular";
+  if (offset >= REGULAR_CLOSE_MS * scale && offset < AFTERHOURS_CLOSE_MS * scale) return "afterhours";
   return "closed";
 }
 
@@ -157,6 +164,8 @@ interface StocksAdapterState {
   gen: GeneratorState;
   prng: Prng;
   msPerTick: number;
+  /** Active sim-day length (default SIM_DAY_MS; compressed for SCN-005). */
+  dayMs: number;
   pendingBeats: ScenarioBeat[];
   priceOverrideRemaining: number;
   priceOverrideValue: number;
@@ -194,6 +203,7 @@ export function createStocksAdapter(): IMarketFeed {
       gen: createGeneratorState(config.startPrice, STOCKS_GBM_PARAMS, "quiet"),
       prng: config.prng,
       msPerTick: config.msPerTick,
+      dayMs: config.simDayMs ?? SIM_DAY_MS,
       pendingBeats: sortedBeats,
       priceOverrideRemaining: 0,
       priceOverrideValue: 0,
@@ -233,7 +243,7 @@ export function createStocksAdapter(): IMarketFeed {
     }
 
     // 3. Session phase.
-    const phase = sessionPhase(simTimeMs);
+    const phase = sessionPhase(simTimeMs, s.dayMs);
     const isOpen = !s.isHalted && (phase === "regular" || phase === "auction" || phase === "premarket");
 
     // 4. Detect session open to apply the open-sigma spike.
@@ -333,7 +343,7 @@ export function createStocksAdapter(): IMarketFeed {
       return { isOpen: false, sessionName: "halted", haltReason: s.haltReason };
     }
     const simTimeMs = s.gen.tickIndex * s.msPerTick;
-    const phase = sessionPhase(simTimeMs);
+    const phase = sessionPhase(simTimeMs, s.dayMs);
     const isOpen = phase === "regular" || phase === "auction" || phase === "premarket";
     return {
       isOpen,

@@ -32,8 +32,15 @@ import type { OrderCancelEvent, OrderFillEvent } from "../src/engine/events.js";
 // ---------------------------------------------------------------------------
 
 describe("scenario registry", () => {
-  it("exposes exactly SCN-001..003 in insertion order", () => {
-    expect(allScenarioIds()).toEqual(["SCN-001", "SCN-002", "SCN-003"]);
+  it("exposes exactly SCN-001..006 in insertion order", () => {
+    expect(allScenarioIds()).toEqual([
+      "SCN-001",
+      "SCN-002",
+      "SCN-003",
+      "SCN-004",
+      "SCN-005",
+      "SCN-006",
+    ]);
   });
 
   it("getScenario returns the def whose manifest matches the requested id", () => {
@@ -54,6 +61,9 @@ describe("scenario registry", () => {
     expect(scenarioSeed("SCN-001")).toBe(42_001);
     expect(scenarioSeed("SCN-002")).toBe(42_002);
     expect(scenarioSeed("SCN-003")).toBe(42_003);
+    expect(scenarioSeed("SCN-004")).toBe(42_004);
+    expect(scenarioSeed("SCN-005")).toBe(42_005);
+    expect(scenarioSeed("SCN-006")).toBe(42_006);
   });
 });
 

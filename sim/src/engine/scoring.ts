@@ -46,7 +46,11 @@ export type MetricId =
   | "session_reviewed"
   | "plan_declared"
   | "plan_declared_late"
-  | "policy_match";
+  | "policy_match"
+  | "il_estimate_written"
+  | "trigger_updated"
+  | "no_entry_window"
+  | "policy_declared_card";
 
 // ---------------------------------------------------------------------------
 // MetricInput — the only view of the EventLog that scoring functions receive.
@@ -77,6 +81,28 @@ export interface MetricInput {
   readonly declaredRiskPct: number;
   /** Account equity at session start (needed for size_compliance ratio only). */
   readonly sessionStartEquity: number;
+  /**
+   * Metric IDs listed in the running scenario's xpRubric (manifest.xpRubric).
+   *
+   * Scenario-specific metrics (il_estimate_written, trigger_updated,
+   * no_entry_window, policy_declared_card) use membership here as their
+   * applicability gate so they stay inert — no XP, no fail row — on scenarios
+   * that do not author them.  Omitted/undefined → all four are inert
+   * (backward-compatible with V0 fixtures and sandbox sessions).
+   *
+   * NOT a PnL field: this is authoring metadata, not outcome data.
+   */
+  readonly rubricMetricIds?: readonly string[];
+  /**
+   * Scenario-authored no-entry windows (sim-ms ranges) for no_entry_window —
+   * e.g. SCN-005's first-15-minutes-of-D1-open, SCN-006's whipsaw window.
+   */
+  readonly noEntryWindows?: readonly { startMs: number; endMs: number }[];
+  /**
+   * Deadline (sim-ms) by which the News Policy Card must be declared for
+   * policy_declared_card to pass (SCN-006: T-01).  Undefined → no deadline.
+   */
+  readonly policyDeadlineMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -186,10 +212,19 @@ export function stop_honored(input: MetricInput): MetricResult {
   }
 
   // After the entry fill, was the stop manually cancelled?
+  //
+  // The harness auto-cancels all pending orders at scenario end with
+  // reason "session_end" — engine housekeeping, not a player action.
+  // §4.2 defines this metric as "stop not MANUALLY cancelled", so the
+  // session-end cancel is exempt: a stop that rode untriggered to the end
+  // of the session was honored, not abandoned.  (Without this exemption a
+  // stop that never triggers — e.g. SCN-004's withdrawal trigger on the
+  // up-divergence path — could never pass.)
   const stopCancelledAfterEntry = input.events.some(
     (e): e is OrderCancelEvent =>
       e.type === "order_cancel" &&
       e.orderId === stopSubmit.orderId &&
+      e.reason !== "session_end" &&
       e.timestamp > entryFill.timestamp
   );
 
@@ -445,6 +480,132 @@ export function policy_match(input: MetricInput): MetricResult {
 }
 
 // ---------------------------------------------------------------------------
+// Scenario-specific metrics (SCENARIOS_V1) — rubric-gated.
+//
+// Applicability rule shared by all four: the metric applies ONLY when the
+// running scenario lists it in manifest.xpRubric (via MetricInput.rubricMetricIds).
+// On every other scenario the metric is inert: applicable=false, no XP event,
+// no fail row, no digest change for V0 golden fixtures.
+// ---------------------------------------------------------------------------
+
+/** True when the scenario's rubric authors this metric. */
+function rubricAuthors(input: MetricInput, metricId: MetricId): boolean {
+  return input.rubricMetricIds?.includes(metricId) ?? false;
+}
+
+/**
+ * il_estimate_written (SCN-004) — LP Position Panel consulted and an IL
+ * estimate written at the major-divergence checkpoint.
+ *
+ * Pass: a journal_entry tagged "il_estimate" exists after the first fill
+ * (the deposit).  Applicable only when rubric-authored AND a deposit (fill)
+ * occurred — an IL estimate is meaningless on an observation-only run, whose
+ * journal XP flows through patience_observation instead.
+ */
+export function il_estimate_written(input: MetricInput): MetricResult {
+  const firstFillIdx = firstEventIndexOf(input.events, "order_fill");
+  const applicable =
+    rubricAuthors(input, "il_estimate_written") && firstFillIdx !== -1;
+  const passed =
+    applicable &&
+    input.events.some(
+      (e, i): boolean =>
+        e.type === "journal_entry" &&
+        (e as JournalEntryEvent).tags.includes("il_estimate") &&
+        i > firstFillIdx
+    );
+  return { metricId: "il_estimate_written", passed, xpOnPass: 25, applicable };
+}
+
+/**
+ * trigger_updated (SCN-004) — withdrawal trigger updated after a decision to
+ * hold (active management vs. passive neglect).
+ *
+ * Pass: a journal_entry tagged "trigger_update" exists after the first fill.
+ * Applicable only when rubric-authored AND a position was opened.
+ */
+export function trigger_updated(input: MetricInput): MetricResult {
+  const firstFillIdx = firstEventIndexOf(input.events, "order_fill");
+  const applicable =
+    rubricAuthors(input, "trigger_updated") && firstFillIdx !== -1;
+  const passed =
+    applicable &&
+    input.events.some(
+      (e, i): boolean =>
+        e.type === "journal_entry" &&
+        (e as JournalEntryEvent).tags.includes("trigger_update") &&
+        i > firstFillIdx
+    );
+  return { metricId: "trigger_updated", passed, xpOnPass: 15, applicable };
+}
+
+/**
+ * no_entry_window (SCN-005 D1-open, SCN-006 whipsaw) — discipline around a
+ * scenario-authored no-entry window.
+ *
+ * Pass requires BOTH (per the SCENARIOS_V1 rubrics — "only if pre-stated"):
+ *   1. No order_submit whose timestamp falls inside any authored window.
+ *   2. The discipline was pre-stated: a plan/hypothesis journal entry OR a
+ *      policy_declared event exists BEFORE the earliest window opens.
+ *
+ * Applicable only when rubric-authored AND windows were supplied.
+ */
+export function no_entry_window(input: MetricInput): MetricResult {
+  const windows = input.noEntryWindows ?? [];
+  const applicable =
+    rubricAuthors(input, "no_entry_window") && windows.length > 0;
+  if (!applicable) {
+    return { metricId: "no_entry_window", passed: false, xpOnPass: 15, applicable: false };
+  }
+
+  const enteredInWindow = input.events.some(
+    (e): e is OrderSubmitEvent =>
+      e.type === "order_submit" &&
+      windows.some((w) => e.timestamp >= w.startMs && e.timestamp <= w.endMs)
+  );
+
+  const earliestStart = Math.min(...windows.map((w) => w.startMs));
+  const preStated = input.events.some(
+    (e): boolean =>
+      (e.type === "journal_entry" &&
+        ((e as JournalEntryEvent).tags.includes("plan") ||
+          (e as JournalEntryEvent).tags.includes("hypothesis")) &&
+        e.timestamp < earliestStart) ||
+      (e.type === "policy_declared" && e.timestamp < earliestStart)
+  );
+
+  const passed = !enteredInWindow && preStated;
+  return { metricId: "no_entry_window", passed, xpOnPass: 15, applicable: true };
+}
+
+/**
+ * policy_declared_card (SCN-006) — News Policy Card completed with journal
+ * rationale before the deadline (T-01).  The behaviour-match half of the card
+ * is the separate policy_match metric.
+ *
+ * Pass: a policy_declared event exists with a non-trivial journal rationale
+ * (>= MIN_POLICY_JOURNAL_WORDS words ≈ the spec's 30-character minimum,
+ * TUNABLE) at or before MetricInput.policyDeadlineMs (when supplied).
+ */
+const MIN_POLICY_JOURNAL_WORDS = 6;
+
+export function policy_declared_card(input: MetricInput): MetricResult {
+  const applicable = rubricAuthors(input, "policy_declared_card");
+  if (!applicable) {
+    return { metricId: "policy_declared_card", passed: false, xpOnPass: 30, applicable: false };
+  }
+
+  const deadline = input.policyDeadlineMs;
+  const passed = input.events.some(
+    (e): e is PolicyDeclaredEvent =>
+      e.type === "policy_declared" &&
+      e.journalWordCount >= MIN_POLICY_JOURNAL_WORDS &&
+      (deadline === undefined || e.timestamp <= deadline)
+  );
+  return { metricId: "policy_declared_card", passed, xpOnPass: 30, applicable: true };
+}
+
+// ---------------------------------------------------------------------------
 // ProcessMetric registry — maps MetricId → extractor function
 // ---------------------------------------------------------------------------
 
@@ -464,6 +625,10 @@ export const METRIC_REGISTRY: Record<MetricId, MetricFn> = {
   plan_declared,
   plan_declared_late,
   policy_match,
+  il_estimate_written,
+  trigger_updated,
+  no_entry_window,
+  policy_declared_card,
 };
 
 // ---------------------------------------------------------------------------

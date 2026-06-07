@@ -1,0 +1,59 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-008",
+  "scenarioId": "SCN-004",
+  "seed": 3235790852,
+  "accountEquity": 10000,
+  "declaredRiskPct": 10,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "observation"
+        ],
+        "wordCount": 26
+      }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 270,
+      "payload": {
+        "tags": [
+          "observation"
+        ],
+        "wordCount": 14
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 300
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "5734c86750b3aa031ae2c1901e1563e492bbf7b2fa3b4206eb980f4abad577d8",
+  "expectedXpEvents": [
+    {
+      "metricId": "patience_observation",
+      "xpAmount": 40
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "plan_declared",
+      "xpAmount": 20
+    }
+  ],
+  "notes": "SCN-004 observation-only run. No deposit; plan + observation journals; patience_observation path."
+}

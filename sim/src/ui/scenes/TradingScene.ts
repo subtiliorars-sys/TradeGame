@@ -35,6 +35,7 @@
 
 import Phaser from "phaser";
 import { SessionAdapter, type PriceTick, type DebriefData } from "../engine/SessionAdapter.js";
+import * as ProgressStore from "../../engine/progress.js";
 import {
   C,
   CSS,
@@ -1303,6 +1304,7 @@ export class TradingScene extends Phaser.Scene {
   private transitionToDebrief(data: DebriefData): void {
     this.adapter.offTick(this.onSimTick);
     this.adapter.offFill(this.onEngineFill);
+    ProgressStore.addXp(data.xpTotal); // accumulate process XP in-memory (§4.5)
     this.scene.start("DebriefScene", data);
   }
 

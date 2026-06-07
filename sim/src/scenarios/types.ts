@@ -88,6 +88,24 @@ export interface ScenarioManifest {
    * (stored outside the sim engine; looked up at debrief-render time).
    */
   debriefContentIds: string[];
+  /**
+   * Scenario-authored no-entry windows (sim-ms), scored by the
+   * no_entry_window metric — e.g. SCN-005's first 15 minutes of D1 open,
+   * SCN-006's whipsaw window.  Omit when the scenario has none.
+   */
+  noEntryWindows?: Array<{ startMs: number; endMs: number; label: string }>;
+  /**
+   * Deadline (sim-ms) for the News Policy Card declaration, scored by
+   * policy_declared_card (SCN-006: T-01).  Omit when no card is used.
+   */
+  policyDeadlineMs?: number;
+  /**
+   * Compressed sim-day length in ms for multi-session scenarios (stocks).
+   * The stocks adapter scales its session-phase boundaries proportionally
+   * (SCN-005: 72-minute sim days so five sessions stay playable).
+   * Omit for the default 24h sim day.
+   */
+  simDayMs?: number;
 }
 
 // ---------------------------------------------------------------------------

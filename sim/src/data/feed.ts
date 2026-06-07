@@ -162,6 +162,12 @@ export interface MarketConfig {
   instrument: InstrumentInfo;
   /** Optional scenario beat schedule. */
   script?: ScenarioScript;
+  /**
+   * Optional compressed sim-day length in ms (stocks adapter only).
+   * Session-phase boundaries scale proportionally; default is the 24h sim
+   * day. Lets multi-session scenarios (SCN-005) fit a playable tick budget.
+   */
+  simDayMs?: number;
 }
 
 // ---------------------------------------------------------------------------

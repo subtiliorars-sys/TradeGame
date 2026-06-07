@@ -237,19 +237,23 @@ export function runScenario(config: HarnessConfig): HarnessResult {
     feed = createForexAdapter();
   }
 
-  feed.init({
-    prng,
-    startPrice: manifest.startPrice,
-    msPerTick: manifest.msPerTick,
-    instrument: {
-      symbol: manifest.instrument.symbol,
-      marketType: manifest.market,
-      tickSize: manifest.market === "forex" ? 0.0001 : 0.0001,
-      baseSpread: manifest.market === "forex" ? 0.00012 : 0.001,
-      pipSize: manifest.market === "forex" ? 0.0001 : 1,
+  feed.init(Object.assign(
+    {
+      prng,
+      startPrice: manifest.startPrice,
+      msPerTick: manifest.msPerTick,
+      instrument: {
+        symbol: manifest.instrument.symbol,
+        marketType: manifest.market,
+        tickSize: manifest.market === "forex" ? 0.0001 : 0.0001,
+        baseSpread: manifest.market === "forex" ? 0.00012 : 0.001,
+        pipSize: manifest.market === "forex" ? 0.0001 : 1,
+      },
+      script: scenario.script,
     },
-    script: scenario.script,
-  });
+    // exactOptionalPropertyTypes: include simDayMs only when authored.
+    manifest.simDayMs !== undefined ? { simDayMs: manifest.simDayMs } : {}
+  ));
 
   // Emit session_start.
   const rawSeed = typeof config.seed === "number" ? config.seed : 0;
@@ -517,12 +521,27 @@ export function runScenario(config: HarnessConfig): HarnessResult {
   });
 
   // --- Scoring ---
-  const metricInput: MetricInput = {
-    events: log.entries.map((e) => e.event),
-    sessionHasWin,
-    declaredRiskPct,
-    sessionStartEquity: accountEquity,
-  };
+  const metricInput: MetricInput = Object.assign(
+    {
+      events: log.entries.map((e) => e.event),
+      sessionHasWin,
+      declaredRiskPct,
+      sessionStartEquity: accountEquity,
+      // Applicability gate for scenario-specific metrics (rubric-authored only).
+      rubricMetricIds: manifest.xpRubric.map((r) => r.metricId),
+    },
+    manifest.noEntryWindows !== undefined
+      ? {
+          noEntryWindows: manifest.noEntryWindows.map((w) => ({
+            startMs: w.startMs,
+            endMs: w.endMs,
+          })),
+        }
+      : {},
+    manifest.policyDeadlineMs !== undefined
+      ? { policyDeadlineMs: manifest.policyDeadlineMs }
+      : {}
+  );
 
   const scoreOutput = runScoreTracker(
     sessionId,
