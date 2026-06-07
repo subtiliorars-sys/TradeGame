@@ -148,6 +148,13 @@ const DEFAULT_FOREX_LEVERAGE = 30;
 // ---------------------------------------------------------------------------
 
 export class SessionAdapter {
+  /**
+   * The most recently ended session — set by endSession(). DebriefScene uses
+   * this to call completeDebrief() (Phaser init data can't carry the adapter
+   * with type safety; module-level handoff mirrors the ProgressStore pattern).
+   */
+  static lastSession: SessionAdapter | null = null;
+
   readonly clock: SimClock;
   readonly log = createEventLog("ui-session-" + Date.now());
 
@@ -175,6 +182,9 @@ export class SessionAdapter {
 
   /** Whether the session has already ended (prevents double-end). */
   private sessionEnded = false;
+
+  /** Whether completeDebrief() has run (prevents double-award of the +30). */
+  private debriefCompleted = false;
 
   /**
    * Whether the sim determined the session had at least one "winning" trade.
@@ -448,6 +458,7 @@ export class SessionAdapter {
   endSession(): DebriefData | null {
     if (this.sessionEnded) return null;
     this.sessionEnded = true;
+    SessionAdapter.lastSession = this;
 
     // Stop the clock so no more ticks fire after this point.
     this.clock.setCompression("paused");
@@ -487,6 +498,49 @@ export class SessionAdapter {
           : finalClose < ev.fillPrice;
       });
     }
+    // debrief_complete is NOT appended here — DebriefScene calls
+    // completeDebrief() when the player reaches the debrief screen, which
+    // re-scores and awards the +30 in THIS session (spec rubric: "Scenario
+    // debrief completed — flat, regardless of outcome"). The previous
+    // append-after-scoring ordering made the metric structurally unearnable
+    // in live play (red-team finding R6-3).
+    const debriefData = this._scoreAndBuild(simTimeMs);
+
+    // Notify listeners (e.g. TradingScene → DebriefScene transition).
+    for (const cb of this.sessionEndListeners) cb(debriefData);
+
+    return debriefData;
+  }
+
+  /**
+   * Mark the debrief as completed: appends debrief_complete to the log,
+   * re-scores, appends only newly-earned XP events (no duplicates), and
+   * returns the refreshed DebriefData. Idempotent — second call returns null.
+   *
+   * DebriefScene calls this on entry: reaching the debrief IS completing
+   * the session flow, so the +30 is earned in the session being debriefed.
+   */
+  completeDebrief(): DebriefData | null {
+    if (!this.sessionEnded || this.debriefCompleted) return null;
+    this.debriefCompleted = true;
+
+    const { tickIndex, simTimeMs } = this.clock.state;
+    this.log.append(simTimeMs, {
+      type: "debrief_complete",
+      tickIndex,
+      timestamp: simTimeMs,
+    });
+
+    return this._scoreAndBuild(simTimeMs);
+  }
+
+  /**
+   * Run the ScoreTracker over the current log, append XP events that are not
+   * already in the log (re-scoring after completeDebrief must not duplicate
+   * the events endSession already appended), and build the DebriefData.
+   */
+  private _scoreAndBuild(simTimeMs: number): DebriefData {
+    const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
     const metricInput: MetricInput = Object.assign(
       {
         events: allEvents,
@@ -521,18 +575,18 @@ export class SessionAdapter {
       this.manifest?.recklessWinnerCoachingText
     );
 
-    // Append XP events returned by the scorer.
+    // Append only XP events whose metric has not already emitted one — one
+    // XP event per metric per session, across endSession + completeDebrief.
+    const alreadyEmitted = new Set(
+      allEvents
+        .filter((e) => e.type === "xp")
+        .map((e) => (e.type === "xp" ? e.metricId : ""))
+    );
     for (const xpEv of scoreOut.xpEvents) {
-      this.log.append(simTimeMs, xpEv);
+      if (!alreadyEmitted.has(xpEv.metricId)) {
+        this.log.append(simTimeMs, xpEv);
+      }
     }
-
-    // Emit debrief_complete — this metric must be appended AFTER scoring so the
-    // debrief_completed metric itself fires on replay, not in this run.
-    this.log.append(simTimeMs, {
-      type: "debrief_complete",
-      tickIndex,
-      timestamp: simTimeMs,
-    });
 
     // Build rubric rows from the manifest xpRubric + score results.
     const rubricRows: DebriefMetricRow[] = this._buildRubricRows(
@@ -556,7 +610,7 @@ export class SessionAdapter {
       ? `Your declared policy (${scoreOut.policyMismatchFlag.declaredOption}) did not match your actions. This will be reviewed in your coaching notes.`
       : null;
 
-    const debriefData: DebriefData = {
+    return {
       scenarioId: this.manifest?.id ?? "SCN-001",
       scenarioTitle: this.manifest?.title ?? "The HarborUSD Depegging",
       rubricRows,
@@ -569,11 +623,6 @@ export class SessionAdapter {
       seed: this.sessionSeed,
       sessionId: this.log.sessionId,
     };
-
-    // Notify listeners (e.g. TradingScene → DebriefScene transition).
-    for (const cb of this.sessionEndListeners) cb(debriefData);
-
-    return debriefData;
   }
 
   /** Build rubric rows by joining manifest xpRubric with scorer results. */

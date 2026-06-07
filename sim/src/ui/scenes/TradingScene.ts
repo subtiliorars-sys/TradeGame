@@ -35,7 +35,6 @@
 
 import Phaser from "phaser";
 import { SessionAdapter, type PriceTick, type DebriefData } from "../engine/SessionAdapter.js";
-import * as ProgressStore from "../../engine/progress.js";
 import {
   C,
   CSS,
@@ -150,6 +149,9 @@ export class TradingScene extends Phaser.Scene {
   private policyCardShown = false;
   private policyDeclared = false;
 
+  /** Non-null when this session is a replay (set from DebriefScene init data). */
+  private replayOfSessionId: string | null = null;
+
   // Position state
   private positions: OpenPosition[] = [];
   /** Order ID of a pending market order awaiting its fill event. */
@@ -212,9 +214,17 @@ export class TradingScene extends Phaser.Scene {
    */
   init(data: unknown): void {
     let id = "SCN-001";
-    if (data && typeof data === "object" && "scenarioId" in data) {
-      const v = (data as { scenarioId: unknown }).scenarioId;
-      if (typeof v === "string") id = v;
+    this.replayOfSessionId = null;
+    if (data && typeof data === "object") {
+      if ("scenarioId" in data) {
+        const v = (data as { scenarioId: unknown }).scenarioId;
+        if (typeof v === "string") id = v;
+      }
+      // Set by DebriefScene's REPLAY button — the original session's ID.
+      if ("replayOf" in data) {
+        const r = (data as { replayOf: unknown }).replayOf;
+        if (typeof r === "string") this.replayOfSessionId = r;
+      }
     }
     this.def = getScenario(id) ?? scn001;
   }
@@ -265,6 +275,18 @@ export class TradingScene extends Phaser.Scene {
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));
     this.adapter.onSessionEnd((data) => this.transitionToDebrief(data));
+
+    // Replay marker (SIM_ENGINE_SPEC §5): a session launched via the debrief's
+    // REPLAY button records replay_started — its own debrief then earns the
+    // session_reviewed metric (+10, "re-review session later").
+    if (this.replayOfSessionId !== null) {
+      this.adapter.log.append(0, {
+        type: "replay_started",
+        originalSessionId: this.replayOfSessionId,
+        tickIndex: 0,
+        timestamp: 0,
+      });
+    }
 
     this.gStatic = this.add.graphics();
     this.gChart = this.add.graphics();
@@ -1411,7 +1433,9 @@ export class TradingScene extends Phaser.Scene {
   private transitionToDebrief(data: DebriefData): void {
     this.adapter.offTick(this.onSimTick);
     this.adapter.offFill(this.onEngineFill);
-    ProgressStore.addXp(data.xpTotal); // accumulate process XP in-memory (§4.5)
+    // XP accounting happens in DebriefScene after completeDebrief() — the
+    // debrief +30 is part of this session's total, so adding here would
+    // either miss it or double-count it.
     this.scene.start("DebriefScene", data);
   }
 

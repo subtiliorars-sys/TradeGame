@@ -33,7 +33,8 @@ import {
   strokeRect,
   hline,
 } from "../engine/draw.js";
-import type { DebriefData } from "../engine/SessionAdapter.js";
+import { SessionAdapter, type DebriefData } from "../engine/SessionAdapter.js";
+import * as ProgressStore from "../../engine/progress.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants (1280 × 800 canvas)
@@ -107,10 +108,22 @@ export class DebriefScene extends Phaser.Scene {
 
     fillRect(g, 0, 0, width, height, C.BG, 0);
 
+    // Reaching the debrief completes the session flow: mark it, re-score so
+    // the debrief_completed row earns its +30 in THIS session (spec rubric:
+    // flat, regardless of outcome), and account the final XP total exactly
+    // once. completeDebrief() is idempotent; null means it already ran (e.g.
+    // a Phaser scene restart) — keep the data we were handed.
+    const refreshed = SessionAdapter.lastSession?.completeDebrief() ?? null;
+    if (refreshed !== null && refreshed.sessionId === this.debriefData?.sessionId) {
+      this.debriefData = refreshed;
+      ProgressStore.addXp(refreshed.xpTotal); // single XP accounting point (§4.5)
+    }
+
     this.drawHeader(g, width);
     this.drawLeftColumn(g);
     this.drawRightColumn(g);
     this.drawFooter(g, width, height);
+    this.drawRankUpCard();
   }
 
   // -------------------------------------------------------------------------
@@ -328,13 +341,16 @@ export class DebriefScene extends Phaser.Scene {
     hline(g, RIGHT_X, y, RIGHT_W, C.BORDER);
     y += 12;
 
-    // ---- COACHING ALERT (conditional) ----
-    // Reckless-winner alert: informational coaching only, never a penalty display.
+    // ---- COACHING OBSERVATION (conditional) ----
+    // SG-05 (CLOSED): right panel below the XP summary, above-the-fold at
+    // 1280×720, reckless-winner takes the top slot, labeled "COACHING
+    // OBSERVATION", no forced acknowledgment. Informational only — never a
+    // penalty display.
     const recklessText = this.debriefData?.recklessWinnerText ?? null;
     const policyNote = this.debriefData?.policyMismatchNote ?? null;
 
     if (recklessText || policyNote) {
-      label(this, RIGHT_X, y, "COACHING ALERT", {
+      label(this, RIGHT_X, y, "COACHING OBSERVATION", {
         fontSize: "11px",
         color: CSS.AMBER,
         fontStyle: "bold",
@@ -432,8 +448,85 @@ export class DebriefScene extends Phaser.Scene {
     // Restart TradingScene with the SAME scenario. The canonical per-scenario
     // seed is resolved inside SessionAdapter (scenarios/registry.ts), so the
     // restart is a deterministic replay of the same tick stream.
+    // replayOf marks the new session as a re-review: TradingScene records
+    // replay_started, and the replay's own debrief earns session_reviewed.
     this.scene.start("TradingScene", {
       scenarioId: this.debriefData?.scenarioId ?? "SCN-001",
+      replayOf: this.debriefData?.sessionId ?? "",
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // Rank-up congratulation card (SIM_ENGINE_SPEC §4.5)
+  // -------------------------------------------------------------------------
+
+  /**
+   * One-time, dismissible congratulation card shown when this session's XP
+   * crossed a rank threshold. Names process behaviors, never trade outcomes
+   * (§4.5 — "You ranked up by journaling…", not "by winning").
+   */
+  private drawRankUpCard(): void {
+    const rankUp = ProgressStore.lastRankUp();
+    if (rankUp === null) return;
+
+    const { width, height } = this.scale;
+    const cw = 480;
+    const ch = 170;
+    const cx = width / 2 - cw / 2;
+    const cy = height / 2 - ch / 2;
+
+    const g = this.add.graphics();
+    const objs: Phaser.GameObjects.GameObject[] = [];
+
+    fillRect(g, 0, 0, width, height, C.BG, 0);
+    g.setAlpha(0.6);
+
+    const cardG = this.add.graphics();
+    fillRect(cardG, cx, cy, cw, ch, C.SURFACE, 8);
+    strokeRect(cardG, cx, cy, cw, ch, C.AMBER, 2, 8);
+
+    objs.push(
+      label(this, width / 2, cy + 28, `RANK UP — ${rankUp.to.displayLabel}`, {
+        fontSize: "17px",
+        color: CSS.AMBER,
+        fontStyle: "bold",
+      }).setOrigin(0.5, 0.5)
+    );
+
+    objs.push(
+      label(
+        this,
+        cx + 20,
+        cy + 50,
+        `You advanced from ${rankUp.from.displayLabel} to ${rankUp.to.displayLabel} ` +
+          "through process behaviors: journaling before acting, sizing within " +
+          "your declared rule, honoring stops, and completing debriefs. " +
+          "Outcomes did not earn this — process did.",
+        {
+          fontSize: "12px",
+          color: CSS.TEXT,
+          wordWrap: { width: cw - 40 },
+          lineSpacing: 4,
+        }
+      )
+    );
+
+    const dismiss = button(
+      this,
+      width / 2 - 80,
+      cy + ch - 46,
+      160,
+      32,
+      "CONTINUE",
+      () => {
+        ProgressStore.clearRankUp();
+        g.destroy();
+        cardG.destroy();
+        for (const o of objs) o.destroy();
+        dismiss.bg.destroy();
+        dismiss.label.destroy();
+      },
+      { fontSize: "12px" }
+    );
   }
 }

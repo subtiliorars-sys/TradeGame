@@ -310,12 +310,34 @@ describe("DB-007: session_end and debrief_complete events in log", () => {
     expect(events).toContain("session_end");
   });
 
-  it("log contains debrief_complete event after endSession()", () => {
+  it("debrief_complete is NOT appended by endSession() — completeDebrief() owns it", () => {
+    // Wave B: the debrief +30 is earned by reaching the debrief screen
+    // (completeDebrief), not auto-granted at session end. The old ordering
+    // made the metric structurally unearnable in live play (red-team R6-3).
     const adapter = new SessionAdapter();
     adapter.clock.advance(2);
     adapter.endSession();
-    const events = adapter.log.entries.map((e) => e.event.type);
+    let events = adapter.log.entries.map((e) => e.event.type);
+    expect(events).not.toContain("debrief_complete");
+
+    const refreshed = adapter.completeDebrief();
+    events = adapter.log.entries.map((e) => e.event.type);
     expect(events).toContain("debrief_complete");
+    const row = refreshed?.rubricRows.find((r) => r.metricId === "debrief_completed");
+    expect(row?.status).toBe("pass");
+    expect(row?.xpEarned).toBe(30);
+
+    // Idempotent: second call returns null and appends nothing new.
+    expect(adapter.completeDebrief()).toBeNull();
+    const count = adapter.log.entries.filter(
+      (e) => e.event.type === "debrief_complete"
+    ).length;
+    expect(count).toBe(1);
+    // One XP event per metric across endSession + completeDebrief.
+    const xpIds = adapter.log.entries
+      .filter((e) => e.event.type === "xp")
+      .map((e) => (e.event.type === "xp" ? e.event.metricId : ""));
+    expect(new Set(xpIds).size).toBe(xpIds.length);
   });
 });
 

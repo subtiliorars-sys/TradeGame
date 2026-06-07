@@ -12,12 +12,15 @@
  * Trade outcomes must never be written here (SIM_ENGINE_SPEC §4.4).
  */
 
+import { currentRank, type RankThreshold } from "./rank.js";
+
 // ---------------------------------------------------------------------------
 // Module-private state
 // ---------------------------------------------------------------------------
 
 let _xpTotal = 0;
 const _completedDrillIds = new Set<string>();
+let _lastRankUp: { from: RankThreshold; to: RankThreshold } | null = null;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -26,10 +29,33 @@ const _completedDrillIds = new Set<string>();
 /**
  * Add process XP to the running total.
  * Silently clamps/ignores negative or non-finite inputs.
+ *
+ * Records a rank-up marker when the addition crosses a rank threshold —
+ * DebriefScene reads it via lastRankUp() to show the one-time congratulation
+ * card (SIM_ENGINE_SPEC §4.5: names process behaviors, never outcomes).
  */
 export function addXp(n: number): void {
   if (!Number.isFinite(n) || n < 0) return;
+  const before = currentRank(_xpTotal, completedDrillIds()).rank;
   _xpTotal += n;
+  const after = currentRank(_xpTotal, completedDrillIds()).rank;
+  if (after.rankId !== before.rankId) {
+    _lastRankUp = { from: before, to: after };
+  }
+}
+
+/**
+ * The rank-up produced by the most recent addXp() that crossed a threshold,
+ * or null. Consumed (cleared) by clearRankUp() once the UI has shown the
+ * congratulation card — one-time, dismissible per §4.5.
+ */
+export function lastRankUp(): { from: RankThreshold; to: RankThreshold } | null {
+  return _lastRankUp;
+}
+
+/** Clear the rank-up marker after the UI has displayed it. */
+export function clearRankUp(): void {
+  _lastRankUp = null;
 }
 
 /** Returns the current cumulative process XP total. */
@@ -60,4 +86,5 @@ export function markDrillCompleted(id: string): void {
 export function reset(): void {
   _xpTotal = 0;
   _completedDrillIds.clear();
+  _lastRankUp = null;
 }
