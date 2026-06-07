@@ -16,7 +16,7 @@ X-I02. See docs/CURRICULUM.md for lesson grids and rank gates.
 | ID | Title | Market | Event Type | Difficulty |
 |----|-------|--------|------------|------------|
 | SCN-004 | The GLIMMER Pool — Impermanent Loss | Crypto (AMM) | Liquidity pool price divergence | Intermediate |
-| SCN-005 | PLEX-8 Index Inclusion Day | Stocks | Index-rebalance inclusion front-run and fade | Intermediate |
+| SCN-005 | NMX 100 Index Inclusion Day | Stocks | Index-rebalance inclusion front-run and fade | Intermediate |
 | SCN-006 | The Employment Report on ANDU | Forex | Scheduled high-impact news event | Intermediate |
 
 All three require completion of the relevant prerequisite drills listed per scenario.
@@ -278,12 +278,12 @@ to end positive) should yield ≤30 XP.
 
 ---
 
-## SCN-005: PLEX-8 Index Inclusion Day
+## SCN-005: NMX 100 Index Inclusion Day
 
 ### Overview
 
 A fictional mid-cap stock, Veldara Industrial (ticker: VLDI), is announced as an upcoming
-addition to the fictional "PLEX-8 Index" — a large-cap synthetic index of 100 fictional
+addition to the fictional NMX 100 — a large-cap synthetic index of 100 fictional
 names tracked by passive funds. Players observe the announcement, the multi-day price run
 leading into the effective inclusion date, the closing-auction volume spike on inclusion
 day, and the post-inclusion fade. The scenario covers the period from announcement through
@@ -299,9 +299,9 @@ hook, auction volume spike)
 (compressible to 22 min at 4x; each session = 18 min at 1x)
 **Session coverage:** 5 simulated full sessions; closing auction visible on Day 5
 **Ticker displayed:** VLDI (fictional) — "Veldara Industrial, a mid-cap fictional
-manufacturer; inclusion in PLEX-8 announced Day 1 pre-market"
+manufacturer; inclusion in NMX 100 announced Day 1 pre-market"
 
-> Note: Veldara Industrial and the PLEX-8 Index do not exist. Any resemblance to real
+> Note: Veldara Industrial and the NMX 100 do not exist. Any resemblance to real
 > companies, indices, or tickers is coincidental. The scenario teaches index-inclusion
 > mechanics as a market archetype. No existing index, real or hypothetical, is named.
 
@@ -339,7 +339,7 @@ Session abbreviations: D1 = inclusion-announcement day, D5 = effective inclusion
 | Session | Phase | Price (VLDI) | Volume | What happens |
 |---------|-------|-------------|--------|--------------|
 | Pre-D1 (context) | Pre-announcement context | $31.40 | Normal | VLDI trading normally. Lesson card shown: "This is Veldara Industrial. It is a mid-cap fictional manufacturer. Nothing has changed about its business today. Observe its order book and volume." |
-| D1 open | Announcement gap | $31.40 → $33.80 | Very high | Pre-market: PLEX-8 announces VLDI will be added on D5. Regular open: VLDI gaps up. Spread widens ($0.28). Large volume in the first 30 minutes. Decision Point A. |
+| D1 open | Announcement gap | $31.40 → $33.80 | Very high | Pre-market: NMX 100 announces VLDI will be added on D5. Regular open: VLDI gaps up. Spread widens ($0.28). Large volume in the first 30 minutes. Decision Point A. |
 | D1 remainder | Run-up begins | $33.80 – $34.50 | High | Momentum buyers enter. Price grinds up through the session. Spread normalizes to $0.06. Lesson card: "Who is buying here? Passive funds must wait until D5 — they are not buying yet." |
 | D2 | Continued grind | $34.50 – $35.60 | Elevated | Price continues upward. Volume declining slightly from D1. A consolidation midday. Decision Point B. |
 | D3 | Peak run momentum | $35.60 – $36.50 | Elevated | Fastest intraday moves of the pre-inclusion window. Retail momentum at its peak. Breadth of buying visible on tape. Decision Point C. |
@@ -359,7 +359,7 @@ Session abbreviations: D1 = inclusion-announcement day, D5 = effective inclusion
 |---------------|-----------------|
 | Buy at market on D1 open | Teaches: chasing into a gap with wide spread on announcement day. Slippage simulated. Debrief asks: "What was the driver of this move? Has anything changed about VLDI's business?" |
 | Buy after the first 30 minutes with a defined stop below $33.00 | Teaches: early-in-the-run entry with process. Valid if journaled with a stated exit plan. The driver (mechanical flow, not fundamentals) must be named in the journal to receive full XP. |
-| Observe and journal: "PLEX-8 inclusion announced. Passive funds must buy at D5 close. I am considering an entry. Driver: mechanical flow, not business change." | Teaches: hypothesis formation and driver labeling. Full XP for this behavior. The player may still enter — the journal action earns XP independently. |
+| Observe and journal: "NMX 100 inclusion announced. Passive funds must buy at D5 close. I am considering an entry. Driver: mechanical flow, not business change." | Teaches: hypothesis formation and driver labeling. Full XP for this behavior. The player may still enter — the journal action earns XP independently. |
 | Skip the scenario: "Index-inclusion plays are outside my stated strategy" | Teaches: recognizing when an event type is outside a defined trading plan. Full XP if documented in journal. Not presented as a poor decision — plan adherence is the lesson. |
 
 **Decision Point B — D2, continued grind**
@@ -402,8 +402,8 @@ This decision point is primarily educational rather than a trade entry point.
 ### Debrief Screen Content
 
 **What happened:**
-Veldara Industrial (VLDI) was announced as an addition to the PLEX-8 Index on Day 1.
-Passive index funds that track PLEX-8 were required to hold VLDI at the closing price on
+Veldara Industrial (VLDI) was announced as an addition to the NMX 100 on Day 1.
+Passive index funds that track the NMX 100 were required to hold VLDI at the closing price on
 Day 5. Between the announcement and Day 5, the price ran from $31.40 to an auction print
 of $37.80 — a 20% move. This run was almost entirely driven by anticipation of the passive
 fund buying, not by any change in VLDI's business or fundamental value.
@@ -482,7 +482,7 @@ with driver labeling) ~70 XP; reckless winner should yield ≤40 XP.
 **Minimum rank:** Trainee
 **Prerequisites (must be completed before scenario unlocks):**
 - SCN-002 completed (Northgate Systems Earnings Gap) — establishes gap mechanics and
-  session-open discipline; PLEX-8 inclusion is the mechanical-flow contrast to
+  session-open discipline; NMX 100 inclusion is the mechanical-flow contrast to
   fundamentals-driven gap behavior
 - Lesson S-I01: "Earnings seasons" (CURRICULUM.md) — establishes the revenue-vs-guidance
   framework that this scenario contrasts with mechanical-flow behavior
@@ -512,7 +512,7 @@ is a new engine capability. Flag for triage before authoring the scenario sim fi
 - **Pre-D1 context:** Session context panel shows VLDI at $31.40 with no annotations.
   Lesson card: "Observe this stock's normal behavior before anything happens."
 - **D1 pre-market:** "Pre-market" indicator active (amber). Announcement text fires as a
-  news-ticker overlay: "PLEX-8 Index to add Veldara Industrial (VLDI) effective Day 5
+  news-ticker overlay: "NMX 100 to add Veldara Industrial (VLDI) effective Day 5
   closing price." No price annotation, no directional language.
 - **D1 open:** Spread indicator spikes ($0.28 displayed prominently). Audio: session bell.
   Journal prompt auto-opens: "Write your hypothesis about what is driving this move."

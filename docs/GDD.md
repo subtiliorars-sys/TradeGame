@@ -345,3 +345,19 @@ The following are permanently excluded or explicitly deferred.
 | Q3 | Rank/cohort model — are cohorts per-market, cross-market, or both? | Design decision, not blocking build |
 | Q4 | Coach role — separate account type or a rank gate? | Blocks coaching feature; deferred to post-v1 |
 | Q5 | Lesson authoring tool — in-app CMS or flat-file + git? | Blocks content scale; flat-file works for v1 |
+
+---
+
+## Appendix — Design Document Index
+
+Supporting documents that expand on sections of this GDD. Read on demand, not upfront.
+
+| Document | What it covers |
+|----------|---------------|
+| `docs/game/SCENARIOS_V0.md` | Full authored spec for the three v0 scenarios: SCN-001 HarborUSD Depegging, SCN-002 Northgate Systems Earnings Gap, SCN-003 London Open Sweep on ANDU |
+| `docs/game/SCENARIOS_V1.md` | Full authored spec for the three v1 scenarios: SCN-004 GLIMMER Pool (impermanent loss), SCN-005 NMX 100 Index Inclusion Day, SCN-006 Employment Report on ANDU |
+| `docs/game/SIM_ENGINE_SPEC.md` | Sim engine technical specification: tick-data format, scenario file schema, replay determinism, market adapters |
+| `docs/game/TEST_PLAN.md` | QA test plan covering order mechanics, fee/spread calculations, coaching-filter rules, and process-scoring correctness |
+| `docs/game/FICTIONAL_CANON.md` | Authoritative registry of all fictional instruments used in TradeGame content; collision-check records and standing rules |
+| `docs/CURRICULUM.md` | Full curriculum map: Foundation Track, three Pillar tracks (Crypto/Stocks/Forex), and Advanced track; lesson IDs and sequencing |
+| `docs/lessons/` | Individual lesson source files (FOUNDATION.md, PILLAR_INTROS.md, and future lesson docs) |
