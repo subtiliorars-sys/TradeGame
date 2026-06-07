@@ -1,0 +1,276 @@
+/* TradeGame — single-page site
+   Mobile-first, no external dependencies, no JS.
+   Accent: #e8a020 (amber). Background: #0d0d0f near-black. */
+
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d0d0f;
+  --surface:   #16171b;
+  --raised:    #1e2026;
+  --border:    #2a2c33;
+  --accent:    #e8a020;
+  --accent-dk: #b87c10;
+  --text:      #d4d6db;
+  --text-dim:  #8a8d96;
+  --text-hi:   #f0f1f3;
+  --radius:    6px;
+  --gap:       1.5rem;
+  --mw:        68rem;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Typography helpers ────────────────────────────────────── */
+h1, h2, h3 { color: var(--text-hi); line-height: 1.25; }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem);  font-weight: 700; margin-bottom: .75rem; }
+h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: .5rem; }
+
+p  { margin-bottom: .9rem; }
+p:last-child { margin-bottom: 0; }
+
+strong { color: var(--text-hi); }
+
+a { color: var(--accent); text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── Layout wrapper ────────────────────────────────────────── */
+.wrap {
+  max-width: var(--mw);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* ── Skip link ─────────────────────────────────────────────── */
+.skip-link {
+  position: absolute; top: -9999px; left: 1rem;
+  background: var(--accent); color: #000; padding: .4rem .8rem;
+  border-radius: var(--radius); font-weight: 700; text-decoration: none;
+  z-index: 100;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Site header / nav ─────────────────────────────────────── */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 0;
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(13,13,15,.95);
+  backdrop-filter: blur(8px);
+}
+.site-header .wrap {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.site-logo {
+  font-weight: 800; font-size: 1.1rem;
+  color: var(--text-hi); text-decoration: none; letter-spacing: .02em;
+}
+.site-logo span { color: var(--accent); }
+.site-nav { display: flex; gap: 1.5rem; list-style: none; flex-wrap: wrap; }
+.site-nav a {
+  color: var(--text-dim); text-decoration: none; font-size: .9rem;
+  transition: color .15s;
+}
+.site-nav a:hover, .site-nav a:focus { color: var(--text-hi); }
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.hero {
+  padding: 5rem 0 4rem;
+  text-align: center;
+}
+.hero h1 { margin-bottom: 1.25rem; }
+.hero .sub {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: var(--text-dim);
+  max-width: 36rem; margin: 0 auto 2rem;
+}
+.hero .sub strong { color: var(--text); }
+
+.btn-cta {
+  display: inline-block;
+  background: var(--accent); color: #000;
+  font-weight: 800; font-size: 1rem;
+  padding: .75rem 2rem; border-radius: var(--radius);
+  text-decoration: none; transition: background .15s, transform .1s;
+}
+.btn-cta:hover { background: var(--accent-dk); }
+.btn-cta:active { transform: scale(.97); }
+.btn-cta:focus-visible { outline: 2px solid var(--text-hi); outline-offset: 3px; }
+
+/* ── Section shared ────────────────────────────────────────── */
+section { padding: 3.5rem 0; }
+section + section { border-top: 1px solid var(--border); }
+
+.section-label {
+  font-size: .75rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: .5rem;
+}
+
+/* ── Pillars ───────────────────────────────────────────────── */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  margin-top: 1.75rem;
+}
+@media (min-width: 640px) {
+  .pillars-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.pillar-card {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.pillar-card h3 { color: var(--accent); }
+
+/* ── Game section ──────────────────────────────────────────── */
+.game-intro { margin-bottom: 1.75rem; }
+.sim-badge {
+  display: inline-block;
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase;
+  background: #1a2a10; color: #6dcf5a;
+  border: 1px solid #3a5a28;
+  padding: .2rem .65rem; border-radius: 999px;
+  margin-left: .6rem; vertical-align: middle;
+}
+.feature-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  margin-top: 1rem;
+}
+@media (min-width: 700px) {
+  .feature-list { grid-template-columns: repeat(2, 1fr); }
+}
+.feature-list li {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+.feature-list li strong { display: block; margin-bottom: .35rem; }
+
+/* ── Community section ─────────────────────────────────────── */
+.community-intro { margin-bottom: 1.75rem; max-width: 52rem; }
+.community-tiles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+}
+@media (min-width: 640px) {
+  .community-tiles { grid-template-columns: repeat(3, 1fr); }
+}
+.community-tile {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.ladder-row {
+  display: flex; align-items: center; gap: .6rem;
+  flex-wrap: wrap; margin-top: 1.75rem;
+}
+.ladder-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .5rem 1rem; font-size: .9rem; font-weight: 600;
+  color: var(--text-hi);
+}
+.ladder-arrow { color: var(--accent); font-size: 1.2rem; font-weight: 700; }
+
+/* ── Lines we don't cross ──────────────────────────────────── */
+.lines-section { background: var(--surface); }
+.lines-intro { max-width: 52rem; margin-bottom: 1.75rem; }
+.lines-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .lines-list { grid-template-columns: repeat(2, 1fr); }
+}
+.lines-list li {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+
+/* ── FAQ ───────────────────────────────────────────────────── */
+.faq-list {
+  list-style: none;
+  margin-top: 1.25rem;
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.faq-list details {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.faq-list summary {
+  padding: 1rem 1.25rem;
+  cursor: pointer; font-weight: 600;
+  color: var(--text-hi);
+  list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: .75rem;
+}
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after {
+  content: "+"; font-size: 1.2rem; color: var(--accent);
+  flex-shrink: 0; transition: transform .2s;
+}
+.faq-list details[open] summary::after { content: "−"; }
+.faq-answer {
+  padding: 0 1.25rem 1rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  padding-top: .75rem;
+}
+.faq-answer p { color: var(--text-dim); }
+
+/* ── Footer ────────────────────────────────────────────────── */
+.site-footer {
+  background: #0a0a0c;
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 0 2rem;
+  margin-top: 0;
+}
+.disclaimer-block {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.75rem;
+  font-size: .9rem; color: var(--text-dim);
+  font-style: italic;
+}
+.footer-nav {
+  display: flex; flex-wrap: wrap; gap: .75rem 1.5rem;
+  list-style: none; margin-bottom: 1.25rem;
+}
+.footer-nav a {
+  color: var(--text-dim); text-decoration: none; font-size: .9rem;
+}
+.footer-nav a:hover { color: var(--text-hi); }
+.footer-meta { font-size: .8rem; color: var(--text-dim); line-height: 1.5; }
+.footer-meta p { margin-bottom: .25rem; }

@@ -19,6 +19,7 @@ monthly review cadences.
 | Date | Event | Verdict |
 |------|-------|---------|
 | 2026-06-06 | Red-team pass (AI review, no attorney) | GO-WITH-FIXES — all fixes applied in this revision. Re-verification required before Phase 1 compliance gate. Attorney review (§4) remains a hard gate before any revenue. |
+| 2026-06-07 | Red-team RE-VERIFICATION (AI review, no attorney) | PASS-WITH-NITS — all 18 prior fixes verified substantive; 8 new MED/LOW findings applied same day (Raging Bull figure corrected, §4 residual scoring fixed, §230 framing corrected, 3 dangling mechanism artifacts created in docs/templates/ + docs/playbooks/, seed-cohort invites declared gated in §19, CONCEPT curriculum bullets de-advised, #scam-reports naming unified + added to channel map). Owner-ratified scope (untested-theory flag, attorney gates) unchanged. Next register review: before Phase 1 compliance gate. |
 
 ---
 
@@ -125,7 +126,7 @@ Phase 4 launch.
 ## 4. Regulatory — Monetization Gate (HARD GATE)
 
 **Severity:** H
-**Likelihood:** Inherent H | Residual H if launched without legal review
+**Likelihood:** Inherent H | Residual L (gate held) — reverts to H if the gate is bypassed
 
 **The issue — scope of "compensation" under the Advisers Act:** Compensation is defined
 as any economic benefit to the adviser, analyzed org-wide, not per-product. The following
@@ -222,8 +223,8 @@ contrary. See §16.
 - No signal channel exists in the Discord. None. Moderators do not create one "just to
   test." Channel creation requires founder approval.
 - Moderators are trained on the content-based removal criteria above.
-- First offense: post removed + member warned. Second offense: ban, no appeal. This
-  is documented in server rules.
+- First offense: post removed immediately (removal precedes any warning), then the
+  member is warned. Second offense: ban, no appeal. This is documented in server rules.
 - The org does not sell, share, or imply signals in any marketing, even when doing so
   would be profitable. This is a cultural and legal commitment.
 - Game leaderboards are process-scored, not outcome-scored (see §16 and above).
@@ -361,7 +362,7 @@ at any appreciable community size in crypto/finance Discord spaces.
   claiming to be from TradeGame, it is a scam."
 - Verification system: official accounts have a verified role; members can check in a
   pinned staff list.
-- `#scam-report` channel live from Phase 1 launch.
+- `#scam-reports` channel live from Phase 1 launch.
 - **Scam report SLA:** Solo-founder realistic SLA is 48 hours (not 24 hours — 24h is
   not sustainable without staff). Acknowledge within 24h; resolve/action within 48h.
   This is the committed cadence, not an aspiration. Escalate if volume exceeds capacity.
@@ -504,7 +505,7 @@ feedback reveals leaderboard gaming that undermines process learning.
 **Likelihood:** Inherent H | Residual M
 
 **The FTC is the dominant enforcer against trading educators.** Reference actions:
-Raging Bull (FTC, $137M consent order); Warrior Trading (FTC, ~$3M, 2022); Online
+Raging Bull (FTC 2022; ~$137M alleged consumer losses, $2.425M stipulated order); Warrior Trading (FTC, ~$3M, 2022); Online
 Trading Academy (FTC). The SEC is not the primary threat here — the FTC is.
 
 **Triggers:**
@@ -548,16 +549,18 @@ members (increased visibility threshold).
 **The issue:** Org-credentialed volunteer coaches giving personalized guidance in cohort
 calls create vicarious liability and aiding-abetting unregistered-adviser exposure for
 both the org and the founder personally. Member-to-member advice in org-branded channels
-compounds this — curation of such content (pinning, amplifying, featuring) worsens the
-org's Section 230 posture (platform vs. publisher distinction).
+compounds this — curating such content (pinning, amplifying, featuring) risks
+"material contribution"/co-development of the advice content (the actual limit of
+Section 230(c)(1) protection), and §230 provides no shield at all against
+SEC/CFTC/FTC enforcement.
 
 **Mechanisms:**
 - Signed coach code-of-conduct required before any coach operates: explicitly defines
   what constitutes a signal or personalized advice, prohibits both, and acknowledges that
   violations may expose both the coach and the org to regulatory action.
 - Spot-check/audit of cohort content: founder or designated monitor reviews a sample
-  of each cohort session (recording or notes) within one week of delivery. Checklist
-  stored in HQ.
+  of each cohort session (recording or notes) within one week of delivery. Checklist:
+  `docs/templates/COHORT_SPOTCHECK_CHECKLIST.md`.
 - Takedown SLA for advice posts: **named owner = Founder.** SLA: 48 hours from report
   to removal action. Posts flagged by moderators as personalized advice or signals are
   escalated immediately; founder action within 48h.
@@ -583,7 +586,9 @@ No entity means no liability shield.
 **Mechanisms — GATES:**
 - Entity formation (LLC or corp, jurisdiction TBD with counsel) is gated BEFORE Phase 1
   public-facing activity. No public Discord launch, no public website, no community
-  marketing before entity is formed and documented in HQ.
+  marketing before entity is formed and documented in HQ. **Seed-cohort invites count
+  as gated activity**: a seed member who loses money can sue the unshielded founder
+  exactly as a public member can — no real-trader cohort runs pre-entity.
 - E&O (errors & omissions) and media-liability insurance reviewed and bound BEFORE
   Phase 4 monetization. Attorney can advise on appropriate coverage for an education/
   coaching org at that stage.
@@ -621,8 +626,8 @@ content about real tokens.
   (including tokens) must be disclosed in the promotion. Policy: org channels do not
   promote named tokens for compensation, period.
 - Pre-collaboration checklist: before any tool/bot/platform collaboration is announced,
-  review against CTA adjacency risk and FTC disclosure requirements. Checklist stored
-  in HQ.
+  review against CTA adjacency risk and FTC disclosure requirements. Checklist:
+  `docs/templates/COLLAB_CHECKLIST.md`.
 
 **Owner-trigger:** Any third-party tool or bot featured in org channels; any token
 featured in a non-mechanics context; any compensation received for mentioning a
@@ -666,7 +671,7 @@ channel used for coordinated manipulation exposes the org to regulatory attentio
 community destruction.
 
 **Mechanisms:**
-- Raid playbook: documented response protocol in HQ for sudden coordinated new-member
+- Raid playbook: `docs/playbooks/RAID_PLAYBOOK.md` — response protocol for sudden coordinated new-member
   influx. Trigger: more than X new members in a 24h period (set threshold at Phase 1
   launch based on normal growth rate).
 - Mass-join heuristic: moderator alert when join rate exceeds 2x the trailing 7-day

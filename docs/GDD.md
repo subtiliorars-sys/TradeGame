@@ -345,3 +345,25 @@ The following are permanently excluded or explicitly deferred.
 | Q3 | Rank/cohort model — are cohorts per-market, cross-market, or both? | Design decision, not blocking build |
 | Q4 | Coach role — separate account type or a rank gate? | Blocks coaching feature; deferred to post-v1 |
 | Q5 | Lesson authoring tool — in-app CMS or flat-file + git? | Blocks content scale; flat-file works for v1 |
+
+---
+
+## Appendix — Design Document Index
+
+Supporting documents that expand on sections of this GDD. Read on demand, not upfront.
+
+| Document | What it covers |
+|----------|---------------|
+| `docs/game/SCENARIOS_V0.md` | Full authored spec for the three v0 scenarios: SCN-001 HarborUSD Depegging, SCN-002 Northgate Systems Earnings Gap, SCN-003 London Open Sweep on ANDU |
+| `docs/game/SCENARIOS_V1.md` | Full authored spec for the three v1 scenarios: SCN-004 GLIMMER Pool (impermanent loss), SCN-005 NMX 100 Index Inclusion Day, SCN-006 Employment Report on ANDU |
+| `docs/game/SIM_ENGINE_SPEC.md` | Sim engine technical specification: tick-data format, scenario file schema, replay determinism, market adapters |
+| `docs/game/TEST_PLAN.md` | QA test plan covering order mechanics, fee/spread calculations, coaching-filter rules, and process-scoring correctness |
+| `docs/game/FICTIONAL_CANON.md` | Authoritative registry of all fictional instruments used in TradeGame content; collision-check records and standing rules |
+| `docs/CURRICULUM.md` | Full curriculum map: Foundation Track, three Pillar tracks (Crypto/Stocks/Forex), and Advanced track; lesson IDs and sequencing |
+| `docs/game/ADVANCED_TIER_BRIEF.md` | Advanced tier definition, 6 scenario concepts (ACN-001 through ACN-006), NG+ hook, prereq philosophy, and News Policy Card backport decision |
+| `docs/game/UI_WIREFRAMES.md` | UI wireframes for core game screens: scenario replay viewer, journal panel, debrief screen, order panel |
+| `docs/lessons/FOUNDATION.md` | Foundation Track lesson source (F-01 through F-09) — prerequisite to all three pillar tracks |
+| `docs/lessons/PILLAR_INTROS.md` | Pillar introduction lessons for all three markets (Crypto, Stocks, Forex) |
+| `docs/lessons/STOCKS_INTERMEDIATE.md` | Stocks Intermediate lesson source (S-I01 through S-I04+) |
+| `docs/lessons/FOREX_INTERMEDIATE.md` | Forex Intermediate lesson source (X-I01 through X-I04+) |
+| `docs/lessons/BEGINNER_COMPLETIONS.md` | Beginner completion lessons across tracks — grid strategies, DCA math, and supporting content |
