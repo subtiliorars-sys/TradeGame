@@ -126,9 +126,9 @@ Worked example. You invest $200 in the NMX 100 ETF on three separate occasions:
 - Buy 2: ETF at $80/unit → 2.5 units purchased
 - Buy 3: ETF at $110/unit → 1.818 units purchased
 
-Total invested: $600. Total units: 6.318. Average cost basis: $600 / 6.318 = $94.97 per unit.
+Total invested: $600. Total units: 6.3182. Average cost basis: $600 / 6.3182 = $94.96 per unit.
 
-If you had put the full $600 in at the first buy ($100/unit), your cost basis would be $100. By buying across three prices — including one lower price — your average dropped to $94.97. The second buy at $80 pulled the average down more than the third buy at $110 pushed it up, because the $200 at $80 bought more units than the $200 at $110.
+If you had put the full $600 in at the first buy ($100/unit), your cost basis would be $100. By buying across three prices — including one lower price — your average dropped to $94.96. The second buy at $80 pulled the average down more than the third buy at $110 pushed it up, because the $200 at $80 bought more units than the $200 at $110.
 
 **Why this works mechanically.** A fixed dollar amount buys more units when the price is lower. That is the arithmetic advantage of DCA: price volatility is not purely an enemy. A lower price at a DCA interval date means more units per dollar. Over many intervals, the average cost basis tends to be below the arithmetic average of the prices paid — because more units are accumulated during the lower-price periods.
 

@@ -113,7 +113,7 @@ Price loss: 45 × $3.00 = $135.00.
 
 Net position: $12.60 carry − $135.00 price loss = −$122.40.
 
-The carry did not protect you. It contributed 12% of the loss back, which is indistinguishable from noise at this scale. In a real account this is the calculation you would face; in the sim you will observe the same dynamic directly across the scenario's timeline.
+The carry did not protect you. It paid back about 9% of the price loss, which is indistinguishable from noise at this scale. In a real account this is the calculation you would face; in the sim you will observe the same dynamic directly across the scenario's timeline.
 
 **The ranging problem.** In a tight range, you might collect carry for weeks. Every day feels like slow progress. Then the range breaks and price returns every pip of accumulated carry in an hour. The position-sizing rule (F-03) still governs: your stop distance determines your size, not the carry credit you are hoping to accumulate.
 

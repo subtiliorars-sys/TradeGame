@@ -283,7 +283,7 @@ predictions — design-doc style]
 
 [SECTION: The Dead-Cat Bounce — T+16]
 
-"At T+16, price recovers 200 basis points. 0.9400 up to 0.9650. It looks like
+"At T+16, price recovers 250 basis points. 0.9400 up to 0.9650. It looks like
 stabilization. It is not. It is short-covering in a broken market. If you open a long
 here expecting mean reversion, you are buying a known-broken instrument on a technical
 bounce. The debrief names this error explicitly.

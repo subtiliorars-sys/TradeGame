@@ -242,7 +242,7 @@ A trader who enters at Day 3's high of $36.50, reasoning "this is going to keep 
 
 - **Less flow benefit remaining.** Most of the front-run buying has already occurred. The passive funds buy at the auction; the front-runners who bought Day 1 and Day 2 are now potential sellers.
 - **More price risk.** The entry is 16% above the pre-announcement price. A reversal of even half the run leaves this trader with a significant loss.
-- **Timing mismatch.** The auction spike ($37.80) is 3.5% above the Day 3 entry of $36.50, a small gain that disappears in the post-auction fade to $34.60.
+- **Timing mismatch.** The auction spike ($37.80) is 3.6% above the Day 3 entry of $36.50, a small gain that disappears in the post-auction fade to $34.60.
 
 The Day 3 entry is not wrong because the price was wrong. It is poor process because the driver is almost exhausted at entry, the stop-to-target ratio is unfavorable, and the thesis ("get in before the auction") conflates observing a mechanical event with having a risk-defined position in it.
 

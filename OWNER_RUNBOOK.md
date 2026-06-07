@@ -341,3 +341,17 @@ owner work.
 *Cross-references: SOCIAL_REVIVAL_PLAN.md, DISCORD_BLUEPRINT.md §6,
 ROADMAP.md phase gates, RISK_REGISTER §4/§6/§10/§14/§17/§19/§24,
 COMMUNITY.md §2, docs/templates/COACH_AGREEMENT.md.*
+
+### P-6. Fictional-instrument name confirmations (added 2026-06-07, wave 4-5)
+
+**Trigger:** Whenever convenient; before Phase 2 content freeze at the latest.
+
+**Decision:** Three naming calls in `docs/game/FICTIONAL_CANON.md`:
+- **KORVA** — new fictional forex base currency (replaced the SOLU placeholder,
+  which was one letter off SOL/Solana). Keep or rename.
+- **CALD / Calder Utilities** — new fictional defensive dividend equity (replaced
+  a miscast VRXC usage). Keep or rename.
+- **HBD** — HarborUSD's shorthand collides with a real ticker (Hive Backed
+  Dollar). Content mostly says "HarborUSD" in full; decide whether to retire the
+  HBD shorthand entirely (small sweep) or accept the collision with the canon's
+  always-use-full-name rule.

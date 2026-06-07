@@ -108,7 +108,7 @@ stop-limit with a stop at $40.00 and a limit at $39.80.
 
 NGSM reports a bad quarter. Overnight it gaps down to $36.50. Your stop triggers at $40.00,
 but the limit order posts at $39.80. There is no liquidity at $39.80 — the first bids are
-at $36.60. Your order does not fill. You are holding a position 14% below your intended
+at $36.60. Your order does not fill. You are holding a position about 8% below your intended
 exit while waiting for a limit that the market has already blown past.
 
 A stop-market would have filled at approximately $36.55 — painful, but closed. A stop-limit
@@ -302,7 +302,8 @@ You have two strategies. You are deciding which to keep.
 - Expectancy = (0.40 × $250) − (0.60 × $100) = $100 − $60 = **+$40 per trade** ✓
 
 Both are positive. But notice: you could cut Strategy B's win rate to 30% and it would
-still produce +$15 per trade. Strategy A breaks even if win rate drops to about 56%.
+still produce +$5 per trade — barely positive, but surviving. Strategy A breaks even if
+win rate drops to about 56%; at 30% it is deeply underwater.
 Higher R:R strategies are more robust to periods of bad form.
 
 Now a trap: **Strategy C:** Win rate 80%, average win $50 (R:R 1:0.5 on $100 risk)
@@ -345,7 +346,7 @@ This is the lesson most people skip because it is uncomfortable. Do not skip it.
 ```
 Loss of 10% → need 11.1% gain to recover
 Loss of 20% → need 25% gain to recover
-Loss of 33% → need 50% gain to recover
+Loss of one-third (33.3%) → need 50% gain to recover
 Loss of 50% → need 100% gain to recover
 Loss of 75% → need 300% gain to recover
 ```

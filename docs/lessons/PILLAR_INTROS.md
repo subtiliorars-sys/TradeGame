@@ -181,7 +181,7 @@ A stock is a fractional ownership stake in one company. An ETF — Exchange Trad
 
 **What an ETF buys you.** Imagine the NMX 100 ETF holds a proportional slice of all 100 companies in the index. If NGSM, which is one of those 100 names, falls 30% on an earnings miss, its weight in the basket might be 1.5%. A 30% drop on a 1.5% weighting moves the overall ETF by 0.45%. You did not feel a 30% hit; you felt a 0.45% hit. That is the diversification benefit — no single event destroys your position.
 
-**What an ETF costs you.** That same cushioning works in reverse. If NGSM triples after a breakthrough product launch, your participation in that tripling is capped at its 1.5% weighting. The single-name holder triples. The ETF holder collects 4.5% from that event. Diversification eliminates extreme downside and extreme upside simultaneously.
+**What an ETF costs you.** That same cushioning works in reverse. If NGSM triples after a breakthrough product launch, your participation in that tripling is capped at its 1.5% weighting. The single-name holder gains 200%. The ETF holder collects about 3% from that event (1.5% weight × a 200% gain). Diversification eliminates extreme downside and extreme upside simultaneously.
 
 **Concentration risk in single names.** Holding NGSM directly means your outcome is entirely dependent on one company: its management, its product cycle, its competitive position, its accounting, and events you cannot predict. The upside potential is higher. So is the variance — meaning your results swing more widely in both directions.
 
