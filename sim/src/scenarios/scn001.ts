@@ -142,6 +142,40 @@ export const scn001: ScenarioDef = {
       "scn001:good-process-can-lose",
       "scn001:common-errors",
     ],
+    // Pre-authored replay annotations (Screen 6 lane, scenario_authored —
+    // vetted here at authoring time; observational tone, no directives).
+    replayAnnotations: [
+      {
+        simTimeMs: 0,
+        text:
+          "HarborUSD is an algorithmic stable. The pre-event range is the " +
+          "baseline — note the spread and depth before anything happens.",
+      },
+      {
+        simTimeMs: 600_000,
+        text:
+          "First deviation from the peg. At this point the cause is " +
+          "ambiguous — early warning and noise look identical here.",
+      },
+      {
+        simTimeMs: 900_000,
+        text:
+          "Recovery peak. Protocol defense briefly restored price — partial " +
+          "recoveries inside a structural failure are common in this archetype.",
+      },
+      {
+        simTimeMs: 960_000,
+        text:
+          "Second leg down — the confirmation. Process question at this " +
+          "moment: was a max-loss defined before acting?",
+      },
+      {
+        simTimeMs: 1_560_000,
+        text:
+          "Dead-cat bounce: short-covering in a broken market, not recovery. " +
+          "Compare the volume profile with the T+5 recovery peak.",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------

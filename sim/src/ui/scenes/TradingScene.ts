@@ -52,6 +52,7 @@ import { scn001 } from "../../scenarios/scn001.js";
 import { getScenario } from "../../scenarios/registry.js";
 import type { RiskModalData } from "./RiskModalScene.js";
 import type { PolicyCardData } from "./PolicyCardScene.js";
+import { depositFromFill, lpPanelView, type LpDeposit } from "../engine/lp.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -154,6 +155,12 @@ export class TradingScene extends Phaser.Scene {
 
   /** Protective-stop orderId → entry orderId (stop-out bookkeeping, F1). */
   private stopIdToEntryId: Map<string, string> = new Map();
+
+  // LP Position Panel (manifest.showLpPanel — SCN-004's IL Dashboard)
+  private lpDeposit: LpDeposit | null = null;
+  private lpWithdrawn = false;
+  private lpFlipShown = false;
+  private lpText: Phaser.GameObjects.Text | null = null;
 
   // Position state
   private positions: OpenPosition[] = [];
@@ -266,6 +273,10 @@ export class TradingScene extends Phaser.Scene {
     this.journalTags = new Set();
     this.journalEntries = [];
     this.stopIdToEntryId = new Map();
+    this.lpDeposit = null;
+    this.lpWithdrawn = false;
+    this.lpFlipShown = false;
+    this.lpText = null;
     this.fillOverlay = null;
     this.fillTimer = null;
     this.sessionEndFired = false;
@@ -303,6 +314,7 @@ export class TradingScene extends Phaser.Scene {
     this.drawOrderTicket();
     this.drawPositionPanel();
     this.drawEstimatePanel();
+    this.drawLpPanelShell();
 
     // Set initial compression to paused so player must press a speed button
     this.adapter.setCompression("paused");
@@ -352,6 +364,11 @@ export class TradingScene extends Phaser.Scene {
 
     this.latestPrice = tick.close;
     this.latestSpread = tick.spread;
+
+    // LP Position Panel refresh (LP scenarios only; frozen after withdrawal).
+    if (this.def.manifest.showLpPanel && !this.lpWithdrawn) {
+      this.updateLpPanel(tick.simTimeMs);
+    }
 
     // Candle aggregation
     if (!this.pendingCandle) {
@@ -961,6 +978,71 @@ export class TradingScene extends Phaser.Scene {
     this.drawOrderTicket();
   }
 
+  // -------------------------------------------------------------------------
+  // LP Position Panel (SCENARIOS_V1 SCN-004 "Core Mechanic: The IL Dashboard")
+  // -------------------------------------------------------------------------
+
+  /**
+   * Static shell + text object for the LP panel, top-left of the chart.
+   * Always visible on LP scenarios once shown (spec: "Panel is always
+   * visible once dismissed. No dismiss-and-hide option."). Values update
+   * per tick in updateLpPanel(). Display surface only — never scoring input.
+   */
+  private drawLpPanelShell(): void {
+    if (!this.def.manifest.showLpPanel) return;
+    const g = this.gStatic;
+    const x = CHART_X + 8;
+    const y = CHART_Y + 8;
+    const w = 318;
+    const h = 96;
+    fillRect(g, x, y, w, h, C.SURFACE, 4);
+    strokeRect(g, x, y, w, h, C.AMBER, 1, 4);
+    label(this, x + 8, y + 6, "LP POSITION PANEL", {
+      fontSize: "10px",
+      color: CSS.AMBER,
+      fontStyle: "bold",
+    });
+    this.lpText = label(this, x + 8, y + 22, "No deposit yet — observing.", {
+      fontSize: "11px",
+      color: CSS.DIM,
+      lineSpacing: 3,
+    });
+  }
+
+  /** Per-tick LP panel refresh + the one-time net-positive neutral marker. */
+  private updateLpPanel(simTimeMs: number): void {
+    if (this.lpText === null) return;
+
+    const view = lpPanelView(this.lpDeposit, this.latestPrice, simTimeMs);
+    if (view === null) {
+      this.lpText.setText("No deposit yet — observing.");
+      this.lpText.setColor(CSS.DIM);
+      return;
+    }
+
+    const lines = [...view.lines];
+    if (this.lpWithdrawn) lines.push("(withdrawn — final snapshot)");
+    this.lpText.setText(lines.join("\n"));
+    this.lpText.setColor(CSS.TEXT);
+
+    // Spec T+72 beat: when net-vs-HODL first turns positive, a NEUTRAL
+    // marker fires once: a data point, not a signal.
+    if (view.netPositive && !this.lpFlipShown && !this.lpWithdrawn) {
+      this.lpFlipShown = true;
+      const { width, height } = this.scale;
+      const note = label(
+        this,
+        width / 2,
+        height - FOOTER_H - 84,
+        "Net position vs. HODL is positive. This is a data point, not a signal.",
+        { fontSize: "12px", color: CSS.DIM, fontStyle: "italic" }
+      ).setOrigin(0.5, 0.5);
+      this.time.delayedCall(6000, () => {
+        if (note.active) note.destroy();
+      });
+    }
+  }
+
   /**
    * True while trade entry is frozen for the news print: from the policy
    * deadline (T-01) until the report window opens. The freeze end derives
@@ -1183,6 +1265,11 @@ export class TradingScene extends Phaser.Scene {
       const pos = this.positions.find((p) => p.orderId === entryForStop);
       this.positions = this.positions.filter((p) => p.orderId !== entryForStop);
       this.drawPositionPanel();
+      // LP scenarios: a triggered withdrawal trigger closes the deposit —
+      // freeze the panel at the final snapshot.
+      if (this.def.manifest.showLpPanel && this.lpDeposit !== null) {
+        this.lpWithdrawn = true;
+      }
       this.showFillConfirm({
         orderId: fill.orderId,
         side: `STOP ${pos?.side === "buy" ? "SELL" : "BUY"}`,
@@ -1216,6 +1303,27 @@ export class TradingScene extends Phaser.Scene {
       entryPrice: fill.fillPrice,
       stopPrice: stopPriceForPos,
     });
+
+    // LP scenarios: the first entry fill IS the deposit (engine models the
+    // LP position as spot — see scn004.ts LP MECHANICS NOTE).
+    if (
+      this.def.manifest.showLpPanel &&
+      this.lpDeposit === null &&
+      this.orderSide === "buy"
+    ) {
+      this.lpDeposit = depositFromFill(
+        fill.fillPrice,
+        filledQty,
+        this.adapter.clock.state.simTimeMs
+      );
+    } else if (
+      this.def.manifest.showLpPanel &&
+      this.lpDeposit !== null &&
+      this.orderSide === "sell"
+    ) {
+      // Manual withdrawal: freeze the panel at the final snapshot.
+      this.lpWithdrawn = true;
+    }
 
     // Emit fill confirmation overlay (teaching mechanic — visually unmissable).
     this.showFillConfirm({
