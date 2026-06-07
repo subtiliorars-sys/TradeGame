@@ -325,7 +325,7 @@ This lesson exists because retail forex has one distinguishing feature that no o
 
 **How leverage works in forex.** When a broker offers 50:1 leverage, a $200 deposit controls a $10,000 position. The broker extends you a short-term loan for $9,800, and your $200 is the collateral — this is called your "required margin."
 
-**Jurisdiction disclaimer — read this.** Maximum permitted leverage varies dramatically by country and regulatory regime. Some jurisdictions cap retail leverage at 2:1 for certain instruments; others permit ratios above 100:1. No curriculum lesson will prescribe a ratio. What is legal and what is prudent are different questions. The aggregate loss data (which you will examine in X-I04 in full) shows that accounts using high leverage are the dominant failure mode, regardless of jurisdiction. Always start well below the maximum permitted ratio for your country and your broker.
+**Jurisdiction disclaimer — read this.** Maximum permitted leverage varies dramatically by country and regulatory regime. Some jurisdictions cap retail leverage at 2:1 for certain instruments; others permit ratios above 100:1. No curriculum lesson will prescribe a ratio. What is legal and what is prudent are different questions. The aggregate loss data (which you will examine in X-I04 in full) shows that accounts using high leverage are the dominant failure mode, regardless of jurisdiction. The aggregate data shows accounts that start well below the maximum permitted ratio survive longer — this is the pattern the X-I04 data will show you directly.
 
 **Worked liquidation example.** You deposit $500 with a broker offering 50:1 leverage. You open 1 standard lot of ANDU/HarborUSD at 1.2500. Position size: 100,000 units.
 
@@ -341,7 +341,7 @@ The broker's stop-out level is 50% (account equity falls to 50% of required marg
 
 At stop-out: loss required = $500 - $200 = $300. At $0.76 per pip per mini lot × 2 lots = $1.52 per pip, that is $300 / $1.52 = 197 pips against you.
 
-At 50:1 with 2 mini lots and only $100 free margin, a margin call warning arrives at roughly 66 pips. Stop-out arrives at 197 pips — if not automatically closed earlier. The numbers shift with every broker, every leverage ratio, every lot size. The calculation above is the skeleton; you must run it for your specific setup before you trade.
+At 50:1 with 2 mini lots and only $100 free margin, a margin call warning arrives at roughly 66 pips. Stop-out arrives at 197 pips — if not automatically closed earlier. The numbers shift with every broker, every leverage ratio, every lot size. The calculation above is the skeleton. In a real account you would need to run it for your specific setup; in the sim, the platform calculates it for you — but the point is that you can do it manually.
 
 **The aggregate picture.** Regulated brokers in multiple jurisdictions are required to disclose the percentage of retail accounts that lose money. Across publicly available disclosures, the numbers cluster in the 70–80% range, with some brokers disclosing higher. Forex is not uniquely difficult in terms of mechanics — pairs, pips, and sessions are learnable. The loss rate is attributable to leverage use combined with inadequate position sizing. X-I04 will walk through the disclosed numbers with you directly.
 
@@ -356,7 +356,7 @@ At 50:1 with 2 mini lots and only $100 free margin, a margin call warning arrive
 2. Why do different countries have different maximum leverage rules? What does that variation tell you about the regulatory view of retail leverage risk?
 3. A learner says, "I'll just use high leverage for small positions to keep my dollar exposure low." Identify the flaw in this reasoning using the liquidation math structure from this lesson.
 
-**Process Check:** Before opening any forex position, can you calculate — using only your deposit, your lot size, and your pip value — the exact pip distance that triggers your broker's margin call? If not, you are not ready to use leverage.
+**Process Check:** Before opening any forex position, can you calculate — using only your deposit, your lot size, and your pip value — the exact pip distance that triggers your broker's margin call? If not, that gap is exactly what this drill is designed to close in the sim before you ever face it live.
 
 ---
 

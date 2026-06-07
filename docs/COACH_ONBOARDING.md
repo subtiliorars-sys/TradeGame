@@ -77,7 +77,7 @@ your process."** Here is how it sounds in practice.
 
 **Example A — Beginner asks about a real token in #crypto-learn**
 
-> Member: "Should I buy SOL right now? It's been dipping a lot and seems like
+> Member: "Should I buy GLIMMER right now? It's been dipping a lot and seems like
 > a good entry."
 
 Redirect:
@@ -113,8 +113,8 @@ observation — you made it irrelevant to the debrief.
 
 **Example C — Someone asks for advice in a voice session (live)**
 
-> Voice participant: "Quick question — do you think XRP is a good hold right
-> now given everything happening with the SEC?"
+> Voice participant: "Quick question — do you think ANDU is a good hold right
+> now given all the regulatory uncertainty?"
 
 Redirect (on-air, immediately):
 > "I'm going to stop you there — that's a call on a live asset, and I can't

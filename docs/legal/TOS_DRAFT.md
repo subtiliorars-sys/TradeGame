@@ -219,6 +219,9 @@ mandatory arbitration clauses for consumer contracts.]
 
 ## 11. Changes to These Terms
 
+> [DRAFT — the section below is template language; not currently operative. No terms
+> are in force anywhere until attorney review and publication.]
+
 TradeGame reserves the right to update these Terms at any time. Material changes will
 be announced in the Discord server and/or by email to registered users before taking
 effect. Continued use of the Service after the effective date of a change constitutes

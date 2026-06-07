@@ -1,4 +1,10 @@
 {
+  "launch_gates": {
+    "_comment": "HARD GATES — verify ALL before building/launching the server, regardless of who executes this spec",
+    "entity_formed": "REQUIRED before ANY invites or public activity — see OWNER_RUNBOOK G-1 / RISK_REGISTER §19",
+    "coppa_analysis": "REQUIRED before any game/account data collection — see OWNER_RUNBOOK G-2 / RISK_REGISTER §10/§14",
+    "social_audit": "FB winning-trades review + Telegram cleanup complete before invite links go into pins — SOCIAL_REVIVAL_PLAN §1a"
+  },
   "server": {
     "name": "TradeGame",
     "verificationLevel": "MEDIUM",
@@ -18,7 +24,6 @@
     },
     "_note": "Owner must disable DM from server members on their own account (operational security, RISK_REGISTER §11). 18+ coaching posture per RISK_REGISTER §10; Discord floor is 13+ but coaching features are gated."
   },
-
   "categories": [
     {
       "name": "WELCOME",
@@ -349,7 +354,6 @@
       ]
     }
   ],
-
   "roles": [
     {
       "name": "Admin",
@@ -416,7 +420,6 @@
       "gateCondition": "Auto-assigned on join"
     }
   ],
-
   "permissionMatrix": {
     "_note": "Y=allow, N=deny, inherit=no override. Rows are roles; columns are permission keys.",
     "everyoneAndNewArrival": {
@@ -500,42 +503,81 @@
       "_note": "Full permissions. All bans final on second signal offense."
     }
   },
-
   "autoModRules": [
     {
       "name": "Signal solicitation",
-      "keywords": ["signals", "signal group", "vip signals", "premium signals", "signal service"],
+      "keywords": [
+        "signals",
+        "signal group",
+        "vip signals",
+        "premium signals",
+        "signal service"
+      ],
       "action": "BLOCK_MESSAGE",
       "alertChannel": "mod-log"
     },
     {
       "name": "DM solicitation",
-      "keywords": ["dm me", "dm for info", "I'll dm you", "check your dms", "sent you a dm"],
+      "keywords": [
+        "dm me",
+        "dm for info",
+        "I'll dm you",
+        "check your dms",
+        "sent you a dm"
+      ],
       "action": "BLOCK_MESSAGE",
       "alertChannel": "mod-log"
     },
     {
       "name": "Payment solicitation",
-      "keywords": ["cashapp", "venmo", "paypal", "send me", "pay me", "zelle"],
+      "keywords": [
+        "cashapp",
+        "venmo",
+        "paypal",
+        "send me",
+        "pay me",
+        "zelle"
+      ],
       "action": "BLOCK_MESSAGE",
       "alertChannel": "mod-log"
     },
     {
       "name": "VIP group spam",
-      "keywords": ["vip group", "vip channel", "join my group", "join my channel", "telegram link", "t.me/"],
+      "keywords": [
+        "vip group",
+        "vip channel",
+        "join my group",
+        "join my channel",
+        "telegram link",
+        "t.me/"
+      ],
       "action": "BLOCK_MESSAGE",
       "alertChannel": "mod-log"
     },
     {
       "name": "Signal channel names",
-      "keywords": ["calls", "alerts", "picks", "plays", "hot tips", "setups to watch"],
+      "keywords": [
+        "calls",
+        "alerts",
+        "picks",
+        "plays",
+        "hot tips",
+        "setups to watch"
+      ],
       "action": "FLAG_FOR_REVIEW",
       "alertChannel": "mod-log",
       "_note": "Do not auto-block — context matters. Flag only."
     },
     {
       "name": "Pump language",
-      "keywords": ["100x", "moonshot", "going to moon", "easy money", "guaranteed profit", "risk-free"],
+      "keywords": [
+        "100x",
+        "moonshot",
+        "going to moon",
+        "easy money",
+        "guaranteed profit",
+        "risk-free"
+      ],
       "action": "BLOCK_MESSAGE",
       "alertChannel": "mod-log"
     },
@@ -546,7 +588,6 @@
       "_note": "Enable Discord's default spam detection: repeated identical messages, mass @mentions."
     }
   ],
-
   "phasedRollout": {
     "softLaunch": [
       "announcements",
@@ -579,17 +620,25 @@
     ],
     "gated": [
       {
-        "channels": ["sim-runs", "scenario-replays", "leaderboards"],
+        "channels": [
+          "sim-runs",
+          "scenario-replays",
+          "leaderboards"
+        ],
         "trigger": "gameVerticalSliceShipped",
         "description": "THE GAME category opens when owner confirms first playable build is available. sim-runs carries placeholder message at soft-launch."
       },
       {
-        "channels": ["replay-review threads"],
+        "channels": [
+          "replay-review threads"
+        ],
         "trigger": "firstCohortLaunches",
         "description": "Channel exists at launch but empty. Threads created by Coach when first cohort begins."
       },
       {
-        "channels": ["Cohort Voice (scheduled)"],
+        "channels": [
+          "Cohort Voice (scheduled)"
+        ],
         "trigger": "firstCohortLaunches",
         "description": "Voice channel exists; active scheduling begins with first cohort."
       }

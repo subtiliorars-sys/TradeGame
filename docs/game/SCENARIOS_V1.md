@@ -100,10 +100,10 @@ Synthetic price levels (GLIMMER in USVC):
 |-------|-------|--------------|-------------|--------------|
 | T-05 to T0 | Setup — deposit decision | 4.20 | None yet | Lesson card on AMM mechanics shown. LP Position Panel introduced. Player chooses deposit amount (bounded 10–40% of sim account). Decision Point A (whether and how much to deposit). Spread on GLIMMER spot: 0.008. |
 | T0 to T+15 | Stable period | 4.20 – 4.35 | Low (0.3% of deposit) | GLIMMER drifts slightly. Fees begin accruing. IL is minimal (< 0.1%). LP Position Panel shows Net vs. HODL essentially flat. A lesson card fires: "When price stays near your deposit price, IL is small and fees accumulate cleanly." |
-| T+15 to T+30 | First divergence leg | 4.35 – 5.10 | Moderate (0.7% cumulative) | GLIMMER rises 21% from deposit price. IL formula visible in-panel: approximately 1.0% IL at this divergence. Fees partially offset. Net vs. HODL turns slightly negative. Decision Point B. |
-| T+30 to T+50 | Acceleration | 5.10 – 6.85 | High (1.4% cumulative) | GLIMMER at +63% from deposit price. IL now approximately 5.8%. Fees at 1.4% — net vs. HODL is roughly −4.4%. HODL baseline is visibly higher than pool value. Decision Point C (primary IL decision). |
+| T+15 to T+30 | First divergence leg | 4.35 – 5.10 | Moderate (0.7% cumulative) | GLIMMER rises 21% from deposit price. IL formula visible in-panel: approximately 0.45% IL at this divergence. Fees partially offset. Net vs. HODL turns slightly negative. Decision Point B. |
+| T+30 to T+50 | Acceleration | 5.10 – 6.85 | High (1.4% cumulative) | GLIMMER at +63% from deposit price. IL now approximately 2.9%. Fees at 1.4% — net vs. HODL is roughly −1.5%. HODL baseline is visibly higher than pool value. Decision Point C (primary IL decision). |
 | T+50 to T+65 | Plateau and high-fee window | 6.85 – 6.75 | Very high (2.1% cumulative by T+65) | GLIMMER consolidates. Price divergence stops widening. Fee accrual continues at its highest rate (high volume on price plateau). Net vs. HODL improves slightly to approximately −3.7%. Decision Point D (hold for fees vs. crystallize the loss). |
-| T+65 to T+80 | Partial correction | 6.75 – 5.40 | Moderate (2.5% cumulative by T+80) | GLIMMER corrects back toward deposit price. IL narrows (approximately 2.1% at 5.40). Fees continue. Net vs. HODL improves to approximately +0.4% — briefly net positive. Decision Point E (exit while ahead or hold for more fee accrual). |
+| T+65 to T+80 | Partial correction | 6.75 – 5.40 | Moderate (2.5% cumulative by T+80) | GLIMMER corrects back toward deposit price. IL narrows (approximately 0.8% at 5.40). Fees continue. Net vs. HODL improves to approximately +0.4% — briefly net positive. Decision Point E (exit while ahead or hold for more fee accrual). |
 | T+80 to T+90 | Resolution | 5.40 – 5.55 | 2.7% cumulative | Price stabilizes. Scenario ends. If still in pool: final LP Position Panel snapshot vs. HODL displayed. |
 
 ---
@@ -127,7 +127,7 @@ Synthetic price levels (GLIMMER in USVC):
 | Withdraw at slight net loss | Teaches: early exit at manageable cost. Valid process if the original plan stated a divergence threshold. Debrief evaluates whether a threshold was pre-stated. |
 | Increase deposit size (add to the pool) | Teaches: adding to an LP position while price is diverging amplifies IL exposure. Coaching flag fires explaining the math. |
 
-**Decision Point C — T+40, major divergence (~63% price move, IL ~5.8%)**
+**Decision Point C — T+40, major divergence (~63% price move, IL ~2.9%)**
 
 This is the primary teaching moment of the scenario. Players who are still in the pool
 face the clearest version of the IL-vs-fees comparison.
@@ -162,9 +162,9 @@ face the clearest version of the IL-vs-fees comparison.
 **What happened:**
 HarborUSD/GLIMMER on ArcSwap offered a high-APY liquidity pool. During the scenario,
 GLIMMER increased 63% from the deposit price, creating an impermanent loss of approximately
-5.8% at peak divergence. Fee income accrued to approximately 2.1% by that point — a net
+2.9% at peak divergence. Fee income accrued to approximately 2.1% by that point — a net
 loss of approximately 3.7% vs. simply holding the raw assets. When GLIMMER corrected to
-5.40 (a 29% from peak), IL narrowed to approximately 2.1% and cumulative fees reached 2.5%,
+5.40 (a 29% from peak), IL narrowed to approximately 0.8% and cumulative fees reached 2.5%,
 making the LP position briefly net positive.
 
 The key insight: IL is not a fixed cost. It is a live comparison between the LP position
@@ -828,7 +828,7 @@ News Policy Card completed) ~70 XP; reckless winner with no card and no stop sho
 
 ### TUNABLE:
 - SCN-004: Full-run XP target ~185; patience-only ~70; reckless winner ≤30. IL
-  percentages (1.0% at 21% divergence, 5.8% at 63% divergence) are calculated on the
+  percentages (0.45% at 21% divergence, 2.9% at 63% divergence; corrected 2026-06-07 to the standard constant-product formula 2*sqrt(r)/(1+r)-1) are calculated on the
   standard x²/(x+1) approximation — verify with the synthetic AMM math before
   implementation. Fee accrual rates (0.3% / 0.7% / 1.4% / 2.1% / 2.5% / 2.7%) are
   first-pass; calibrate so the "fees won" outcome at T+72 is achievable but not
