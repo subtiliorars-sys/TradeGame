@@ -73,6 +73,14 @@ export class RiskModalScene extends Phaser.Scene {
     fillRect(overlay, 0, 0, width, height, C.BG, 0);
     overlay.setAlpha(0.78);
 
+    // BLOCKING (§3.4): swallow all pointer input so nothing reaches the
+    // TradingScene underneath while the modal is up. The modal's own buttons
+    // are added after this zone, so they stay on top and remain clickable.
+    this.add
+      .zone(0, 0, width, height)
+      .setOrigin(0, 0)
+      .setInteractive();
+
     // Modal panel
     const pw = 580;
     const ph = 440;

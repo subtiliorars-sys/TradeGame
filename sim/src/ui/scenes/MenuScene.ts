@@ -3,8 +3,12 @@
  *
  * Shows:
  *   SCN-001  HarborUSD Depegging (CRYPTO)  — enabled, START available.
- *   SCN-002  Northgate Systems (STOCKS)     — visible, disabled ("coming in slice 2").
- *   SCN-003  London Open Sweep (FOREX)      — visible, disabled ("coming in slice 2").
+ *   SCN-002  Northgate Systems (STOCKS)     — enabled, START available.
+ *   SCN-003  London Open Sweep (FOREX)      — enabled, START available.
+ *
+ * Card metadata (title, duration, seed, market) derives from the scenario
+ * registry — no duplicated literals here. Card-only display fields
+ * (subtitle, difficulty) are kept in the CARD_EXTRAS map below.
  *
  * Education-not-advice footer rendered persistently at the bottom of the screen
  * (SIM_ENGINE_SPEC §C one-liner):
@@ -32,57 +36,22 @@ import {
   strokeRect,
   hline,
 } from "../engine/draw.js";
+import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
 
 // ---------------------------------------------------------------------------
-// Scenario metadata (Phase 2 vertical-slice — three scenarios; only SCN-001 enabled)
+// Card-only display fields — not duplicated in the manifest
 // ---------------------------------------------------------------------------
 
-interface ScenarioCard {
-  id: string;
-  market: string;
-  title: string;
+interface CardExtras {
   subtitle: string;
-  difficulty: string;
-  duration: string;
-  seed: number;
-  enabled: boolean;
-  disabledReason?: string;
 }
 
-const SCENARIOS: ScenarioCard[] = [
-  {
-    id: "SCN-001",
-    market: "CRYPTO",
-    title: "The HarborUSD Depegging",
-    subtitle: "",
-    difficulty: "Intermediate",
-    duration: "40 min (10 min 4x)",
-    seed: 42_001,
-    enabled: true,
-  },
-  {
-    id: "SCN-002",
-    market: "STOCKS",
-    title: "Northgate Systems",
-    subtitle: "Earnings Gap & Fade",
-    difficulty: "Intermediate",
-    duration: "60 min (15 min 4x)",
-    seed: 42_002,
-    enabled: false,
-    disabledReason: "Coming in slice 2",
-  },
-  {
-    id: "SCN-003",
-    market: "FOREX",
-    title: "London Open Sweep on ANDU",
-    subtitle: "",
-    difficulty: "Intermediate",
-    duration: "60 min (15 min 4x)",
-    seed: 42_003,
-    enabled: false,
-    disabledReason: "Coming in slice 2",
-  },
-];
+/** Display-only fields per scenario ID, not duplicated from the manifest. */
+const CARD_EXTRAS: Record<string, CardExtras> = {
+  "SCN-001": { subtitle: "" },
+  "SCN-002": { subtitle: "Earnings Gap & Fade" },
+  "SCN-003": { subtitle: "" },
+};
 
 // ---------------------------------------------------------------------------
 // XP display stub (no persistence yet — Tier B gates real storage)
@@ -148,22 +117,23 @@ export class MenuScene extends Phaser.Scene {
   }
 
   // -------------------------------------------------------------------------
-  // Scenario card grid — 3 cards across two rows
+  // Scenario card grid — 3 cards across one row
   // -------------------------------------------------------------------------
 
   private drawScenarioGrid(
     g: Phaser.GameObjects.Graphics,
     width: number,
-    height: number
+    _height: number
   ): void {
-    // Single row of 3 cards, horizontally centred.
-    const totalW = SCENARIOS.length * CARD_W + (SCENARIOS.length - 1) * PAD;
+    const scenarios = allScenarios();
+    const totalW = scenarios.length * CARD_W + (scenarios.length - 1) * PAD;
     const startX = (width - totalW) / 2;
     const startY = PAD + 96;
 
-    SCENARIOS.forEach((scn, i) => {
+    scenarios.forEach((scn, i) => {
       const cx = startX + i * (CARD_W + PAD);
-      this.drawCard(g, cx, startY, scn);
+      const extras = CARD_EXTRAS[scn.manifest.id] ?? { subtitle: "" };
+      this.drawCard(g, cx, startY, scn.manifest.id, scn.manifest, extras);
     });
   }
 
@@ -171,72 +141,69 @@ export class MenuScene extends Phaser.Scene {
     g: Phaser.GameObjects.Graphics,
     x: number,
     y: number,
-    scn: ScenarioCard
+    scenarioId: string,
+    manifest: import("../../scenarios/types.js").ScenarioManifest,
+    extras: CardExtras
   ): void {
     panel(g, x, y, CARD_W, CARD_H, 6);
 
     // Market badge
-    const badgeColor = scn.enabled ? C.AMBER : C.BORDER;
-    fillRect(g, x + 12, y + 12, 80, 20, badgeColor, 3);
-    const marketLbl = label(this, x + 12 + 40, y + 12 + 10, scn.market, {
+    const market = manifest.market.toUpperCase();
+    fillRect(g, x + 12, y + 12, 80, 20, C.AMBER, 3);
+    const marketLbl = label(this, x + 12 + 40, y + 12 + 10, market, {
       fontSize: "11px",
-      color: scn.enabled ? CSS.BG : CSS.DIM,
+      color: CSS.BG,
       fontStyle: "bold",
     });
     marketLbl.setOrigin(0.5, 0.5);
 
     // Scenario ID
-    label(this, x + 12, y + 40, scn.id, {
+    label(this, x + 12, y + 40, scenarioId, {
       fontSize: "11px",
       color: CSS.DIM,
     });
 
     // Title
-    label(this, x + 12, y + 58, scn.title, {
+    label(this, x + 12, y + 58, manifest.title, {
       fontSize: "14px",
       fontStyle: "bold",
-      color: scn.enabled ? CSS.TEXT : CSS.DIM,
+      color: CSS.TEXT,
       wordWrap: { width: CARD_W - 24 },
     });
 
-    if (scn.subtitle) {
-      label(this, x + 12, y + 80, scn.subtitle, {
+    if (extras.subtitle) {
+      label(this, x + 12, y + 80, extras.subtitle, {
         fontSize: "12px",
         color: CSS.DIM,
       });
     }
 
-    // Difficulty + duration
-    label(this, x + 12, y + 108, `${scn.difficulty}  ·  ${scn.duration}`, {
+    // Format duration from manifest durationMs (convert to approx minutes).
+    const durationMin = Math.round(manifest.durationMs / 60_000);
+    const durationStr = `${durationMin} min`;
+
+    // Difficulty (from the manifest — single source of truth) + duration
+    label(this, x + 12, y + 108, `${manifest.difficulty}  ·  ${durationStr}`, {
       fontSize: "11px",
       color: CSS.DIM,
     });
 
-    // Seed (authored scenario seed — visible for determinism transparency)
-    label(this, x + 12, y + 128, `Seed: ${scn.seed}`, {
+    // Seed (canonical UI play seed — visible for determinism transparency)
+    const seed = scenarioSeed(scenarioId);
+    label(this, x + 12, y + 128, `Seed: ${seed}`, {
       fontSize: "10px",
       color: CSS.DIM,
     });
 
     hline(g, x + 12, y + 148, CARD_W - 24);
 
-    if (scn.enabled) {
-      // START button
-      const bw = CARD_W - 24;
-      const bh = 36;
-      const b = button(this, x + 12, y + CARD_H - bh - 12, bw, bh, "START", () =>
-        this.startScenario(scn.id)
-      );
-      // b refs are managed by Phaser scene graph
-      void b;
-    } else {
-      // Disabled state — show coming-soon label
-      label(this, x + 12, y + CARD_H - 44, scn.disabledReason ?? "Locked", {
-        fontSize: "12px",
-        color: CSS.DIM,
-        fontStyle: "italic",
-      });
-    }
+    // START button — all three scenarios are enabled.
+    const bw = CARD_W - 24;
+    const bh = 36;
+    const b = button(this, x + 12, y + CARD_H - bh - 12, bw, bh, "START", () =>
+      this.startScenario(scenarioId)
+    );
+    void b;
   }
 
   // -------------------------------------------------------------------------
@@ -246,7 +213,7 @@ export class MenuScene extends Phaser.Scene {
   private drawProgressBar(
     g: Phaser.GameObjects.Graphics,
     width: number,
-    height: number
+    _height: number
   ): void {
     // Position: below card grid, above footer.
     const barY = PAD + 96 + CARD_H + PAD + 12;
@@ -311,9 +278,6 @@ export class MenuScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private startScenario(id: string): void {
-    if (id === "SCN-001") {
-      this.scene.start("TradingScene");
-    }
-    // SCN-002, SCN-003 are disabled — buttons not rendered for them.
+    this.scene.start("TradingScene", { scenarioId: id });
   }
 }

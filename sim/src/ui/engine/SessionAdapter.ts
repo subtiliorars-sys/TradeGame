@@ -12,28 +12,49 @@
  * TickEvent emissions from the engine are the authoritative price source.
  * This adapter exposes an onTick callback that TradingScene subscribes to.
  *
+ * Adapter selection:
+ *   Constructor accepts a ScenarioDef and numeric seed. The market adapter
+ *   (crypto / stocks / forex) is selected from manifest.market — mirroring
+ *   the harness/run.ts adapter wiring exactly.
+ *
+ * Account model:
+ *   crypto/stocks → CryptoSpotAccount (cash, no leverage)
+ *   forex         → ForexMarginAccount (leveraged)
+ *
+ * Leverage for forex is taken from the manifest or defaults to 50:1.
+ *
  * Order routing:
- *   The adapter owns an OrderBook and CryptoSpotAccount instance.
+ *   The adapter owns an OrderBook and appropriate account instance.
  *   TradingScene calls adapter.submitOrder() to place orders; fill math is
  *   performed inside the engine OrderBook (computeMarketFillCosts) so that
  *   live play and headless replay produce identical FillEvent fields.
- *   The inline fill math that previously lived in TradingScene is removed.
  */
 
 import {
   createClock,
   createCryptoAdapter,
+  createStocksAdapter,
+  createForexAdapter,
   createEventLog,
   seed as seedPrng,
   createOrderBook,
   createCryptoSpotAccount,
+  createForexMarginAccount,
   type SimClock,
   type CompressionMode,
   ticksPerWallSecond,
 } from "../../index.js";
 import type { IMarketFeed } from "../../data/feed.js";
-import type { OrderFillEvent, OrderSubmitEvent } from "../../engine/events.js";
+import type { OrderFillEvent, OrderSubmitEvent, SimEvent } from "../../engine/events.js";
 import type { OrderParams } from "../../orders/book.js";
+import type { CryptoSpotAccount, ForexMarginAccount } from "../../orders/account.js";
+import {
+  runScoreTracker,
+  type MetricInput,
+} from "../../engine/scoring.js";
+import type { ScenarioDef, ScenarioManifest, XpRubricEntry } from "../../scenarios/types.js";
+import { scn001 as _scn001Default } from "../../scenarios/scn001.js";
+import { scenarioSeed } from "../../scenarios/registry.js";
 
 /** Current price snapshot delivered to the UI each tick. */
 export interface PriceTick {
@@ -53,13 +74,78 @@ export interface FillResult {
   fill: OrderFillEvent;
 }
 
+/** Synchronous outcome of submitOrder(). */
+export interface SubmitOutcome {
+  orderId: string;
+  /**
+   * Non-null when the OrderBook rejected the order at submit time
+   * (e.g. "leverage_ack_required", "session_closed", "insufficient_balance").
+   * Null means the order was accepted (fill arrives via onFill on a later tick).
+   */
+  rejectReason: string | null;
+}
+
 export type TickCallback = (tick: PriceTick) => void;
 export type FillCallback = (fill: OrderFillEvent) => void;
 
-const SCN001_SEED = 42_001;
-const MS_PER_TICK = 1_000; // 1 sim-second per tick
-// Estimated sigma for the HarborUSD/USVC feed (conservative baseline).
+// ---------------------------------------------------------------------------
+// DebriefData — the teaching payoff object produced at session end.
+//
+// No PnL anywhere in this type. No account-balance display.
+// ---------------------------------------------------------------------------
+
+/** One row in the debrief process rubric table. */
+export interface DebriefMetricRow {
+  /** Canonical metric ID. */
+  readonly metricId: string;
+  /** Human-readable label from the scenario rubric. */
+  readonly label: string;
+  /**
+   * 'pass' | 'fail' | 'na'.
+   * 'na' means the metric was not applicable to this session (no opportunity
+   * to fire). NOT a failure. Rendered as "—" in the table, never as ✗.
+   */
+  readonly status: "pass" | "fail" | "na";
+  /** XP earned for this row (0 when status !== 'pass'). */
+  readonly xpEarned: number;
+}
+
+/** Full debrief payload passed to DebriefScene. */
+export interface DebriefData {
+  readonly scenarioId: string;
+  readonly scenarioTitle: string;
+  /** Per-metric rows for the rubric table. */
+  readonly rubricRows: readonly DebriefMetricRow[];
+  /** Sum of all xpEarned across rows (process XP only — no PnL). */
+  readonly xpTotal: number;
+  // --- Scenario debrief text IDs (resolved from ScenarioManifest) ---
+  /** ID of the "what happened" content block. */
+  readonly whatHappenedId: string;
+  /** ID of the "good process" content block. */
+  readonly goodProcessId: string;
+  /** ID of the mandatory "good process can still lose" callout block. */
+  readonly goodProcessCanLoseId: string;
+  // --- Coaching flags ---
+  /** Present when the reckless-winner flag fired; null otherwise. */
+  readonly recklessWinnerText: string | null;
+  /** Present when policy was declared but behaviour mismatched; null otherwise. */
+  readonly policyMismatchNote: string | null;
+  /** The seed used for this session (needed for "Replay scenario" button). */
+  readonly seed: number;
+  /** Session ID for log purposes. */
+  readonly sessionId: string;
+}
+
+// Estimated sigma for market orders (conservative baseline).
 const BASE_SIGMA = 0.008;
+// Default leverage for forex scenarios. SIM_ENGINE_SPEC §3.4: leverage_ratio
+// TUNABLE, 30:1 (EU/UK retail cap level — conservative default). The wireframe
+// Screen 2a (SCN-003) also shows 30:1. No manifest field for leverage yet.
+const DEFAULT_FOREX_LEVERAGE = 30;
+
+// ---------------------------------------------------------------------------
+// SessionAdapter — scenario-aware, market-selectable
+// ---------------------------------------------------------------------------
 
 export class SessionAdapter {
   readonly clock: SimClock;
@@ -67,32 +153,87 @@ export class SessionAdapter {
 
   private readonly feed: IMarketFeed;
   private readonly orderBook = createOrderBook();
-  private readonly account = createCryptoSpotAccount(10_000);
+  /** crypto / stocks → CryptoSpotAccount; forex → ForexMarginAccount */
+  private readonly accountSpot: CryptoSpotAccount | null;
+  private readonly accountForex: ForexMarginAccount | null;
+  /** Market type from the resolved manifest. */
+  private readonly marketType: "crypto" | "stocks" | "forex";
+  /** Seed used for this session (surfaced to DebriefData). */
+  private readonly sessionSeed: number;
 
   private accumulatedMs = 0;
   private tickListeners: TickCallback[] = [];
   private fillListeners: FillCallback[] = [];
+  private sessionEndListeners: Array<(data: DebriefData) => void> = [];
   private orderSeq = 0;
 
   /** Latest price snapshot — undefined until first tick. */
   latestTick: PriceTick | undefined;
 
-  constructor() {
-    const prng = seedPrng(SCN001_SEED);
+  /** Scenario manifest wired at construction (used to build DebriefData). */
+  private readonly manifest: ScenarioManifest;
 
-    this.feed = createCryptoAdapter();
+  /** Whether the session has already ended (prevents double-end). */
+  private sessionEnded = false;
+
+  /**
+   * Whether the sim determined the session had at least one "winning" trade.
+   * Set externally by the UI layer because the engine enforces the structural
+   * PnL guard — the adapter receives only a boolean (see MetricInput.sessionHasWin).
+   */
+  sessionHasWin = false;
+
+  /**
+   * Construct a SessionAdapter for the given scenario and seed.
+   *
+   * The market adapter (crypto / stocks / forex) is selected from
+   * manifest.market — matching the adapter wiring in harness/run.ts exactly.
+   *
+   * @param def  ScenarioDef to run. Defaults to scn001 for backward-compat.
+   * @param seedValue  PRNG seed. Defaults to the scenario's canonical seed.
+   */
+  constructor(def?: ScenarioDef, seedValue?: number) {
+    // Fall back to scn001 when called without arguments (backward-compat for
+    // ui-parity.test.ts which constructs SessionAdapter() with no args).
+    const resolvedDef: ScenarioDef = def ?? _scn001Default;
+
+    this.manifest = resolvedDef.manifest;
+    this.marketType = this.manifest.market;
+    this.sessionSeed = seedValue ?? scenarioSeed(this.manifest.id);
+
+    const prng = seedPrng(this.sessionSeed);
+
+    // Select market adapter (mirrors harness/run.ts).
+    if (this.marketType === "crypto") {
+      this.feed = createCryptoAdapter();
+    } else if (this.marketType === "stocks") {
+      this.feed = createStocksAdapter();
+    } else {
+      this.feed = createForexAdapter();
+    }
+
     this.feed.init({
       prng,
-      startPrice: 1.0,
-      msPerTick: MS_PER_TICK,
+      startPrice: this.manifest.startPrice,
+      msPerTick: this.manifest.msPerTick,
       instrument: {
-        symbol: "HarborUSD/USVC",
-        marketType: "crypto",
-        tickSize: 0.0001,
-        baseSpread: 0.008,
-        pipSize: 1,
+        symbol: this.manifest.instrument.symbol,
+        marketType: this.marketType,
+        tickSize: this.marketType === "forex" ? 0.0001 : 0.0001,
+        baseSpread: this.marketType === "forex" ? 0.00012 : 0.001,
+        pipSize: this.marketType === "forex" ? 0.0001 : 1,
       },
+      script: resolvedDef.script,
     });
+
+    // Account model.
+    if (this.marketType === "forex") {
+      this.accountSpot = null;
+      this.accountForex = createForexMarginAccount(10_000);
+    } else {
+      this.accountSpot = createCryptoSpotAccount(10_000);
+      this.accountForex = null;
+    }
 
     this.clock = createClock(
       this.log,
@@ -127,7 +268,7 @@ export class SessionAdapter {
 
         for (const cb of this.tickListeners) cb(pt);
       },
-      MS_PER_TICK
+      this.manifest.msPerTick
     );
   }
 
@@ -138,10 +279,10 @@ export class SessionAdapter {
    * identical to the harness runner. The UI no longer computes fill price
    * inline; it reads back FillResult from this method.
    *
-   * Returns the FillResult immediately for market orders (filled on next
-   * tick via the clock's tick handler) — but for simplicity, market orders
-   * here are delivered synchronously by advancing one tick internally after
-   * submit. The UI should call this when the tick is current.
+   * Rejects (leverage_ack_required, session_closed, insufficient_balance,
+   * stop_limit_deferred) are surfaced synchronously in the returned
+   * SubmitOutcome AND logged as an order_cancel with the reject reason —
+   * mirroring the harness runner's event-log shape exactly.
    *
    * NOTE: For the current UI (market orders only), fills are processed during
    * the clock tick handler. This method submits the order; the fill is
@@ -153,7 +294,9 @@ export class SessionAdapter {
     stopPrice: number | null;
     orderType?: "market" | "limit" | "stop";
     limitPrice?: number | null;
-  }): string {
+    /** Forex: whether leverage_risk_acknowledged has been emitted. */
+    leverageAckReceived?: boolean;
+  }): SubmitOutcome {
     const { tickIndex, simTimeMs } = this.clock.state;
     const orderId = `ui-ord-${++this.orderSeq}`;
     const orderType = spec.orderType ?? "market";
@@ -171,6 +314,9 @@ export class SessionAdapter {
     };
     this.log.append(simTimeMs, submitEv);
 
+    // sessionOpen comes from the feed's session state.
+    const sessionOpen = this.feed.sessionState().isOpen;
+
     const params: OrderParams = {
       orderId,
       orderType,
@@ -178,26 +324,58 @@ export class SessionAdapter {
       quantity: spec.quantity,
       price: spec.limitPrice ?? null,
       stopPrice: spec.stopPrice,
-      marketType: "crypto",
+      marketType: this.marketType,
       currentSigma: BASE_SIGMA,
       baseSigma: BASE_SIGMA,
-      accountEquity: this.account.equity,
-      leverageAckReceived: false, // crypto — no leverage ack required
-      sessionOpen: true,
+      accountEquity: this.accountEquity,
+      leverageAckReceived: spec.leverageAckReceived ?? false,
+      sessionOpen,
     };
 
-    this.orderBook.submitOrder(params, tickIndex, simTimeMs);
-    return orderId;
+    const result = this.orderBook.submitOrder(params, tickIndex, simTimeMs);
+    if (result.type === "reject") {
+      // Log a cancel with the reject reason so the event log is complete
+      // (identical shape to the harness runner's reject handling).
+      const rejectReason = result.rejectReason ?? "rejected";
+      this.log.append(simTimeMs, {
+        type: "order_cancel",
+        orderId,
+        reason: rejectReason,
+        tickIndex,
+        timestamp: simTimeMs,
+      });
+      return { orderId, rejectReason };
+    }
+    return { orderId, rejectReason: null };
   }
 
   /** Current account equity (balance + unrealized PnL). */
   get accountEquity(): number {
-    return this.account.equity;
+    if (this.accountForex !== null) return this.accountForex.marginSummary.equity;
+    if (this.accountSpot !== null) return this.accountSpot.equity;
+    return 10_000;
   }
 
   /** Current account balance (settled cash). */
   get accountBalance(): number {
-    return this.account.balance;
+    if (this.accountForex !== null) return this.accountForex.balance;
+    if (this.accountSpot !== null) return this.accountSpot.balance;
+    return 10_000;
+  }
+
+  /** Forex margin summary — undefined for non-forex markets. */
+  get forexMarginSummary() {
+    return this.accountForex?.marginSummary ?? null;
+  }
+
+  /** Default leverage for this session (forex only). */
+  get leverage(): number {
+    return DEFAULT_FOREX_LEVERAGE;
+  }
+
+  /** Current session state from the underlying feed. */
+  get sessionState() {
+    return this.feed.sessionState();
   }
 
   /**
@@ -234,6 +412,133 @@ export class SessionAdapter {
 
   offFill(cb: FillCallback): void {
     this.fillListeners = this.fillListeners.filter((x) => x !== cb);
+  }
+
+  /** Subscribe to session-end events (fired by endSession()). */
+  onSessionEnd(cb: (data: DebriefData) => void): void {
+    this.sessionEndListeners.push(cb);
+  }
+
+  offSessionEnd(cb: (data: DebriefData) => void): void {
+    this.sessionEndListeners = this.sessionEndListeners.filter((x) => x !== cb);
+  }
+
+  /**
+   * Ends the session: pauses the clock, runs the ScoreTracker over the event
+   * log, emits session_end + xp events, and calls sessionEnd listeners with
+   * the fully-populated DebriefData.
+   *
+   * Idempotent — safe to call multiple times; only the first call acts.
+   */
+  endSession(): DebriefData | null {
+    if (this.sessionEnded) return null;
+    this.sessionEnded = true;
+
+    // Stop the clock so no more ticks fire after this point.
+    this.clock.setCompression("paused");
+
+    const { tickIndex, simTimeMs } = this.clock.state;
+
+    // Append session_end event.
+    this.log.append(simTimeMs, {
+      type: "session_end",
+      tickIndex,
+      timestamp: simTimeMs,
+    });
+
+    // Build MetricInput from the event log (structural PnL guard: only boolean win).
+    const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
+    const metricInput: MetricInput = {
+      events: allEvents,
+      sessionHasWin: this.sessionHasWin,
+      declaredRiskPct: 1, // default; Tier B: read from plan_declared journal entry
+      sessionStartEquity: 10_000,
+    };
+
+    const scoreOut = runScoreTracker(
+      this.log.sessionId,
+      metricInput,
+      simTimeMs,
+      this.manifest?.recklessWinnerCoachingText
+    );
+
+    // Append XP events returned by the scorer.
+    for (const xpEv of scoreOut.xpEvents) {
+      this.log.append(simTimeMs, xpEv);
+    }
+
+    // Emit debrief_complete — this metric must be appended AFTER scoring so the
+    // debrief_completed metric itself fires on replay, not in this run.
+    this.log.append(simTimeMs, {
+      type: "debrief_complete",
+      tickIndex,
+      timestamp: simTimeMs,
+    });
+
+    // Build rubric rows from the manifest xpRubric + score results.
+    const rubricRows: DebriefMetricRow[] = this._buildRubricRows(
+      this.manifest?.xpRubric ?? [],
+      scoreOut.results
+    );
+
+    const xpTotal = rubricRows.reduce((sum, r) => sum + r.xpEarned, 0);
+
+    // Resolve debrief content IDs from manifest.
+    const ids = this.manifest?.debriefContentIds ?? [];
+    const whatHappenedId = ids[0] ?? "";
+    const goodProcessId = ids[1] ?? "";
+    const goodProcessCanLoseId = ids[2] ?? "";
+
+    // Reckless-winner coaching text (null when flag not fired).
+    const recklessWinnerText = scoreOut.recklessWinnerFlag?.coachingText ?? null;
+
+    // Policy mismatch note (null when not fired).
+    const policyMismatchNote = scoreOut.policyMismatchFlag
+      ? `Your declared policy (${scoreOut.policyMismatchFlag.declaredOption}) did not match your actions. This will be reviewed in your coaching notes.`
+      : null;
+
+    const debriefData: DebriefData = {
+      scenarioId: this.manifest?.id ?? "SCN-001",
+      scenarioTitle: this.manifest?.title ?? "The HarborUSD Depegging",
+      rubricRows,
+      xpTotal,
+      whatHappenedId,
+      goodProcessId,
+      goodProcessCanLoseId,
+      recklessWinnerText,
+      policyMismatchNote,
+      seed: this.sessionSeed,
+      sessionId: this.log.sessionId,
+    };
+
+    // Notify listeners (e.g. TradingScene → DebriefScene transition).
+    for (const cb of this.sessionEndListeners) cb(debriefData);
+
+    return debriefData;
+  }
+
+  /** Build rubric rows by joining manifest xpRubric with scorer results. */
+  private _buildRubricRows(
+    rubric: readonly XpRubricEntry[],
+    results: readonly import("../../engine/scoring.js").MetricResult[]
+  ): DebriefMetricRow[] {
+    return rubric.map((entry) => {
+      const result = results.find((r) => r.metricId === entry.metricId);
+      if (!result || !result.applicable) {
+        return {
+          metricId: entry.metricId,
+          label: entry.label,
+          status: "na" as const,
+          xpEarned: 0,
+        };
+      }
+      return {
+        metricId: entry.metricId,
+        label: entry.label,
+        status: result.passed ? ("pass" as const) : ("fail" as const),
+        xpEarned: result.passed ? entry.xpOnPass : 0,
+      };
+    });
   }
 
   setCompression(mode: CompressionMode): boolean {

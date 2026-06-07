@@ -1,0 +1,78 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-005",
+  "scenarioId": "SCN-003",
+  "seed": 3016021478,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1.0,
+  "actions": [
+    {
+      "type": "leverage_ack",
+      "ticksAfter": 0,
+      "payload": {}
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": ["hypothesis", "plan"],
+        "wordCount": 28
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 264,
+      "payload": {
+        "orderId": "stop-c001",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 78,
+        "stopPrice": 1.2775,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "entry-c001",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 78,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": { "count": 636 }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": ["exit"],
+        "wordCount": 16
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "47ac5400dcf962aa47a90b0fa89d0a4836eb5fffbd0cafa0606e019565e342fc",
+  "expectedXpEvents": [
+    { "metricId": "leverage_ack",         "xpAmount": 10 },
+    { "metricId": "journal_before_trade", "xpAmount": 20 },
+    { "metricId": "plan_declared",        "xpAmount": 20 },
+    { "metricId": "size_compliance",      "xpAmount": 30 },
+    { "metricId": "stop_before_entry",    "xpAmount": 25 },
+    { "metricId": "stop_honored",         "xpAmount": 20 },
+    { "metricId": "exit_journal",         "xpAmount": 15 },
+    { "metricId": "no_stop_widen",        "xpAmount": 15 },
+    { "metricId": "debrief_completed",    "xpAmount": 30 }
+  ],
+  "notes": "SCN-003 ANDU London-open sweep — clean run. Seed 0xB3C4D5E6 = 3016021478. Player: leverage ack + hypothesis journal at tick 0, advances to tick 264 (08:07 confirmation, T_REVERSAL=1,320,000ms), places sell-stop at 1.2775 (37 pips below 1.2812 entry, per SCENARIOS_V0 debrief callout) BEFORE market buy entry. Advances 636 ticks to tick 900 (09:00 drift window). Stochastic GBM dips through 1.2775 at tick 389 (stop fills), price recovers on authored beats. Exit journal written, debrief completed. All process metrics pass. sessionHasWin=true (final close ~1.2862 > entry fill ~1.2814). No reckless_winner_flag. Total XP: 185. Regenerate digest: npx vitest run tests/_gen_digests.test.ts"
+}

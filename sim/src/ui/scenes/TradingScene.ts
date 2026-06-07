@@ -34,7 +34,7 @@
  */
 
 import Phaser from "phaser";
-import { SessionAdapter, type PriceTick } from "../engine/SessionAdapter.js";
+import { SessionAdapter, type PriceTick, type DebriefData } from "../engine/SessionAdapter.js";
 import {
   C,
   CSS,
@@ -47,6 +47,10 @@ import {
 } from "../engine/draw.js";
 import type { CompressionMode } from "../../engine/clock.js";
 import type { EventLog, OrderFillEvent } from "../../engine/events.js";
+import type { ScenarioDef } from "../../scenarios/types.js";
+import { scn001 } from "../../scenarios/scn001.js";
+import { getScenario } from "../../scenarios/registry.js";
+import type { RiskModalData } from "./RiskModalScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -63,14 +67,25 @@ const CHART_Y = HEADER_H + PAD;
 const SIDE_X = CHART_X + CHART_W + PAD;
 const SIDE_Y = HEADER_H + PAD;
 
-// Candle aggregation
-const TICKS_PER_CANDLE = 60; // 1 sim-minute
+// Candle aggregation — candles target ~1 sim-minute regardless of tick size,
+// so SCN-001 (1 s ticks) gets 60-tick candles and SCN-002/003 (30 s ticks)
+// get 2-tick candles. Computed per scenario in create().
+const CANDLE_SIM_MS = 60_000;
 const MAX_CANDLES = 42;
 
 // Estimate-panel display constants (for the pre-order estimate preview only —
 // the actual fill uses engine computeMarketFillCosts via SessionAdapter).
-const EST_FEE_RATE = 0.0015;        // crypto taker fee (matching engine FEE_CRYPTO_TAKER)
-const EST_BASE_SLIPPAGE_RATE = 0.0005; // 0.05% base slippage (matching engine BASE_SLIPPAGE.crypto)
+// Per-market values match the engine constants in orders/book.ts.
+const EST_FEE_RATE: Record<"crypto" | "stocks" | "forex", number> = {
+  crypto: 0.0015,  // FEE_CRYPTO_TAKER
+  stocks: 0.0,     // FEE_STOCKS (zero-commission model v1)
+  forex: 0.0,      // FEE_FOREX (spread-only)
+};
+const EST_BASE_SLIPPAGE_RATE: Record<"crypto" | "stocks" | "forex", number> = {
+  crypto: 0.0005,  // BASE_SLIPPAGE.crypto
+  stocks: 0.0002,  // BASE_SLIPPAGE.stocks
+  forex: 0.00003,  // BASE_SLIPPAGE.forex (~0.3 pips)
+};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -100,6 +115,11 @@ interface OpenPosition {
 export class TradingScene extends Phaser.Scene {
   private adapter!: SessionAdapter;
 
+  // Active scenario (resolved from the registry via init data; scn001 default).
+  private def: ScenarioDef = scn001;
+  /** Ticks per ~1-sim-minute candle, derived from manifest.msPerTick. */
+  private ticksPerCandle = 60;
+
   // Chart data
   private candles: Candle[] = [];
   private pendingCandle: Partial<Candle> | null = null;
@@ -118,10 +138,17 @@ export class TradingScene extends Phaser.Scene {
   private orderLimitPrice = "";
   private focusedField: "quantity" | "stop" | "limit" | null = null;
 
+  // Forex leverage acknowledgment — once per session (re-fires each new
+  // scenario session per spec §3.4 / wireframe Screen 2a interaction notes).
+  private leverageAcked = false;
+
   // Position state
   private positions: OpenPosition[] = [];
   /** Order ID of a pending market order awaiting its fill event. */
   private pendingFillOrderId: string | null = null;
+  /** Stop price + quantity captured at submit (ticket clears immediately). */
+  private pendingStopPrice: number | null = null;
+  private pendingQty = 0;
 
   // Journal
   private journalOpen = false;
@@ -159,6 +186,9 @@ export class TradingScene extends Phaser.Scene {
     lbl: Phaser.GameObjects.Text;
   }> = [];
 
+  // Whether the END SESSION transition has already fired (prevent double-fire).
+  private sessionEndFired = false;
+
 
   constructor() {
     super({ key: "TradingScene" });
@@ -168,12 +198,62 @@ export class TradingScene extends Phaser.Scene {
   // Lifecycle
   // -------------------------------------------------------------------------
 
+  /**
+   * Receives { scenarioId } from MenuScene (or DebriefScene "Replay").
+   * Unknown/absent IDs fall back to SCN-001.
+   */
+  init(data: unknown): void {
+    let id = "SCN-001";
+    if (data && typeof data === "object" && "scenarioId" in data) {
+      const v = (data as { scenarioId: unknown }).scenarioId;
+      if (typeof v === "string") id = v;
+    }
+    this.def = getScenario(id) ?? scn001;
+  }
+
+  /**
+   * Phaser reuses scene instances across scene.start() calls, so every piece
+   * of per-session mutable state must be reset here — otherwise a replay or a
+   * second scenario would inherit the previous session's chart/positions.
+   */
+  private resetSessionState(): void {
+    this.ticksPerCandle = Math.max(
+      1,
+      Math.round(CANDLE_SIM_MS / this.def.manifest.msPerTick)
+    );
+    this.candles = [];
+    this.pendingCandle = null;
+    this.pendingTicks = 0;
+    this.latestPrice = 0;
+    this.latestSpread = 0.008;
+    this.orderType = "market";
+    this.orderSide = "buy";
+    this.orderQuantity = "";
+    this.orderStopPrice = "";
+    this.orderLimitPrice = "";
+    this.focusedField = null;
+    this.leverageAcked = false;
+    this.positions = [];
+    this.pendingFillOrderId = null;
+    this.pendingStopPrice = null;
+    this.pendingQty = 0;
+    this.journalOpen = false;
+    this.journalText = "";
+    this.journalTags = new Set();
+    this.journalEntries = [];
+    this.fillOverlay = null;
+    this.fillTimer = null;
+    this.sessionEndFired = false;
+  }
+
   create(): void {
     const { width, height } = this.scale;
 
-    this.adapter = new SessionAdapter();
+    this.resetSessionState();
+    this.adapter = new SessionAdapter(this.def);
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));
+    this.adapter.onSessionEnd((data) => this.transitionToDebrief(data));
 
     this.gStatic = this.add.graphics();
     this.gChart = this.add.graphics();
@@ -209,6 +289,13 @@ export class TradingScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private onSimTick = (tick: PriceTick): void => {
+    // Auto-end the session when scenario duration elapses.
+    if (!this.sessionEndFired && tick.simTimeMs >= this.def.manifest.durationMs) {
+      this.sessionEndFired = true;
+      this.adapter.endSession();
+      return; // endSession calls transitionToDebrief via onSessionEnd listener
+    }
+
     this.latestPrice = tick.close;
     this.latestSpread = tick.spread;
 
@@ -233,7 +320,7 @@ export class TradingScene extends Phaser.Scene {
       this.pendingTicks++;
     }
 
-    if (this.pendingTicks >= TICKS_PER_CANDLE) {
+    if (this.pendingTicks >= this.ticksPerCandle) {
       this.candles.push(this.pendingCandle as Candle);
       if (this.candles.length > MAX_CANDLES) this.candles.shift();
       this.pendingCandle = null;
@@ -256,8 +343,10 @@ export class TradingScene extends Phaser.Scene {
     fillRect(g, 0, 0, width, HEADER_H, C.SURFACE, 0);
     hline(g, 0, HEADER_H, width, C.BORDER);
 
-    // Scenario name
-    label(this, PAD, HEADER_H / 2, "SCN-001: The HarborUSD Depegging", {
+    const m = this.def.manifest;
+
+    // Scenario name (from the manifest — scenario-aware)
+    label(this, PAD, HEADER_H / 2, `${m.id}: ${m.title}`, {
       fontSize: "14px",
       color: CSS.AMBER,
       fontStyle: "bold",
@@ -270,7 +359,7 @@ export class TradingScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
 
     // Market label
-    label(this, 560, HEADER_H / 2, "CRYPTO  ·  HarborUSD/USVC", {
+    label(this, 560, HEADER_H / 2, `${m.market.toUpperCase()}  ·  ${m.instrument.symbol}`, {
       fontSize: "13px",
       color: CSS.DIM,
     }).setOrigin(0, 0.5);
@@ -281,6 +370,29 @@ export class TradingScene extends Phaser.Scene {
     // Right side panels
     panel(g, SIDE_X, SIDE_Y, SIDE_W, 160, 4); // position panel
     panel(g, SIDE_X, SIDE_Y + 168, SIDE_W, 380, 4); // order ticket
+
+    // END SESSION button — player-triggered scenario end.
+    // Positioned in the header, right-adjacent to the scenario label.
+    const endBtn = button(
+      this,
+      870,
+      8,
+      108,
+      34,
+      "END SESSION",
+      () => {
+        if (!this.sessionEndFired) {
+          this.sessionEndFired = true;
+          this.adapter.endSession();
+        }
+      },
+      {
+        fillColor: C.SURFACE,
+        textColor: CSS.RED,
+        fontSize: "11px",
+      }
+    );
+    void endBtn;
 
     // Speed button label
     label(this, 1040, HEADER_H / 2, "Speed:", {
@@ -305,8 +417,29 @@ export class TradingScene extends Phaser.Scene {
     );
     void jb;
 
-    // Keyboard shortcut for J
-    this.input.keyboard?.on("keydown-J", () => this.toggleJournal());
+    // Keyboard shortcut for J — OPENS the journal only; while the journal is
+    // open the J key types into the entry text like any other character
+    // (close via the [X] button).
+    this.input.keyboard?.on("keydown-J", () => {
+      if (!this.journalOpen) this.toggleJournal();
+    });
+
+    // Keyboard capture for journal text when the journal is open.
+    // Registered ONCE per scene create — registering inside redrawJournal()
+    // would add a listener per redraw (each keystroke redraws → compounding
+    // duplicate listeners → duplicated characters).
+    // (simplistic: captures all char keys when journal is open and stop/qty
+    // fields are not focused)
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      if (!this.journalOpen) return;
+      if (this.focusedField !== null) return;
+      if (e.key === "Backspace") {
+        this.journalText = this.journalText.slice(0, -1);
+      } else if (e.key.length === 1) {
+        this.journalText += e.key;
+      }
+      this.redrawJournal();
+    });
 
     // Footer — education-not-advice (persistent per spec)
     fillRect(g, 0, height - FOOTER_H, width, FOOTER_H, C.SURFACE, 0);
@@ -501,7 +634,7 @@ export class TradingScene extends Phaser.Scene {
     });
     py += 18;
 
-    this.priceLbl = label(this, px, py, "HarborUSD/USVC  —", {
+    this.priceLbl = label(this, px, py, `${this.def.manifest.instrument.symbol}  —`, {
       fontSize: "13px",
       color: CSS.AMBER,
     });
@@ -530,7 +663,7 @@ export class TradingScene extends Phaser.Scene {
     });
     py += 20;
 
-    label(this, px, py, "Instrument: HarborUSD/USVC", {
+    label(this, px, py, `Instrument: ${this.def.manifest.instrument.symbol}`, {
       fontSize: "12px",
       color: CSS.DIM,
     });
@@ -660,21 +793,33 @@ export class TradingScene extends Phaser.Scene {
     });
   }
 
+  /** Price display precision: 2 dp for stocks, 4 dp for crypto/forex. */
+  private priceDecimals(): number {
+    return this.def.manifest.market === "stocks" ? 2 : 4;
+  }
+
   private updateEstimatePanel(): void {
     const price = this.latestPrice;
     if (price === 0 || !this.estimateLbl) return;
 
+    const market = this.def.manifest.market;
+    const feeRate = EST_FEE_RATE[market];
+    const slipRate = EST_BASE_SLIPPAGE_RATE[market];
+    const dp = this.priceDecimals();
+
     const qty = parseFloat(this.orderQuantity) || 0;
     // Estimate only — actual fill comes from engine computeMarketFillCosts.
-    const slippage = price * EST_BASE_SLIPPAGE_RATE;
-    const fee = qty * price * EST_FEE_RATE;
+    const slippage = price * slipRate;
+    const fee = qty * price * feeRate;
     const ask = price + this.latestSpread / 2 + slippage;
+    const feeLabel =
+      feeRate > 0 ? `${(feeRate * 100).toFixed(2)}%` : "none (spread only)";
 
     if (qty > 0) {
       this.estimateLbl.setText(
-        `Ask: ${ask.toFixed(4)}   Slippage: +${slippage.toFixed(4)}\n` +
-          `Spread: ${this.latestSpread.toFixed(4)}   Fee: ${(EST_FEE_RATE * 100).toFixed(2)}%\n` +
-          `You pay: ${(ask + this.latestSpread / 2).toFixed(4)}   Fee cost: ${fee.toFixed(4)} USVC`
+        `Ask: ${ask.toFixed(dp)}   Slippage: +${slippage.toFixed(dp)}\n` +
+          `Spread: ${this.latestSpread.toFixed(dp)}   Fee: ${feeLabel}\n` +
+          `You pay: ${(ask + this.latestSpread / 2).toFixed(dp)}   Fee cost: ${fee.toFixed(4)} USVC`
       );
       this.estimateLbl.setColor(CSS.AMBER);
     } else {
@@ -698,7 +843,9 @@ export class TradingScene extends Phaser.Scene {
 
   private updatePriceLabels(): void {
     if (this.priceLbl && this.latestPrice > 0) {
-      this.priceLbl.setText(`HarborUSD/USVC  ${this.latestPrice.toFixed(4)}`);
+      this.priceLbl.setText(
+        `${this.def.manifest.instrument.symbol}  ${this.latestPrice.toFixed(this.priceDecimals())}`
+      );
     }
     if (this.spreadLbl) {
       this.spreadLbl.setText(`Spread: ${this.latestSpread.toFixed(4)}`);
@@ -725,6 +872,21 @@ export class TradingScene extends Phaser.Scene {
     const stop = parseFloat(this.orderStopPrice);
     if (!qty || !stop) return;
 
+    // Forex gate (SIM_ENGINE_SPEC §3.4 / wireframe Screen 2a): the blocking
+    // leverage-risk modal fires at the FIRST forex order submission of the
+    // session. The order proceeds only after "I UNDERSTAND" (which emits
+    // leverage_risk_acknowledged to the EventLog). Cancel returns to the
+    // ticket with all fields intact. Re-fires each new scenario session.
+    if (this.def.manifest.market === "forex" && !this.leverageAcked) {
+      this.showLeverageRiskModal(qty);
+      return;
+    }
+
+    this.doSubmitOrder(qty, stop);
+  }
+
+  /** Actually route the order to the engine (after any forex ack gate). */
+  private doSubmitOrder(qty: number, stop: number): void {
     // Block speed changes during confirm (§1.3 — disabled until fill arrives).
     this.adapter.clock.beginOrderConfirm();
 
@@ -732,7 +894,7 @@ export class TradingScene extends Phaser.Scene {
     // computeMarketFillCosts (same path as the harness runner).
     // The fill event is delivered asynchronously via onEngineFill when the
     // next tick processes the order.
-    this.pendingFillOrderId = this.adapter.submitOrder({
+    const outcome = this.adapter.submitOrder({
       side: this.orderSide,
       quantity: qty,
       stopPrice: stop,
@@ -740,13 +902,89 @@ export class TradingScene extends Phaser.Scene {
       limitPrice: this.orderType === "limit"
         ? (parseFloat(this.orderLimitPrice) || null)
         : null,
+      leverageAckReceived: this.leverageAcked,
     });
+
+    if (outcome.rejectReason !== null) {
+      // Order rejected at submit time (session closed, insufficient balance…).
+      // Unlock the speed controls and show why; keep the ticket fields so the
+      // player can correct and resubmit.
+      this.adapter.clock.endOrderConfirm();
+      this.showRejectNotice(outcome.rejectReason);
+      return;
+    }
+
+    this.pendingFillOrderId = outcome.orderId;
+    // Capture stop + qty now — the ticket fields are cleared below, but the
+    // fill event arrives on a later tick (see onEngineFill).
+    this.pendingStopPrice = stop;
+    this.pendingQty = qty;
 
     // Reset ticket immediately.
     this.orderQuantity = "";
     this.orderStopPrice = "";
     this.orderLimitPrice = "";
     this.drawOrderTicket();
+  }
+
+  /**
+   * Launch the blocking forex leverage-risk modal (Screen 2a) as an overlay.
+   * On acknowledge the modal emits leverage_risk_acknowledged to the EventLog
+   * itself; we then mark the session acked and submit the held order.
+   */
+  private showLeverageRiskModal(qty: number): void {
+    const summary = this.adapter.forexMarginSummary;
+    const data: RiskModalData = {
+      riskInput: {
+        balance: this.adapter.accountBalance,
+        existingUsedMargin: summary?.usedMargin ?? 0,
+        lotUnits: qty,
+        lots: 1,
+        currentPrice: this.latestPrice > 0
+          ? this.latestPrice
+          : this.def.manifest.startPrice,
+        leverage: this.adapter.leverage,
+        existingUnrealizedPnl: 0,
+      },
+      log: this.adapter.log,
+      clock: this.adapter.clock,
+      onAck: () => {
+        this.leverageAcked = true;
+        // Re-read the ticket — fields are still intact (only cleared on submit).
+        const heldQty = parseFloat(this.orderQuantity);
+        const heldStop = parseFloat(this.orderStopPrice);
+        if (heldQty && heldStop) this.doSubmitOrder(heldQty, heldStop);
+      },
+      onCancel: () => {
+        // Return to the order ticket; nothing submitted, nothing logged.
+      },
+    };
+    this.scene.launch("RiskModalScene", data);
+  }
+
+  /**
+   * Surface a submit-time order reject (red notice above the footer;
+   * auto-dismisses). Reasons map to plain teaching language.
+   */
+  private showRejectNotice(reason: string): void {
+    const friendly: Record<string, string> = {
+      leverage_ack_required: "Order rejected: acknowledge the leverage risk display first.",
+      session_closed: "Order rejected: the market session is closed (market orders queue is not available).",
+      insufficient_balance: "Order rejected: position size exceeds your account balance.",
+      stop_limit_deferred: "Order rejected: stop-limit orders are not available in this version.",
+    };
+    const text = friendly[reason] ?? `Order rejected: ${reason}`;
+
+    const { width, height } = this.scale;
+    const notice = label(this, width / 2, height - FOOTER_H - 60, text, {
+      fontSize: "13px",
+      color: CSS.RED,
+      fontStyle: "bold",
+    }).setOrigin(0.5, 0.5);
+
+    this.time.delayedCall(4000, () => {
+      if (notice.active) notice.destroy();
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -759,13 +997,18 @@ export class TradingScene extends Phaser.Scene {
     this.pendingFillOrderId = null;
 
     const estimatedFill = this.latestPrice + this.latestSpread / 2;
-    const stopPriceForPos = parseFloat(this.orderStopPrice) || null;
+    // Stop + qty were captured at submit time (the ticket clears immediately
+    // after submit, before the fill tick arrives).
+    const stopPriceForPos = this.pendingStopPrice;
+    const filledQty = this.pendingQty;
+    this.pendingStopPrice = null;
+    this.pendingQty = 0;
 
     // Record position using the engine's fill price.
     this.positions.push({
       orderId: fill.orderId,
       side: this.orderSide,
-      quantity: fill.fillPrice > 0 ? 1 : 0, // qty tracked externally; stub for display
+      quantity: filledQty,
       entryPrice: fill.fillPrice,
       stopPrice: stopPriceForPos,
     });
@@ -971,19 +1214,6 @@ export class TradingScene extends Phaser.Scene {
       lineSpacing: 3,
     }));
 
-    // Keyboard capture for journal text when journal is open
-    // (simplistic: captures all char keys when journal is open and stop/qty fields are not focused)
-    const captureKey = this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
-      if (!this.journalOpen) return;
-      if (this.focusedField !== null) return;
-      if (e.key === "Backspace") {
-        this.journalText = this.journalText.slice(0, -1);
-      } else if (e.key.length === 1) {
-        this.journalText += e.key;
-      }
-      this.redrawJournal();
-    });
-
     // SAVE ENTRY
     const saveBtn = button(
       this,
@@ -1059,6 +1289,21 @@ export class TradingScene extends Phaser.Scene {
     this.journalText = "";
     this.journalTags.clear();
     this.redrawJournal();
+  }
+
+  // -------------------------------------------------------------------------
+  // Session end → Debrief transition
+  // -------------------------------------------------------------------------
+
+  /**
+   * Called by the SessionAdapter's onSessionEnd listener when endSession()
+   * completes. Transitions to DebriefScene, passing the DebriefData as init
+   * data via Phaser's scene.start second argument.
+   */
+  private transitionToDebrief(data: DebriefData): void {
+    this.adapter.offTick(this.onSimTick);
+    this.adapter.offFill(this.onEngineFill);
+    this.scene.start("DebriefScene", data);
   }
 
 }

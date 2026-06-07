@@ -1,0 +1,72 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-002",
+  "scenarioId": "SCN-002",
+  "seed": 2712847316,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1.0,
+  "actions": [
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": ["plan", "pre_open"],
+        "wordCount": 28
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 190,
+      "payload": {
+        "orderId": "stop-002",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 2,
+        "stopPrice": 48.50,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "entry-002",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 2,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": { "count": 50 }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": ["exit"],
+        "wordCount": 16
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "54f970aa5aae6fc42fab990b23018f89d699a7dc76317f2cc13e7ff0c4bfe8f9",
+  "expectedXpEvents": [
+    { "metricId": "journal_before_trade", "xpAmount": 20 },
+    { "metricId": "size_compliance",      "xpAmount": 30 },
+    { "metricId": "stop_before_entry",    "xpAmount": 25 },
+    { "metricId": "stop_honored",         "xpAmount": 20 },
+    { "metricId": "exit_journal",         "xpAmount": 15 },
+    { "metricId": "no_stop_widen",        "xpAmount": 15 },
+    { "metricId": "debrief_completed",    "xpAmount": 30 },
+    { "metricId": "plan_declared",        "xpAmount": 20 }
+  ],
+  "notes": "SCN-002 clean run. Player journals pre-session at tick 0 (08:00, 'plan' tag → plan_declared fires), waits out the no-trade zone, places sell stop at $48.50 before market buy at tick 190 (09:35, after the no-trade zone), advances 50 ticks to session end (tick 240). Fade drives price through $48.50 — stop triggers naturally (not manually cancelled → stop_honored passes). This is the spec's correct-process losing trade: breakout buy stopped out during the fade. sessionHasWin=false (stop exit below entry). All 8 process metrics pass. Total XP: 175. Regenerate with: npx vitest run tests/_gen_scn002_digests.test.ts"
+}
