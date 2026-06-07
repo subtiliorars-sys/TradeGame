@@ -34,7 +34,7 @@
  */
 
 import Phaser from "phaser";
-import { SessionAdapter, type PriceTick } from "../engine/SessionAdapter.js";
+import { SessionAdapter, type PriceTick, type DebriefData } from "../engine/SessionAdapter.js";
 import {
   C,
   CSS,
@@ -47,6 +47,10 @@ import {
 } from "../engine/draw.js";
 import type { CompressionMode } from "../../engine/clock.js";
 import type { EventLog, OrderFillEvent } from "../../engine/events.js";
+import { scn001 } from "../../scenarios/scn001.js";
+
+// Scenario duration — when the sim clock reaches this ms, the session auto-ends.
+const SCENARIO_DURATION_MS = scn001.manifest.durationMs; // 3,000,000 ms (40 min)
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -159,6 +163,9 @@ export class TradingScene extends Phaser.Scene {
     lbl: Phaser.GameObjects.Text;
   }> = [];
 
+  // Whether the END SESSION transition has already fired (prevent double-fire).
+  private sessionEndFired = false;
+
 
   constructor() {
     super({ key: "TradingScene" });
@@ -171,9 +178,12 @@ export class TradingScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
 
+    this.sessionEndFired = false;
     this.adapter = new SessionAdapter();
+    this.adapter.setManifest(scn001.manifest);
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));
+    this.adapter.onSessionEnd((data) => this.transitionToDebrief(data));
 
     this.gStatic = this.add.graphics();
     this.gChart = this.add.graphics();
@@ -209,6 +219,13 @@ export class TradingScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private onSimTick = (tick: PriceTick): void => {
+    // Auto-end the session when scenario duration elapses.
+    if (!this.sessionEndFired && tick.simTimeMs >= SCENARIO_DURATION_MS) {
+      this.sessionEndFired = true;
+      this.adapter.endSession();
+      return; // endSession calls transitionToDebrief via onSessionEnd listener
+    }
+
     this.latestPrice = tick.close;
     this.latestSpread = tick.spread;
 
@@ -281,6 +298,29 @@ export class TradingScene extends Phaser.Scene {
     // Right side panels
     panel(g, SIDE_X, SIDE_Y, SIDE_W, 160, 4); // position panel
     panel(g, SIDE_X, SIDE_Y + 168, SIDE_W, 380, 4); // order ticket
+
+    // END SESSION button — player-triggered scenario end.
+    // Positioned in the header, right-adjacent to the scenario label.
+    const endBtn = button(
+      this,
+      870,
+      8,
+      108,
+      34,
+      "END SESSION",
+      () => {
+        if (!this.sessionEndFired) {
+          this.sessionEndFired = true;
+          this.adapter.endSession();
+        }
+      },
+      {
+        fillColor: C.SURFACE,
+        textColor: CSS.RED,
+        fontSize: "11px",
+      }
+    );
+    void endBtn;
 
     // Speed button label
     label(this, 1040, HEADER_H / 2, "Speed:", {
@@ -1059,6 +1099,21 @@ export class TradingScene extends Phaser.Scene {
     this.journalText = "";
     this.journalTags.clear();
     this.redrawJournal();
+  }
+
+  // -------------------------------------------------------------------------
+  // Session end → Debrief transition
+  // -------------------------------------------------------------------------
+
+  /**
+   * Called by the SessionAdapter's onSessionEnd listener when endSession()
+   * completes. Transitions to DebriefScene, passing the DebriefData as init
+   * data via Phaser's scene.start second argument.
+   */
+  private transitionToDebrief(data: DebriefData): void {
+    this.adapter.offTick(this.onSimTick);
+    this.adapter.offFill(this.onEngineFill);
+    this.scene.start("DebriefScene", data);
   }
 
 }

@@ -32,8 +32,13 @@ import {
   ticksPerWallSecond,
 } from "../../index.js";
 import type { IMarketFeed } from "../../data/feed.js";
-import type { OrderFillEvent, OrderSubmitEvent } from "../../engine/events.js";
+import type { OrderFillEvent, OrderSubmitEvent, SimEvent } from "../../engine/events.js";
 import type { OrderParams } from "../../orders/book.js";
+import {
+  runScoreTracker,
+  type MetricInput,
+} from "../../engine/scoring.js";
+import type { ScenarioManifest, XpRubricEntry } from "../../scenarios/types.js";
 
 /** Current price snapshot delivered to the UI each tick. */
 export interface PriceTick {
@@ -56,6 +61,54 @@ export interface FillResult {
 export type TickCallback = (tick: PriceTick) => void;
 export type FillCallback = (fill: OrderFillEvent) => void;
 
+// ---------------------------------------------------------------------------
+// DebriefData — the teaching payoff object produced at session end.
+//
+// No PnL anywhere in this type. No account-balance display.
+// ---------------------------------------------------------------------------
+
+/** One row in the debrief process rubric table. */
+export interface DebriefMetricRow {
+  /** Canonical metric ID. */
+  readonly metricId: string;
+  /** Human-readable label from the scenario rubric. */
+  readonly label: string;
+  /**
+   * 'pass' | 'fail' | 'na'.
+   * 'na' means the metric was not applicable to this session (no opportunity
+   * to fire). NOT a failure. Rendered as "—" in the table, never as ✗.
+   */
+  readonly status: "pass" | "fail" | "na";
+  /** XP earned for this row (0 when status !== 'pass'). */
+  readonly xpEarned: number;
+}
+
+/** Full debrief payload passed to DebriefScene. */
+export interface DebriefData {
+  readonly scenarioId: string;
+  readonly scenarioTitle: string;
+  /** Per-metric rows for the rubric table. */
+  readonly rubricRows: readonly DebriefMetricRow[];
+  /** Sum of all xpEarned across rows (process XP only — no PnL). */
+  readonly xpTotal: number;
+  // --- Scenario debrief text IDs (resolved from ScenarioManifest) ---
+  /** ID of the "what happened" content block. */
+  readonly whatHappenedId: string;
+  /** ID of the "good process" content block. */
+  readonly goodProcessId: string;
+  /** ID of the mandatory "good process can still lose" callout block. */
+  readonly goodProcessCanLoseId: string;
+  // --- Coaching flags ---
+  /** Present when the reckless-winner flag fired; null otherwise. */
+  readonly recklessWinnerText: string | null;
+  /** Present when policy was declared but behaviour mismatched; null otherwise. */
+  readonly policyMismatchNote: string | null;
+  /** The seed used for this session (needed for "Replay scenario" button). */
+  readonly seed: number;
+  /** Session ID for log purposes. */
+  readonly sessionId: string;
+}
+
 const SCN001_SEED = 42_001;
 const MS_PER_TICK = 1_000; // 1 sim-second per tick
 // Estimated sigma for the HarborUSD/USVC feed (conservative baseline).
@@ -72,10 +125,24 @@ export class SessionAdapter {
   private accumulatedMs = 0;
   private tickListeners: TickCallback[] = [];
   private fillListeners: FillCallback[] = [];
+  private sessionEndListeners: Array<(data: DebriefData) => void> = [];
   private orderSeq = 0;
 
   /** Latest price snapshot — undefined until first tick. */
   latestTick: PriceTick | undefined;
+
+  /** Scenario manifest wired at construction (used to build DebriefData). */
+  private manifest: ScenarioManifest | null = null;
+
+  /** Whether the session has already ended (prevents double-end). */
+  private sessionEnded = false;
+
+  /**
+   * Whether the sim determined the session had at least one "winning" trade.
+   * Set externally by the UI layer because the engine enforces the structural
+   * PnL guard — the adapter receives only a boolean (see MetricInput.sessionHasWin).
+   */
+  sessionHasWin = false;
 
   constructor() {
     const prng = seedPrng(SCN001_SEED);
@@ -234,6 +301,141 @@ export class SessionAdapter {
 
   offFill(cb: FillCallback): void {
     this.fillListeners = this.fillListeners.filter((x) => x !== cb);
+  }
+
+  /**
+   * Wire a ScenarioManifest so endSession() can build DebriefData.
+   * Called by TradingScene before starting the sim clock.
+   */
+  setManifest(m: ScenarioManifest): void {
+    this.manifest = m;
+  }
+
+  /** Subscribe to session-end events (fired by endSession()). */
+  onSessionEnd(cb: (data: DebriefData) => void): void {
+    this.sessionEndListeners.push(cb);
+  }
+
+  offSessionEnd(cb: (data: DebriefData) => void): void {
+    this.sessionEndListeners = this.sessionEndListeners.filter((x) => x !== cb);
+  }
+
+  /**
+   * Ends the session: pauses the clock, runs the ScoreTracker over the event
+   * log, emits session_end + xp events, and calls sessionEnd listeners with
+   * the fully-populated DebriefData.
+   *
+   * Idempotent — safe to call multiple times; only the first call acts.
+   */
+  endSession(): DebriefData | null {
+    if (this.sessionEnded) return null;
+    this.sessionEnded = true;
+
+    // Stop the clock so no more ticks fire after this point.
+    this.clock.setCompression("paused");
+
+    const { tickIndex, simTimeMs } = this.clock.state;
+
+    // Append session_end event.
+    this.log.append(simTimeMs, {
+      type: "session_end",
+      tickIndex,
+      timestamp: simTimeMs,
+    });
+
+    // Build MetricInput from the event log (structural PnL guard: only boolean win).
+    const allEvents: readonly SimEvent[] = this.log.entries.map((e) => e.event);
+    const metricInput: MetricInput = {
+      events: allEvents,
+      sessionHasWin: this.sessionHasWin,
+      declaredRiskPct: 1, // default; Tier B: read from plan_declared journal entry
+      sessionStartEquity: 10_000,
+    };
+
+    const scoreOut = runScoreTracker(
+      this.log.sessionId,
+      metricInput,
+      simTimeMs,
+      this.manifest?.recklessWinnerCoachingText
+    );
+
+    // Append XP events returned by the scorer.
+    for (const xpEv of scoreOut.xpEvents) {
+      this.log.append(simTimeMs, xpEv);
+    }
+
+    // Emit debrief_complete — this metric must be appended AFTER scoring so the
+    // debrief_completed metric itself fires on replay, not in this run.
+    this.log.append(simTimeMs, {
+      type: "debrief_complete",
+      tickIndex,
+      timestamp: simTimeMs,
+    });
+
+    // Build rubric rows from the manifest xpRubric + score results.
+    const rubricRows: DebriefMetricRow[] = this._buildRubricRows(
+      this.manifest?.xpRubric ?? [],
+      scoreOut.results
+    );
+
+    const xpTotal = rubricRows.reduce((sum, r) => sum + r.xpEarned, 0);
+
+    // Resolve debrief content IDs from manifest.
+    const ids = this.manifest?.debriefContentIds ?? [];
+    const whatHappenedId = ids[0] ?? "";
+    const goodProcessId = ids[1] ?? "";
+    const goodProcessCanLoseId = ids[2] ?? "";
+
+    // Reckless-winner coaching text (null when flag not fired).
+    const recklessWinnerText = scoreOut.recklessWinnerFlag?.coachingText ?? null;
+
+    // Policy mismatch note (null when not fired).
+    const policyMismatchNote = scoreOut.policyMismatchFlag
+      ? `Your declared policy (${scoreOut.policyMismatchFlag.declaredOption}) did not match your actions. This will be reviewed in your coaching notes.`
+      : null;
+
+    const debriefData: DebriefData = {
+      scenarioId: this.manifest?.id ?? "SCN-001",
+      scenarioTitle: this.manifest?.title ?? "The HarborUSD Depegging",
+      rubricRows,
+      xpTotal,
+      whatHappenedId,
+      goodProcessId,
+      goodProcessCanLoseId,
+      recklessWinnerText,
+      policyMismatchNote,
+      seed: SCN001_SEED,
+      sessionId: this.log.sessionId,
+    };
+
+    // Notify listeners (e.g. TradingScene → DebriefScene transition).
+    for (const cb of this.sessionEndListeners) cb(debriefData);
+
+    return debriefData;
+  }
+
+  /** Build rubric rows by joining manifest xpRubric with scorer results. */
+  private _buildRubricRows(
+    rubric: readonly XpRubricEntry[],
+    results: readonly import("../../engine/scoring.js").MetricResult[]
+  ): DebriefMetricRow[] {
+    return rubric.map((entry) => {
+      const result = results.find((r) => r.metricId === entry.metricId);
+      if (!result || !result.applicable) {
+        return {
+          metricId: entry.metricId,
+          label: entry.label,
+          status: "na" as const,
+          xpEarned: 0,
+        };
+      }
+      return {
+        metricId: entry.metricId,
+        label: entry.label,
+        status: result.passed ? ("pass" as const) : ("fail" as const),
+        xpEarned: result.passed ? entry.xpOnPass : 0,
+      };
+    });
   }
 
   setCompression(mode: CompressionMode): boolean {

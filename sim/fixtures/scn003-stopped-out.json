@@ -1,0 +1,78 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-006",
+  "scenarioId": "SCN-003",
+  "seed": 3588683688,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1.0,
+  "actions": [
+    {
+      "type": "leverage_ack",
+      "ticksAfter": 0,
+      "payload": {}
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": ["hypothesis", "plan"],
+        "wordCount": 24
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 264,
+      "payload": {
+        "orderId": "stop-s001",
+        "orderType": "stop",
+        "side": "buy",
+        "quantity": 78,
+        "stopPrice": 1.2850,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "entry-s001",
+        "orderType": "market",
+        "side": "sell",
+        "quantity": 78,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": { "count": 240 }
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": ["exit"],
+        "wordCount": 14
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "3c8548f7986c4c5847e18d35d23f13b2c66e52589eaf0afa9889ca707b5f373e",
+  "expectedXpEvents": [
+    { "metricId": "leverage_ack",         "xpAmount": 10 },
+    { "metricId": "journal_before_trade", "xpAmount": 20 },
+    { "metricId": "plan_declared",        "xpAmount": 20 },
+    { "metricId": "size_compliance",      "xpAmount": 30 },
+    { "metricId": "stop_before_entry",    "xpAmount": 25 },
+    { "metricId": "stop_honored",         "xpAmount": 20 },
+    { "metricId": "exit_journal",         "xpAmount": 15 },
+    { "metricId": "no_stop_widen",        "xpAmount": 15 },
+    { "metricId": "debrief_completed",    "xpAmount": 30 }
+  ],
+  "notes": "SCN-003 ANDU London-open sweep — good-process-bad-outcome (stopped out). Seed 0xD5E6F7A8 = 3588683688. Player: leverage ack + hypothesis journal at tick 0. Advances to tick 264 (08:07 T_REVERSAL). Player misreads the reversal as a failed bounce and enters SHORT at confirmation (~1.2810), placing a buy-stop-to-cover at 1.2850 (38 pips above entry) BEFORE entry. The authored trend pushes ANDU to 1.2870; stop-to-cover triggers at tick 412 (~1.2868). Process is fully correct: stop placed before entry, never widened, not manually cancelled — stop FILLS via trigger. Exit journal written, debrief completed. sessionHasWin=false (short entered ~1.2810, final close ~1.2862 > entry). No reckless_winner_flag. Total XP: 185. The key assertion: stop_honored fires on a losing run, proving process XP is independent of outcome. Regenerate digest: npx vitest run tests/_gen_digests.test.ts"
+}

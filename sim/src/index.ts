@@ -16,5 +16,7 @@ export { createForexAdapter } from "./data/forex.js";
 // Scenarios — typed manifests and V0 definitions.
 export * from "./scenarios/types.js";
 export { scn001 } from "./scenarios/scn001.js";
+export { scn002 } from "./scenarios/scn002.js";
+export { scn003 } from "./scenarios/scn003.js";
 // Harness — headless scenario runner (integration surface + golden-replay backend).
 export * from "./harness/run.js";
