@@ -230,3 +230,62 @@ top-rated community reviews, discussions hub + sandbox-unlock thread,
 steambase.io, steamspy, itch.io devlogs v1.3/v1.5/v2.0,
 github.com/cinqmarsmedia/Trade-Bots-Algorithmic-Trading-Game,
 cinqmarsmedia.com/tradebots.
+
+---
+
+# Follow-up: Mobile + itch.io landscape (2026-06-08)
+
+Closes open question #3. Survey of 10 mobile/web sims + the itch.io tag.
+
+## Landscape (verified live unless marked)
+
+| App | Scale | Data | Framing | PnL leaderboard? |
+|---|---|---|---|---|
+| **Trading Game** (tradinggame.com) | **3.2M downloads**, 4.64/5 (22K) | Real, 220+ assets | Education-first + Pro sub (AI coaching) | Yes |
+| **Invstr** | mid-scale (INFERRED) | Real, US-only | "Play.Learn.Invest" sim→real funnel | Yes — prizes are REAL brokerage vouchers |
+| **TradingView "The Leap"** | 39,363 participants/round | Real paper | Competition | Hard yes — net-profit-% ranked, cash prizes |
+| **Stock Trainer** | 62K ratings, 4.3/5 | Real, 20+ markets | Practice | No prize mechanic; ad-funded |
+| **Forex Hero** | "2M+ learners" (vendor claim) | Real | Education/fun | Not confirmed |
+| **ChartGame** | small | Real historic, hidden tickers | Candle-replay practice | Yes (daily) |
+| **Bear Bull Traders** | thousands of paid members | Live trade-room | Coaching org, $39 trial → $1,099/yr | n/a (no game) |
+| itch.io tag | THIN — hobby titles, minimal engagement | — | — | — |
+
+## Verdict
+**The education-first process-scored lane is MORE open on mobile than on
+Steam.** The top education-branded app (Trading Game, 3.2M downloads) still
+runs PnL leaderboards; nobody uses process scoring, fictional instruments,
+or in-game-originated coaching funnels. Demand validated, variant untried.
+Nobody has stitched game → community → coaching subscription; Bear Bull
+Traders proves the coaching-subscription economics standalone.
+
+## Dark-pattern catalog (never do)
+- **DP-1 (worst): sim prizes redeemable as real brokerage trades** (Invstr) —
+  the game literally converts players into account-holders. → RECOMMEND:
+  add an explicit "no broker referral / no sim-to-real conversion" covenant
+  to RISK_REGISTER (owner approval + red-team pass required for register
+  changes — queued, not applied here).
+- DP-2: cash prizes on pure-returns competition (The Leap).
+- DP-3: "graduate to real trading" CTAs / broker affiliate links.
+- DP-4: paywall mid-course after a free hook (gate coaching depth, never
+  started-lesson completion).
+- DP-5: inflated demo capital ($100K–$1M) making fake wins feel real —
+  realistic capital is the counter-pattern (and ours: $10k).
+- DP-6: ads inside active sessions (trust corrosion; coaching funnels run
+  on trust).
+
+## Strategy inputs
+- **R1**: the RISK_REGISTER covenant above (queued for owner + red-team).
+- **R2**: benchmark monetization on Trading Game Pro (AI coaching tier) —
+  their AI coaches PnL; ours would coach PROCESS, and process-scored XP is
+  structurally richer signal for an AI coach. That's the pitch.
+- **R3**: plan a Capacitor/PWA wrapper for Phase-2 mobile — push
+  notifications + store discoverability are funnel requirements; Phaser
+  ports cleanly. Web-only is fine for Phase 1, a ceiling for Phase 2.
+
+**Unknowns:** Invstr scale (inferred), Forex Hero claim (vendor),
+TradeHero original is dormant (2024 same-name app is unrelated), itch.io
+tag pages 403'd (thinness confirmed via search). Sources in the brief:
+tradinggame.com (+Trustpilot, support docs), invstr.com/fantasy-finance,
+smartasset.com Invstr review, tradingview.com/the-leap, forexhero.eu,
+Stock Trainer Play listing, chartgame.com, bearbulltraders.com membership,
+bitcoinflip.app, itch.io tag search.
