@@ -137,7 +137,7 @@ first pass had players optimizing for score rather than process — the wrong ou
 we rebuilt the scoring layer around decision quality: did you size correctly, did you
 journal, did you follow your stated rule?
 
-The game is still in development. This is what the early builds look like.
+The game is still in design. This is where the design stands today — no playable build exists yet.
 
 [Attach: design sketch or spec excerpt — must be clearly labeled as design-stage material, not gameplay]
 
