@@ -137,7 +137,7 @@ Each scenario ends with a **Debrief Screen:**
 
 | Market | Example scenario |
 |--------|-----------------|
-| Crypto | BTC flash crash (rapid liquidation cascade, price -30 % in minutes) |
+| Crypto | GLIMMER flash crash (rapid liquidation cascade, price -30 % in minutes) |
 | Crypto | Stablecoin depegs (algo-stable loses peg, panic spread) |
 | Stocks | Earnings gap up — beat on revenue, miss on guidance |
 | Stocks | Sector rotation — defensive stocks bid while tech sells |

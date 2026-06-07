@@ -424,9 +424,13 @@ Forex positions use leverage. This is an intentional teaching mechanic, not a ga
 feature — the point is to demonstrate how leverage amplifies both gains and losses.
 
 ```
-pip_value(pair, lot_size) = lot_size * pip_size / current_price
-// Example: 1 standard lot EURUSD, pip_size 0.0001, price 1.1000
-// pip_value = 100000 * 0.0001 / 1.1000 = $9.09/pip
+pip_value(pair, lot_size) = lot_size * pip_size
+// All sim forex pairs are HarborUSD-quoted (FICTIONAL_CANON: ANDU/HarborUSD,
+// KORVA/HarborUSD), so pip value is flat per lot — no rate conversion.
+// Example: 1 standard lot ANDU/HarborUSD, pip_size 0.0001
+// pip_value = 100000 * 0.0001 = $10.00/pip  (mini: $1.00, micro: $0.10)
+// Matches sim/src/orders/account.ts pipValue() and the lesson convention
+// (PILLAR_INTROS forex pillar, FOUNDATION, X-B01).
 
 margin_required = (lot_size * current_price) / leverage_ratio
 // leverage_ratio = TUNABLE: 30:1 (EU/UK retail cap level — conservative default)

@@ -163,8 +163,8 @@ processes ticks and must produce the fill events below.
 | `FX-001` | Mandatory leverage display blocks order entry | Submit forex `order_submit` before `leverage_risk_acknowledged` event | Engine returns `order_reject`; reason = `leverage_ack_required` |
 | `FX-002` | Post-ack order proceeds | `leverage_risk_acknowledged` → `order_submit` | `order_fill` emitted normally |
 | `FX-003` | Margin required calculation | 1 standard lot ANDU at price 1.2812, leverage 30:1 | `margin_required = (100000 * 1.2812) / 30 = $4270.67` ± 0.01 |
-| `FX-004` | Margin call warning at 50% | Free margin falls to 50% of used margin | `margin_call_warning` event emitted in EventLog |
-| `FX-005` | Stop-out at 20% | Free margin falls to 20% of used margin | All positions auto-closed; `stop_out` event emitted; scenario ends with coaching flag |
+| `FX-004` | Margin call warning at 50% | Margin level (equity ÷ used margin) falls to 50% | `margin_call_warning` event emitted in EventLog |
+| `FX-005` | Stop-out at 20% | Margin level (equity ÷ used margin) falls to 20% | All positions auto-closed; `stop_out` event emitted; scenario ends with coaching flag. NOTE: 20% is SIM_ENGINE_SPEC §3.4's TUNABLE; OWNER_RUNBOOK P-7 (stop-out convention) may revise — update this row when P-7 is decided |
 | `FX-006` | Leverage ack logged in EventLog | Player clicks "I understand" | `leverage_risk_acknowledged` event present with `tickIndex` and `timestamp` |
 | `FX-007` | `leverage_ack` process metric fires | `leverage_risk_acknowledged` present before first fill | `leverage_ack` XP event emitted by ScoreTracker |
 
