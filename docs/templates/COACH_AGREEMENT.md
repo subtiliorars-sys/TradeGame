@@ -22,6 +22,11 @@ As a TradeGame coach, I agree:
 4. **Disclosure.** I disclose any relationship (paid, token-granted, affiliate)
    with any trading product, bot, token project, or broker before mentioning it,
    and I never promote them in coaching spaces.
+4a. **No sim-to-real referrals (RISK_REGISTER §16a).** In org channels I never
+   refer, recommend, or link members to any real-money broker, exchange,
+   trading platform, prop-firm/funded-account program, or copy-trading
+   service — compensated or not. Critical/educational discussion of platforms
+   is fine; pointing someone at an account-opening path is not.
 5. **Voice rules.** Cohort calls and office hours follow the voice-surface
    protocol (RISK_REGISTER §24): recorded or two-staff-present; AMA questions
    pre-screened.
