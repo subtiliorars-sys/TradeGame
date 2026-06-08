@@ -17,6 +17,7 @@
  */
 
 import type { TickEvent, OrderFillEvent, OrderCancelEvent } from "../engine/events.js";
+import { assertSeedOrderId } from "../drills/wave2Seed.js";
 
 // ---------------------------------------------------------------------------
 // Domain types
@@ -356,6 +357,10 @@ export function createOrderBook(): OrderBook {
     tickIndex: number,
     timestamp: number
   ): OrderBookEvent {
+    // W2-2: enforce seed- prefix guard — authored IDs must not collide with
+    // the live UUID namespace (LIVE_DRILL_ENGINE_BRIEF OPEN-LDED-4 / W2-2).
+    assertSeedOrderId(seed.orderId);
+
     // Synthetic forced fill: authored price, zero costs, no pending entry —
     // the position simply exists from this event forward. The caller is
     // responsible for appending the paired order_submit event so the log

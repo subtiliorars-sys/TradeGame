@@ -85,14 +85,19 @@ export function isSeedOrderId(orderId: string): boolean {
 /**
  * Assert that `orderId` carries the "seed-" prefix.
  * Throws a descriptive error on violation so authoring errors surface early
- * (as OPEN-LDED-4 recommends for the hard-enforcement option).
+ * (OPEN-LDED-4 hard-enforcement option — chosen for fail-fast safety).
  *
- * TODO (W2-2): import in OrderBook.forceFill, call before the fill path.
+ * Called by OrderBook.forceFill and dispatchSeedPositionBeat in run.ts to
+ * prevent authored seed IDs from colliding with the live UUID namespace.
  */
 export function assertSeedOrderId(orderId: string): void {
-  // TODO: implement
-  void orderId;
-  throw new Error("wave2Seed.assertSeedOrderId: not yet implemented");
+  if (!isSeedOrderId(orderId)) {
+    throw new Error(
+      `assertSeedOrderId: orderId "${orderId}" does not carry the required "seed-" prefix. ` +
+      `Seed order IDs must start with "seed-" to avoid collision with the live UUID namespace ` +
+      `(LIVE_DRILL_ENGINE_BRIEF OPEN-LDED-4 / W2-2).`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

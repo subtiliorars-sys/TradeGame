@@ -53,8 +53,10 @@ import { createCryptoAdapter } from "../data/crypto.js";
 import { createStocksAdapter } from "../data/stocks.js";
 import { createForexAdapter } from "../data/forex.js";
 import { createOrderBook, type OrderParams } from "../orders/book.js";
+import { assertSeedOrderId } from "../drills/wave2Seed.js";
 import { runScoreTracker, type MetricInput } from "../engine/scoring.js";
 import type { IMarketFeed } from "../data/feed.js";
+import type { SeedPositionBeat } from "../data/feed.js";
 import type { TickEvent } from "../engine/events.js";
 import type { ScenarioDef } from "../scenarios/types.js";
 
@@ -344,6 +346,17 @@ export function runScenario(config: HarnessConfig): HarnessResult {
       throw new Error(
         `drillSeed: the book rejected the seed stop (${seedStopOutcome.rejectReason ?? "?"}) — the drill premise would be false`
       );
+    }
+  }
+
+  // W2-1: dispatch any seed_position beats from the ScenarioScript at simTimeMs=0.
+  // These fire before the first PRNG-driven tick (same semantics as drillSeed, but
+  // script-driven so a DrillScenarioDef can carry seeding without a separate
+  // HarnessConfig.drillSeed argument). The adapter ignores these beats; the harness
+  // handles them here, just after session_start and drillSeed processing.
+  for (const beat of scenario.script) {
+    if (beat.kind === "seed_position" && beat.simTimeMs === 0) {
+      dispatchSeedPositionBeat(beat, log, orderBook, manifest.market);
     }
   }
 
@@ -681,6 +694,97 @@ function findSubmitForFill(
     }
   }
   return undefined;
+}
+
+/**
+ * W2-1 — dispatch a `seed_position` beat from the ScenarioScript.
+ *
+ * Emits the standard order_submit + order_fill pair at tick 0 with authored
+ * IDs (byte-stable) + places the companion stop in the pending book.
+ * This mirrors the drillSeed inline path but is triggered from the script
+ * beat list, allowing DrillScenarioDef manifests to carry seeding without
+ * a separate HarnessConfig.drillSeed argument.
+ *
+ * W2-2 guard: assertSeedOrderId fires on both IDs — authoring errors surface here.
+ */
+function dispatchSeedPositionBeat(
+  beat: SeedPositionBeat,
+  log: ReturnType<typeof createEventLog>,
+  orderBook: ReturnType<typeof createOrderBook>,
+  market: "crypto" | "stocks" | "forex"
+): void {
+  // W2-2: enforce seed- prefix on both authored IDs.
+  assertSeedOrderId(beat.entryOrderId);
+  assertSeedOrderId(beat.stopOrderId);
+
+  // Emit the synthetic entry submit event (EventLog reads as a complete sequence).
+  log.append(0, {
+    type: "order_submit",
+    orderId: beat.entryOrderId,
+    orderType: "market",
+    side: beat.positionSide,
+    quantity: beat.quantity,
+    price: null,
+    stopPrice: null,
+    tickIndex: 0,
+    timestamp: 0,
+  });
+
+  // Forced fill at authored price — zero slippage/spread/fee (inherited state).
+  const fillOutcome = orderBook.forceFill(
+    {
+      orderId: beat.entryOrderId,
+      side: beat.positionSide,
+      quantity: beat.quantity,
+      fillPrice: beat.fillPrice,
+    },
+    0,
+    0
+  );
+  if (fillOutcome.fill !== undefined) {
+    log.append(0, fillOutcome.fill);
+  }
+
+  // Companion stop submit event.
+  const stopSide = beat.positionSide === "buy" ? "sell" : "buy";
+  log.append(0, {
+    type: "order_submit",
+    orderId: beat.stopOrderId,
+    orderType: "stop",
+    side: stopSide,
+    quantity: beat.quantity,
+    price: null,
+    stopPrice: beat.stopPrice,
+    tickIndex: 0,
+    timestamp: 0,
+  });
+
+  // Register the companion stop as a live pending order in the book.
+  const stopOutcome = orderBook.submitOrder(
+    {
+      orderId: beat.stopOrderId,
+      orderType: "stop",
+      side: stopSide,
+      quantity: beat.quantity,
+      price: null,
+      stopPrice: beat.stopPrice,
+      marketType: market,
+      currentSigma: 0,
+      baseSigma: 0,
+      // Seed stop protects inherited state — bypass size guard (same pattern as
+      // the drillSeed inline path: accountEquity: Number.MAX_SAFE_INTEGER).
+      accountEquity: Number.MAX_SAFE_INTEGER,
+      leverageAckReceived: true,
+      sessionOpen: true,
+    },
+    0,
+    0
+  );
+  if (stopOutcome.type === "reject") {
+    throw new Error(
+      `seed_position beat: book rejected companion stop (${stopOutcome.rejectReason ?? "?"}) — drill premise false`
+    );
+  }
 }
 
 function assertNeverAction(action: never): never {

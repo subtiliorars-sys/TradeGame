@@ -247,6 +247,10 @@ function applyDueBeats(s: CryptoAdapterState, currentSimTimeMs: number): void {
         // Not applicable to crypto adapter — log and ignore.
         break;
 
+      case "seed_position":
+        // Handled by the harness (run.ts) before tick 0; no price-feed effect.
+        break;
+
       default:
         // Exhaustive switch — TypeScript enforces all ScenarioBeat kinds.
         assertNeverBeat(beat);

@@ -407,6 +407,10 @@ function applyDueBeats(s: StocksAdapterState, currentSimTimeMs: number): void {
         // Not applicable to stocks adapter.
         break;
 
+      case "seed_position":
+        // Handled by the harness (run.ts) before tick 0; no price-feed effect.
+        break;
+
       default:
         assertNeverBeat(beat);
     }

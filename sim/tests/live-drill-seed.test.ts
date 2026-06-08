@@ -23,7 +23,8 @@ describe("OrderBook.forceFill", () => {
   it("emits a fill at the authored price with zero slippage/spread/fee", () => {
     const book = createOrderBook();
     const ev = book.forceFill(
-      { orderId: "x", side: "buy", quantity: 1, fillPrice: 42_000 },
+      // W2-2: orderId must carry the "seed-" prefix (guard enforced).
+      { orderId: "seed-x", side: "buy", quantity: 1, fillPrice: 42_000 },
       0,
       0
     );
@@ -36,7 +37,8 @@ describe("OrderBook.forceFill", () => {
 
   it("does not touch pending orders (seeded state, not a live order)", () => {
     const book = createOrderBook();
-    book.forceFill({ orderId: "x", side: "buy", quantity: 1, fillPrice: 10 }, 0, 0);
+    // W2-2: orderId must carry the "seed-" prefix.
+    book.forceFill({ orderId: "seed-x", side: "buy", quantity: 1, fillPrice: 10 }, 0, 0);
     expect(book.pendingCount).toBe(0);
   });
 });
