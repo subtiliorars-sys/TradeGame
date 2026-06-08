@@ -156,6 +156,20 @@ export interface HarnessConfig {
   actions: PlayerAction[];
   /** Session UUID (auto-generated deterministically from seed if absent). */
   sessionId?: string;
+  /**
+   * Live-drill position seed (LIVE_DRILL_ENGINE_BRIEF §2.3): when present,
+   * the harness emits a synthetic submit→fill pair + companion stop at tick
+   * 0, immediately after session_start — the player starts the session
+   * holding the position. Authored values only; deterministic; zero costs.
+   */
+  drillSeed?: {
+    entryOrderId: string;
+    stopOrderId: string;
+    side: "buy" | "sell";
+    quantity: number;
+    fillPrice: number;
+    stopPrice: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -266,6 +280,63 @@ export function runScenario(config: HarnessConfig): HarnessResult {
     tickIndex: 0,
     timestamp: 0,
   });
+
+  // Live-drill position seed (before any PRNG-driven tick): synthetic
+  // submit→fill at the authored price (forceFill, zero costs) + companion
+  // protective stop as a REAL pending stop order. The log reads as a
+  // complete sequence; replay reconstructs the position from events alone.
+  if (config.drillSeed !== undefined) {
+    const ds = config.drillSeed;
+    log.append(0, {
+      type: "order_submit",
+      orderId: ds.entryOrderId,
+      orderType: "market",
+      side: ds.side,
+      quantity: ds.quantity,
+      price: null,
+      stopPrice: null,
+      tickIndex: 0,
+      timestamp: 0,
+    });
+    const seedFill = orderBook.forceFill(
+      { orderId: ds.entryOrderId, side: ds.side, quantity: ds.quantity, fillPrice: ds.fillPrice },
+      0,
+      0
+    );
+    if (seedFill.fill !== undefined) {
+      log.append(0, seedFill.fill);
+    }
+    const stopSide = ds.side === "buy" ? "sell" : "buy";
+    log.append(0, {
+      type: "order_submit",
+      orderId: ds.stopOrderId,
+      orderType: "stop",
+      side: stopSide,
+      quantity: ds.quantity,
+      price: null,
+      stopPrice: ds.stopPrice,
+      tickIndex: 0,
+      timestamp: 0,
+    });
+    orderBook.submitOrder(
+      {
+        orderId: ds.stopOrderId,
+        orderType: "stop",
+        side: stopSide,
+        quantity: ds.quantity,
+        price: null,
+        stopPrice: ds.stopPrice,
+        marketType: manifest.market,
+        currentSigma: 0,
+        baseSigma: 0,
+        accountEquity: config.accountEquity,
+        leverageAckReceived: true,
+        sessionOpen: true,
+      },
+      0,
+      0
+    );
+  }
 
   // --- Mutable harness state ---
   let leverageAckReceived = false;

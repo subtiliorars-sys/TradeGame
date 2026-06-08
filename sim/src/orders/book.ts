@@ -239,6 +239,15 @@ function stopTriggered(side: OrderSide, stopPrice: number, tick: TickEvent): boo
 // Order book
 // ---------------------------------------------------------------------------
 
+/** Authored seed-fill parameters (live drills — inherited positions). */
+export interface ForceFillParams {
+  orderId: string;
+  side: OrderSide;
+  quantity: number;
+  /** Authored fill price — used verbatim; no slippage model involvement. */
+  fillPrice: number;
+}
+
 /** Output returned by processOrdersOnTick for each fill or cancel. */
 export interface OrderBookEvent {
   type: "fill" | "cancel" | "reject";
@@ -258,6 +267,14 @@ export interface OrderBookEvent {
  */
 export interface OrderBook {
   submitOrder(params: OrderParams, tickIndex: number, timestamp: number): OrderBookEvent;
+  /**
+   * Seed a position as a synthetic forced fill (LIVE_DRILL_ENGINE_BRIEF §2.3):
+   * emits a standard fill at the AUTHORED price with zero slippage/spread/fee
+   * — the seeded position is inherited state, not a trade the player made,
+   * so no transaction cost is appropriate. Bypasses trigger logic entirely.
+   * Deterministic and byte-stable by construction (no PRNG, no market state).
+   */
+  forceFill(seed: ForceFillParams, tickIndex: number, timestamp: number): OrderBookEvent;
   processOrdersOnTick(tick: TickEvent): OrderBookEvent[];
   cancelSession(tickIndex: number, timestamp: number): OrderBookEvent[];
   cancelOrder(orderId: string, tickIndex: number, timestamp: number, reason?: string): OrderBookEvent | null;
@@ -332,6 +349,31 @@ export function createOrderBook(): OrderBook {
     });
 
     return { type: "fill", orderId }; // "accepted" — not a fill yet, but no error
+  }
+
+  function forceFill(
+    seed: ForceFillParams,
+    tickIndex: number,
+    timestamp: number
+  ): OrderBookEvent {
+    // Synthetic forced fill: authored price, zero costs, no pending entry —
+    // the position simply exists from this event forward. The caller is
+    // responsible for appending the paired order_submit event so the log
+    // reads as a complete (submit → fill) sequence for replay.
+    return {
+      type: "fill",
+      orderId: seed.orderId,
+      fill: {
+        type: "order_fill",
+        orderId: seed.orderId,
+        fillPrice: seed.fillPrice,
+        slippage: 0,
+        spreadCost: 0,
+        feeCost: 0,
+        tickIndex,
+        timestamp,
+      },
+    };
   }
 
   function processOrdersOnTick(tick: TickEvent): OrderBookEvent[] {
@@ -450,6 +492,7 @@ export function createOrderBook(): OrderBook {
 
   return {
     submitOrder,
+    forceFill,
     processOrdersOnTick,
     cancelSession,
     cancelOrder,
