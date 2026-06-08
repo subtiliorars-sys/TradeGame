@@ -75,3 +75,32 @@ describe("lpPanelView — spec beat checkpoints", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// DP-C checkpoint gap view (wave: IL checkpoint)
+// ---------------------------------------------------------------------------
+
+import { ilGapView } from "../src/ui/engine/lp.js";
+
+describe("ilGapView — estimate vs actual, accuracy never scored", () => {
+  it("computes actual% and the gap in points", () => {
+    // Actual IL fraction −0.0292 (the spec's DP-C value) vs a 2% estimate.
+    const g = ilGapView(2, -0.0292);
+    expect(g.actualPct).toBeCloseTo(2.92, 2);
+    expect(g.gapPts).toBeCloseTo(0.92, 2);
+  });
+
+  it("treats estimate sign/direction generously (3 ≈ −3 ≈ '3% IL')", () => {
+    expect(ilGapView(3, -0.03).gapPts).toBeCloseTo(0, 9);
+  });
+
+  it("teaching line tiers by gap size, never blames", () => {
+    expect(ilGapView(2.9, -0.0292).line).toContain("intuition");
+    expect(ilGapView(2.0, -0.0292).line).toContain("Close");
+    const wide = ilGapView(10, -0.0292).line;
+    expect(wide).toContain("useful");
+    for (const banned of ["wrong", "fail", "bad"]) {
+      expect(wide.toLowerCase()).not.toContain(banned);
+    }
+  });
+});

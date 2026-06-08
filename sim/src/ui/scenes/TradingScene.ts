@@ -53,6 +53,7 @@ import { getScenario } from "../../scenarios/registry.js";
 import type { RiskModalData } from "./RiskModalScene.js";
 import type { PolicyCardData } from "./PolicyCardScene.js";
 import { depositFromFill, lpPanelView, type LpDeposit } from "../engine/lp.js";
+import type { IlCheckpointData } from "./IlCheckpointScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -158,6 +159,8 @@ export class TradingScene extends Phaser.Scene {
 
   // LP Position Panel (manifest.showLpPanel — SCN-004's IL Dashboard)
   private lpDeposit: LpDeposit | null = null;
+  /** DP-C IL-estimate checkpoint fired (once per session). */
+  private ilCheckpointShown = false;
   private lpWithdrawn = false;
   private lpFlipShown = false;
   private lpText: Phaser.GameObjects.Text | null = null;
@@ -275,6 +278,7 @@ export class TradingScene extends Phaser.Scene {
     this.stopIdToEntryId = new Map();
     this.lpDeposit = null;
     this.lpWithdrawn = false;
+    this.ilCheckpointShown = false;
     this.lpFlipShown = false;
     this.lpText = null;
     this.fillOverlay = null;
@@ -368,6 +372,22 @@ export class TradingScene extends Phaser.Scene {
     // LP Position Panel refresh (LP scenarios only; frozen after withdrawal).
     if (this.def.manifest.showLpPanel && !this.lpWithdrawn) {
       this.updateLpPanel(tick.simTimeMs);
+    }
+
+    // DP-C IL-estimate checkpoint (SCN-004 UI beat): fires once, only for
+    // players still in the pool at the checkpoint (observation-only runs
+    // earn their journal XP through patience instead).
+    if (
+      this.def.manifest.showLpPanel &&
+      !this.ilCheckpointShown &&
+      this.lpDeposit !== null &&
+      !this.lpWithdrawn
+    ) {
+      const dpc = this.def.manifest.decisionPoints.find((d) => d.id === "DP-C");
+      if (dpc !== undefined && tick.simTimeMs >= dpc.simTimeMs) {
+        this.ilCheckpointShown = true;
+        this.showIlCheckpoint(tick.simTimeMs);
+      }
     }
 
     // Candle aggregation
@@ -502,8 +522,8 @@ export class TradingScene extends Phaser.Scene {
     // (simplistic: captures all char keys when journal is open and stop/qty
     // fields are not focused)
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
-      // F7: the policy card overlay owns the keyboard while active.
-      if (this.scene.isActive("PolicyCardScene")) return;
+      // F7: overlay scenes own the keyboard while active.
+      if (this.scene.isActive("PolicyCardScene") || this.scene.isActive("IlCheckpointScene")) return;
       if (!this.journalOpen) return;
       if (this.focusedField !== null) return;
       if (e.key === "Backspace") {
@@ -519,8 +539,8 @@ export class TradingScene extends Phaser.Scene {
     // Backspace deletes, Enter/Escape blurs. Registered ONCE per scene create
     // (same listener-compounding rule as the journal handler above).
     this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
-      // F7: the policy card overlay owns the keyboard while active.
-      if (this.scene.isActive("PolicyCardScene")) return;
+      // F7: overlay scenes own the keyboard while active.
+      if (this.scene.isActive("PolicyCardScene") || this.scene.isActive("IlCheckpointScene")) return;
       if (this.focusedField === null) return;
       if (e.key === "Enter" || e.key === "Escape") {
         this.focusedField = null;
@@ -1188,6 +1208,33 @@ export class TradingScene extends Phaser.Scene {
       },
     };
     this.scene.launch("PolicyCardScene", data);
+  }
+
+  /**
+   * Launch the DP-C IL-estimate checkpoint (SCN-004). Same overlay rules as
+   * the policy card: dismiss any fill-confirm first (F4 — a live confirm
+   * holds the orderConfirm lock and the pause silently fails), blur the
+   * ticket (F7), pause; play resumes via the speed controls afterwards.
+   */
+  private showIlCheckpoint(simTimeMs: number): void {
+    const view = lpPanelView(this.lpDeposit, this.latestPrice, simTimeMs);
+    if (view === null) return;
+    this.dismissFillOverlay();
+    if (!this.adapter.setCompression("paused")) {
+      this.adapter.clock.endOrderConfirm();
+      this.adapter.setCompression("paused");
+    }
+    this.updateSpeedButtonHighlight("paused");
+    this.focusedField = null;
+    const data: IlCheckpointData = {
+      view,
+      log: this.adapter.log,
+      clock: this.adapter.clock,
+      onDone: () => {
+        // Stay paused; the player resumes deliberately (policy-card convention).
+      },
+    };
+    this.scene.launch("IlCheckpointScene", data);
   }
 
   /**
