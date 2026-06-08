@@ -57,13 +57,25 @@ export interface CurrentRankResult {
 // ---------------------------------------------------------------------------
 // All threshold numbers are TUNABLE — see module header.
 
+// Drill gates are assigned per DRILL_SYSTEM_BRIEF §3.3, with one shipped-
+// drills-only rule on top: a rank may gate ONLY on drills that exist in the
+// live catalog (a gate on an unshipped drill would softlock the ladder —
+// XP can never vault a gate). Trainee's four Beginner drills shipped in the
+// drill-build waves; Practitioner/Journeyman/Strategist gates flip in as
+// their drill tiers ship (brief table is the authoritative assignment).
+// A property test enforces gate-ids ⊆ shipped catalog.
 export const CANONICAL_LADDER: readonly RankThreshold[] = [
   { rankId: "observer",          displayLabel: "Observer",          xpRequired:    0, drillsRequired: [] }, // TUNABLE
-  { rankId: "trainee",           displayLabel: "Trainee",           xpRequired:  200, drillsRequired: [] }, // TUNABLE
-  { rankId: "practitioner",      displayLabel: "Practitioner",      xpRequired:  800, drillsRequired: [] }, // TUNABLE
-  { rankId: "journeyman",        displayLabel: "Journeyman",        xpRequired: 2000, drillsRequired: [] }, // TUNABLE
-  { rankId: "strategist",        displayLabel: "Strategist",        xpRequired: 4500, drillsRequired: [] }, // TUNABLE
-  { rankId: "senior_strategist", displayLabel: "Senior Strategist", xpRequired: 8000, drillsRequired: [] }, // TUNABLE
+  { rankId: "trainee",           displayLabel: "Trainee",           xpRequired:  200, drillsRequired: [   // TUNABLE (brief §3.3)
+    "drill:position-sizing-crypto",
+    "drill:position-sizing-stocks",
+    "drill:position-sizing-forex",
+    "drill:stop-placement-v1",
+  ] },
+  { rankId: "practitioner",      displayLabel: "Practitioner",      xpRequired:  800, drillsRequired: [] }, // TUNABLE — brief assigns 6 Intermediate drills; flips when they ship
+  { rankId: "journeyman",        displayLabel: "Journeyman",        xpRequired: 2000, drillsRequired: [] }, // TUNABLE — brief assigns 3 blowup drills; flips when they ship
+  { rankId: "strategist",        displayLabel: "Strategist",        xpRequired: 4500, drillsRequired: [] }, // TUNABLE — brief assigns 3 correlation drills; flips when they ship
+  { rankId: "senior_strategist", displayLabel: "Senior Strategist", xpRequired: 8000, drillsRequired: [] }, // TUNABLE — no gate by design
 ];
 
 // ---------------------------------------------------------------------------
