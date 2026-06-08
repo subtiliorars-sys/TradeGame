@@ -358,7 +358,7 @@ export class SessionAdapter {
         tickIndex: 0,
         timestamp: 0,
       });
-      this.orderBook.submitOrder(
+      const seedStopOutcome = this.orderBook.submitOrder(
         {
           orderId: drillSeed.stopOrderId,
           orderType: "stop",
@@ -369,13 +369,20 @@ export class SessionAdapter {
           marketType: this.marketType,
           currentSigma: 0,
           baseSigma: 0,
-          accountEquity: 10_000,
+          // Guard-inapplicable: protects INHERITED state (red-team F5 —
+          // the hardcoded 10k equity silently rejected the forex seed stop).
+          accountEquity: Number.MAX_SAFE_INTEGER,
           leverageAckReceived: true,
           sessionOpen: true,
         },
         0,
         0
       );
+      if (seedStopOutcome.type === "reject") {
+        throw new Error(
+          `drillSeed: seed stop rejected (${seedStopOutcome.rejectReason ?? "?"})`
+        );
+      }
     }
   }
 
@@ -560,6 +567,16 @@ export class SessionAdapter {
     this.clock.setCompression("paused");
 
     const { tickIndex, simTimeMs } = this.clock.state;
+
+    // Cancel all pending orders with reason "session_end" — harness parity
+    // (red-team F6: the UI never called cancelSession, so seeded stops
+    // stayed pending forever and the predicates' session_end exemption was
+    // dead code from the UI's perspective).
+    for (const be of this.orderBook.cancelSession(tickIndex, simTimeMs)) {
+      if (be.type === "cancel" && be.cancel) {
+        this.log.append(simTimeMs, be.cancel);
+      }
+    }
 
     // Append session_end event.
     this.log.append(simTimeMs, {

@@ -51,7 +51,13 @@ export class DrillDebriefScene extends Phaser.Scene {
     fillRect(g, 0, 0, width, height, C.BG, 0);
 
     const { drill, logEntries } = this.data2;
-    const evald = evaluateDrawdownSurvival(logEntries, drill.seed);
+    const authoredTicks =
+      drill.scenario.manifest.durationMs / drill.scenario.manifest.msPerTick;
+    const evald = evaluateDrawdownSurvival(
+      logEntries,
+      drill.seed,
+      Math.floor(authoredTicks * (2 / 3)) // TUNABLE engagement floor
+    );
 
     // Header
     fillRect(g, 0, 0, width, 48, C.SURFACE, 0);
