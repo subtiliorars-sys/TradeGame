@@ -99,6 +99,32 @@ export class MenuScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private drawHeader(g: Phaser.GameObjects.Graphics, width: number): void {
+    // DRILLS entry — risk drills feed rank gates + scenario prerequisites.
+    const db = button(
+      this,
+      width - PAD - 150,
+      PAD,
+      150,
+      34,
+      "RISK DRILLS",
+      () => this.scene.start("DrillScene"),
+      { fillColor: C.SURFACE, textColor: CSS.AMBER, fontSize: "12px" }
+    );
+    void db;
+    // LESSONS entry — read-then-do; lessons feed scenario prereqs (advisory
+    // in wave 1) and the drill provenance chain.
+    const lb = button(
+      this,
+      width - PAD - 150,
+      PAD + 42,
+      150,
+      34,
+      "LESSONS",
+      () => this.scene.start("LessonScene"),
+      { fillColor: C.SURFACE, textColor: CSS.AMBER, fontSize: "12px" }
+    );
+    void lb;
+
     // Title
     const title = label(this, PAD, PAD, "TRADEGAME", {
       fontSize: "28px",
@@ -209,7 +235,9 @@ export class MenuScene extends Phaser.Scene {
     const lockState = scenarioLockState(
       manifest,
       currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId,
-      ProgressStore.completedScenarioIds()
+      ProgressStore.completedScenarioIds(),
+      undefined,
+      ProgressStore.completedDrillIds()
     );
 
     const bw = CARD_W - 24;

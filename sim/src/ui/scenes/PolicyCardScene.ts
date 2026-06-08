@@ -91,6 +91,12 @@ const OPTIONS: OptionSpec[] = [
   },
 ];
 
+/** Word count of the typed rationale (single source for gate + emission). */
+function rationaleWords(text: string): number {
+  const t = text.trim();
+  return t ? t.split(/\s+/).length : 0;
+}
+
 export class PolicyCardScene extends Phaser.Scene {
   private selected: PolicyOption | null = null;
   private rationale = "";
@@ -254,15 +260,13 @@ export class PolicyCardScene extends Phaser.Scene {
       lineSpacing: 3,
     }));
     const charsOk = this.rationale.trim().length >= MIN_RATIONALE_CHARS;
-    const wordsOk =
-      (this.rationale.trim() ? this.rationale.trim().split(/\s+/).length : 0) >=
-      MIN_RATIONALE_WORDS;
+    const wordsOk = rationaleWords(this.rationale) >= MIN_RATIONALE_WORDS;
     add(label(
       this,
       px + 16,
       taY + 12 + taH + 6,
       `${this.rationale.trim().length}/${MIN_RATIONALE_CHARS} characters · ` +
-        `${this.rationale.trim() ? this.rationale.trim().split(/\s+/).length : 0}/${MIN_RATIONALE_WORDS} words`,
+        `${rationaleWords(this.rationale)}/${MIN_RATIONALE_WORDS} words`,
       {
         fontSize: "10px",
         color: charsOk && wordsOk ? CSS.DIM : CSS.RED,
@@ -272,9 +276,7 @@ export class PolicyCardScene extends Phaser.Scene {
 
     // DECLARE button — enabled only with an option + sufficient rationale
     // (both the char gate and the scoring metric's word gate, F5).
-    const wordCount = this.rationale.trim()
-      ? this.rationale.trim().split(/\s+/).length
-      : 0;
+    const wordCount = rationaleWords(this.rationale);
     const canDeclare =
       this.selected !== null &&
       this.rationale.trim().length >= MIN_RATIONALE_CHARS &&
@@ -317,9 +319,7 @@ export class PolicyCardScene extends Phaser.Scene {
   private declare(): void {
     if (this.selected === null) return;
     const { log, clock, scenarioId, onDeclare } = this.cardData;
-    const words = this.rationale.trim()
-      ? this.rationale.trim().split(/\s+/).length
-      : 0;
+    const words = rationaleWords(this.rationale);
 
     // EventLog emission: option + word count only — rationale TEXT is not
     // logged (§5.1 privacy split, same rule as the journal drawer).

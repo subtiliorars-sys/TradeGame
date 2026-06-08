@@ -1,0 +1,111 @@
+{
+  "fixtureVersion": "1",
+  "testId": "GR-013",
+  "scenarioId": "SCN-006",
+  "seed": 3235799046,
+  "accountEquity": 10000,
+  "declaredRiskPct": 1,
+  "actions": [
+    {
+      "type": "leverage_ack",
+      "ticksAfter": 0,
+      "payload": {}
+    },
+    {
+      "type": "journal_entry",
+      "ticksAfter": 0,
+      "payload": {
+        "tags": [
+          "plan",
+          "hypothesis"
+        ],
+        "wordCount": 26
+      }
+    },
+    {
+      "type": "policy_declare",
+      "ticksAfter": 180,
+      "payload": {
+        "policyId": "scn006-card",
+        "option": "A_flat",
+        "journalWordCount": 12
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 50,
+      "payload": {
+        "orderId": "violate-006",
+        "orderType": "stop",
+        "side": "sell",
+        "quantity": 75,
+        "stopPrice": 1.314,
+        "price": null
+      }
+    },
+    {
+      "type": "order_submit",
+      "ticksAfter": 0,
+      "payload": {
+        "orderId": "entry-006v",
+        "orderType": "market",
+        "side": "buy",
+        "quantity": 75,
+        "price": null,
+        "stopPrice": null
+      }
+    },
+    {
+      "type": "advance_ticks",
+      "ticksAfter": 0,
+      "payload": {
+        "count": 900
+      }
+    },
+    {
+      "type": "debrief_complete",
+      "ticksAfter": 0,
+      "payload": {}
+    }
+  ],
+  "expectedLogDigest": "2f13028c1347a52848ad0989ac93d44cbe3bbf44af09d37523f85781c4b258e8",
+  "expectedXpEvents": [
+    {
+      "metricId": "journal_before_trade",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "size_compliance",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "stop_before_entry",
+      "xpAmount": 25
+    },
+    {
+      "metricId": "stop_honored",
+      "xpAmount": 20
+    },
+    {
+      "metricId": "no_stop_widen",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "leverage_ack",
+      "xpAmount": 10
+    },
+    {
+      "metricId": "debrief_completed",
+      "xpAmount": 30
+    },
+    {
+      "metricId": "no_entry_window",
+      "xpAmount": 15
+    },
+    {
+      "metricId": "policy_declared_card",
+      "xpAmount": 30
+    }
+  ],
+  "notes": "SCN-006 policy-MISMATCH run (GR-013). Option A (flat before report) declared on time at the card, then VIOLATED: stop+entry submitted after the declaration inside the adherence window. policy_declared_card pays (+30, the declaration was timely); policy_match pays NOTHING (the betrayal); the trade's own discipline metrics still pay \u2014 the mismatch costs exactly the adherence reward, never the unrelated process credit. Total 195 vs clean-B 235."
+}

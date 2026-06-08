@@ -56,6 +56,34 @@ export function depositFromFill(
 }
 
 /**
+ * DP-C checkpoint gap view (SCENARIOS_V1 SCN-004 UI beat): the player types
+ * an IL estimate BEFORE seeing the actual; the gap between them is the
+ * lesson. Pure presentation math — estimate accuracy is practice, never a
+ * score input (il_estimate_written grades that the estimate was journaled,
+ * not how close it was).
+ */
+export interface IlGapView {
+  /** Actual IL as a positive percentage (display convention). */
+  actualPct: number;
+  /** |estimate − actual| in percentage points. */
+  gapPts: number;
+  /** Teaching line for the reveal. */
+  line: string;
+}
+
+export function ilGapView(estimatePct: number, ilFractionActual: number): IlGapView {
+  const actualPct = Math.abs(ilFractionActual) * 100;
+  const gapPts = Math.abs(Math.abs(estimatePct) - actualPct);
+  const line =
+    gapPts <= 0.5
+      ? "Within half a point — the constant-product math is becoming intuition."
+      : gapPts <= 1.5
+        ? "Close. Re-walk 2√r/(1+r)−1 against the divergence shown — the gap shrinks with reps."
+        : "A wide gap is the useful kind: it shows where the intuition bends. The formula stays on the reference card in every session.";
+  return { actualPct, gapPts, line };
+}
+
+/**
  * Panel view at the current tick. Returns null with no deposit (the render
  * layer shows the observing state).
  */

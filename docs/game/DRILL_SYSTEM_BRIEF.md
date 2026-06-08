@@ -739,6 +739,16 @@ This is a non-breaking change: the caller (MenuScene) already has access to
 
 ---
 
+### 6.x Gate-flip demotion policy (added post red-team, 2026-06-08)
+
+When a future wave flips Practitioner/Journeyman/Strategist drill gates in,
+players already ABOVE those XP thresholds will display a lower rank until the
+new drills are completed (currentRank is pure; gates are cumulative). The
+flip wave's brief MUST decide deliberately between (a) grandfathering
+(seed completedDrillIds for affected players) and (b) demote-with-messaging
+(an explicit one-time notice naming the new drills). Shipping a flip without
+this decision is a player-trust regression — red-team F4, drill wave D.
+
 ## 7. Engine and UI Surface Inventory
 
 ### 7.1 Recommended Architecture — Drills as Micro-Scenarios

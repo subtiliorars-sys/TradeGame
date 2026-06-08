@@ -257,3 +257,42 @@ describe("GR-007/008 determinism: two runs with same config produce identical di
     expect(run1.digest.sha256).toBe(run2.digest.sha256);
   });
 });
+
+// ---------------------------------------------------------------------------
+// GR-014: trigger honored LATE — the flag is coaching, never a penalty
+// ---------------------------------------------------------------------------
+
+describe("GR-014: SCN-004 trigger-honored-late — reckless flag fires, XP unharmed", () => {
+  const fixture = loadFixture("scn004-stopout.json");
+
+  it("digest matches golden", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    expect(result.digest.sha256).toBe(fixture.expectedLogDigest);
+  });
+
+  it("the late trigger EXECUTES (withdrawal by stop fill during the correction)", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    const fill = result.log.entries
+      .map((e) => e.event)
+      .find((e) => e.type === "order_fill" && e.orderId === "trigger-014");
+    expect(fill).toBeDefined();
+    const stopXp = result.xpSummary.events.find((e) => e.metricId === "stop_honored");
+    expect(stopXp?.xpAmount).toBe(20);
+  });
+
+  it("reckless_winner_flag fires (no pre-deposit trigger + winning session) — the ONLY golden path with the flag", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    const flags = result.log.entries.filter((e) => e.event.type === "reckless_winner_flag");
+    expect(flags).toHaveLength(1);
+  });
+
+  it("XP equals the clean run's 130 — the flag is coaching, never an XP penalty", () => {
+    const result = runScenario(fixtureToConfig(fixture));
+    expect(result.xpSummary.total).toBe(130);
+  });
+
+  it("determinism: two runs identical", () => {
+    const config = fixtureToConfig(fixture);
+    expect(runScenario(config).digest.sha256).toBe(runScenario(config).digest.sha256);
+  });
+});

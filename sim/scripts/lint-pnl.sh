@@ -18,30 +18,50 @@
 # change to remove size_compliance's equity ratio — a design decision, not a
 # code change.
 
-SCORING_FILE="$(dirname "$0")/../src/engine/scoring.ts"
+SRC="$(dirname "$0")/../src"
 
-if [ ! -f "$SCORING_FILE" ]; then
-  echo "lint-pnl: ERROR — scoring.ts not found at $SCORING_FILE" >&2
-  exit 1
-fi
+# Scope (widened after three red-team passes flagged the single-file tripwire
+# as a residual): every PURE scoring-adjacent module. The UI boundary
+# (SessionAdapter/TradingScene) is deliberately excluded — displaying account
+# state is its legitimate job; the rail is that SCORING never reads it.
+FILES="
+$SRC/engine/scoring.ts
+$SRC/engine/rank.ts
+$SRC/engine/progress.ts
+$SRC/engine/amm.ts
+$SRC/drills/catalog.ts
+$SRC/ui/engine/gating.ts
+$SRC/ui/engine/lp.ts
+$SRC/ui/engine/replay.ts
+"
 
 # Prohibited identifiers per TEST_PLAN §2.2 + SIM_ENGINE_SPEC §4.4.
 PATTERN='realizedPnL|unrealizedPnL|pnlScore|winRate|returnOnAccount|returnPct|profitUsd|profitPips'
 
-# Exclude comment lines (content after the line-number prefix starts with * or //)
-# so that spec-reference docstrings listing prohibited names do not self-trip the guard.
-# grep -n output format: "NN: content" — filter on content after the colon.
-MATCHES=$(grep -inE "$PATTERN" "$SCORING_FILE" | grep -vE '^[0-9]+:\s*(//|\*)')
+FAILED=0
+for f in $FILES; do
+  if [ ! -f "$f" ]; then
+    # Modules from unmerged feature branches (e.g. drills/) may not exist on
+    # every branch — skip with a note rather than failing; they are scanned
+    # automatically once their branch merges.
+    echo "lint-pnl: note — $f not present on this branch (skipped)"
+    continue
+  fi
+  # Exclude comment lines (content after the line-number prefix starts with
+  # * or //) so spec-reference docstrings do not self-trip the guard.
+  MATCHES=$(grep -inE "$PATTERN" "$f" | grep -vE '^[0-9]+:\s*(//|\*)')
+  if [ -n "$MATCHES" ]; then
+    echo ""
+    echo "lint-pnl: FAIL — PnL-related identifier found in $f" >&2
+    echo "Reference: SIM_ENGINE_SPEC §4.1 and RISK_REGISTER §16" >&2
+    echo ""
+    echo "$MATCHES" >&2
+    echo ""
+    FAILED=1
+  fi
+done
 
-if [ -n "$MATCHES" ]; then
-  echo ""
-  echo "lint-pnl: FAIL — PnL-related identifier found in scoring.ts" >&2
-  echo "Reference: SIM_ENGINE_SPEC §4.1 and RISK_REGISTER §16" >&2
-  echo ""
-  echo "$MATCHES" >&2
-  echo ""
-  exit 1
-fi
+[ "$FAILED" -eq 1 ] && exit 1
 
-echo "lint-pnl: OK — no prohibited PnL identifiers in scoring.ts"
+echo "lint-pnl: OK — no prohibited PnL identifiers in scoring-adjacent modules"
 exit 0

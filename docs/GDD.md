@@ -325,7 +325,7 @@ The following are permanently excluded or explicitly deferred.
 | Item | Status |
 |------|--------|
 | Real-money integration of any kind | Permanently excluded |
-| Broker or exchange API connections | Permanently excluded — v1 and beyond until explicit design review |
+| Broker or exchange API connections | Permanently excluded — v1 and beyond until explicit design review AND the RISK_REGISTER §16a override path (owner + counsel + red-team + register amendment) |
 | Buy/sell signal product | Permanently excluded |
 | NFTs, tokens, or crypto-native rewards | Permanently excluded |
 | Multiplayer trading floors / competitive PvP | Deferred |

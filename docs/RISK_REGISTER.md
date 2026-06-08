@@ -20,6 +20,7 @@ monthly review cadences.
 |------|-------|---------|
 | 2026-06-06 | Red-team pass (AI review, no attorney) | GO-WITH-FIXES — all fixes applied in this revision. Re-verification required before Phase 1 compliance gate. Attorney review (§4) remains a hard gate before any revenue. |
 | 2026-06-07 | Red-team RE-VERIFICATION (AI review, no attorney) | PASS-WITH-NITS — all 18 prior fixes verified substantive; 8 new MED/LOW findings applied same day (Raging Bull figure corrected, §4 residual scoring fixed, §230 framing corrected, 3 dangling mechanism artifacts created in docs/templates/ + docs/playbooks/, seed-cohort invites declared gated in §19, CONCEPT curriculum bullets de-advised, #scam-reports naming unified + added to channel map). Owner-ratified scope (untested-theory flag, attorney gates) unchanged. Next register review: before Phase 1 compliance gate. |
+| 2026-06-08 | §16a sim-to-real conversion covenant added (owner-approved; UTC date) | Focused red-team: SHIP-WITH-FIXES → findings 1-7,9-12 wording deltas applied same PR (prop-firm/intermediary/data-deal loopholes closed, COLLAB_CHECKLIST fail-closed gate, override paths harmonized, editorial carve-out) |
 
 ---
 
@@ -491,11 +492,72 @@ preference. See §6 for the register-level resolution of any contradiction.
 **Mechanisms:**
 - Outcome-only leaderboards explicitly not implemented (see GDD).
 - Design review before any leaderboard feature is added: does this score process or
-  outcome? If outcome, it is rejected. No override path exists without a register
-  amendment and a red-team pass.
+  outcome? If outcome, it is rejected. No override path exists without owner + counsel +
+  a red-team pass + a versioned register amendment (harmonized with §16a).
 
 **Owner-trigger:** Any proposal to add outcome-based scoring or P&L leaderboards; player
 feedback reveals leaderboard gaming that undermines process learning.
+
+---
+
+## 16a. Game-Specific — Sim-to-Real Conversion Covenant (OWNER APPROVED 2026-06-08)
+
+**Severity:** H
+**Likelihood:** Inherent H | Residual L (with this covenant enforced)
+
+**The issue:** The mobile-landscape research (docs/game/COMPETITOR_RESEARCH.md,
+2026-06-08 follow-up) documented the worst live pattern in the niche: a competitor
+pays simulated-contest winners in REAL brokerage vouchers — the game converts
+players into funded trading accounts. Any sim-to-real conversion incentive would
+(a) destroy the education-not-advice posture, (b) plausibly trigger broker-dealer /
+solicitation and state-level registration analysis, and (c) make every "process not
+profit" claim in the product read as a funnel disguise.
+
+**Covenant (hard prohibition — no override without owner + counsel + red-team +
+a versioned register amendment):**
+"Conversion entity" below means: any real-money broker, exchange, trading platform,
+prop-trading / funded-account program, copy-trading service, CFD provider, or
+custodial wallet/swap service — AND any affiliate, subsidiary, education arm,
+marketing agency, or other intermediary of such an entity, and any entity whose
+business model includes converting users into funded trading accounts.
+
+TradeGame will NEVER, in any mode, tier, prize, partnership, advertising,
+sponsorship, brand placement, or marketing surface:
+- refer, link, or funnel players to a conversion entity (no affiliate links, no
+  referral codes, no "graduate to real trading" CTAs, no co-marketing);
+- award any prize redeemable as, convertible to, or contingent upon opening,
+  funding, or obtaining access to any real-money or firm-funded trading account
+  or evaluation (prop-firm evaluations included);
+- condition any in-game benefit on real-money trading activity, or represent
+  sim results as predictive of real trading outcomes (see §15). (This includes
+  any future "journal/verify your real trades for XP" feature — banned, not
+  merely gated: in-game progression never touches real-money activity.)
+- license, sell, or share player data, contact information, or performance data
+  with any conversion entity, or white-label/embed the game for one.
+
+Editorial carve-out: critical, educational, or research citation of real
+platforms (lessons, competitor analysis) is permitted; no such citation may
+link to an account-opening flow or carry referral/affiliate/campaign parameters.
+
+Coach scope: this covenant binds org-credentialed coaches acting in org channels
+(compensated or not); COACH_AGREEMENT.md carries the matching clause.
+
+**Mechanisms:**
+- Design review gate: any feature touching prizes, partnerships, monetization, or
+  outbound links checks this section by name before build, AND runs
+  docs/templates/COLLAB_CHECKLIST.md, whose first box is the fail-closed §16a
+  conversion-entity check.
+- The education footer / disclaimers never coexist on a surface with a broker link
+  (structurally impossible if the covenant holds; this line exists so a violation
+  is detectable in review).
+- Monetization design (when it begins) starts from this covenant + §16 + §17 as
+  fixed constraints — gate coaching depth, never conversion.
+
+**Owner-trigger:** Any partnership inquiry from a conversion entity OR any entity
+acting for one (agencies and education arms included); any monetization proposal
+involving prizes with monetary value (cash prizes per se are reviewed under §16's
+process-only rule — returns-ranked cash competition is rejected there); any
+marketing draft containing an outbound link to a trading platform.
 
 ---
 

@@ -21,6 +21,7 @@ import { currentRank, type RankThreshold } from "./rank.js";
 let _xpTotal = 0;
 const _completedDrillIds = new Set<string>();
 const _completedScenarioIds = new Set<string>();
+const _completedLessonIds = new Set<string>();
 let _lastRankUp: { from: RankThreshold; to: RankThreshold } | null = null;
 
 // ---------------------------------------------------------------------------
@@ -81,6 +82,47 @@ export function markDrillCompleted(id: string): void {
 }
 
 /**
+ * Complete a drill AND award its XP atomically, with rank-change detection
+ * spanning BOTH mutations (red-team F1: when the DRILL gate — not the XP —
+ * crosses a rank threshold, marking the drill before addXp() made addXp's
+ * own before-snapshot already include the new drill, so the §4.5 rank-up
+ * marker never fired on the primary on-ramp path).
+ */
+export function completeDrill(id: string, xp: number): void {
+  const before = currentRank(_xpTotal, completedDrillIds()).rank;
+  _completedDrillIds.add(id);
+  if (Number.isFinite(xp) && xp > 0) {
+    _xpTotal += xp;
+  }
+  const after = currentRank(_xpTotal, completedDrillIds()).rank;
+  if (after.rankId !== before.rankId) {
+    _lastRankUp = { from: before, to: after };
+  }
+}
+
+/**
+ * Complete a lesson AND award its XP atomically (mirrors completeDrill —
+ * same rank-change detection across both mutations; once-per-lesson is
+ * enforced by the caller checking completedLessonIds first).
+ */
+export function completeLesson(id: string, xp: number): void {
+  const before = currentRank(_xpTotal, completedDrillIds()).rank;
+  _completedLessonIds.add(id);
+  if (Number.isFinite(xp) && xp > 0) {
+    _xpTotal += xp;
+  }
+  const after = currentRank(_xpTotal, completedDrillIds()).rank;
+  if (after.rankId !== before.rankId) {
+    _lastRankUp = { from: before, to: after };
+  }
+}
+
+/** IDs of lessons completed this browser session. */
+export function completedLessonIds(): string[] {
+  return Array.from(_completedLessonIds);
+}
+
+/**
  * Mark a scenario as completed (debrief reached). Feeds the Main Menu's
  * scenario-prereq gates ("scenario:SCN-00X" in manifest.prereqs).
  * Completion = process flow finished, regardless of outcome — no PnL input.
@@ -102,5 +144,6 @@ export function reset(): void {
   _xpTotal = 0;
   _completedDrillIds.clear();
   _completedScenarioIds.clear();
+  _completedLessonIds.clear();
   _lastRankUp = null;
 }

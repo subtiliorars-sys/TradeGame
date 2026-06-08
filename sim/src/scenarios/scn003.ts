@@ -103,7 +103,7 @@ export const scn003: ScenarioDef = {
       "drill:position-sizing-forex",
       "drill:stop-placement-v1",
       "lesson:forex-session-windows",
-      "lesson:liquidity-sweep",
+      "lesson:session-open-sweeps", // renamed from liquidity-sweep (LESSON_SYSTEM_BRIEF §3 reconciliation — X-I01 is the authored lesson; SCN-006 already used this ID)
     ],
     minRank: "Trainee",
     difficulty: "Intermediate",

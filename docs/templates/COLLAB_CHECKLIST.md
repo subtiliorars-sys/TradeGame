@@ -4,6 +4,7 @@ Run BEFORE any tool, bot, platform, token project, broker, or creator
 collaboration is agreed to or announced. All boxes must pass or the collab
 does not happen. Log every run in the table below, including rejections.
 
+- [ ] **§16a covenant gate (FAIL-CLOSED, check FIRST):** partner is NOT — and is not owned by, affiliated with, or acting for — a real-money broker, exchange, trading platform, prop-trading/funded-account program, copy-trading service, CFD provider, or custodial wallet/swap service. **If it is: REJECT. Stop here; no further boxes.** (RISK_REGISTER §16a)
 - [ ] **Compensation disclosed internally:** is ANY payment, token grant,
       affiliate cut, free access, or in-kind benefit involved? If yes →
       §17(b) anti-touting + FTC material-connection territory: public
