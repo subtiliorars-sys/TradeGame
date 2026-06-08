@@ -220,7 +220,18 @@ export class SessionAdapter {
    * @param def  ScenarioDef to run. Defaults to scn001 for backward-compat.
    * @param seedValue  PRNG seed. Defaults to the scenario's canonical seed.
    */
-  constructor(def?: ScenarioDef, seedValue?: number) {
+  constructor(
+    def?: ScenarioDef,
+    seedValue?: number,
+    drillSeed?: {
+      entryOrderId: string;
+      stopOrderId: string;
+      side: "buy" | "sell";
+      quantity: number;
+      fillPrice: number;
+      stopPrice: number;
+    }
+  ) {
     // Fall back to scn001 when called without arguments (backward-compat for
     // ui-parity.test.ts which constructs SessionAdapter() with no args).
     const resolvedDef: ScenarioDef = def ?? _scn001Default;
@@ -304,6 +315,68 @@ export class SessionAdapter {
       },
       this.manifest.msPerTick
     );
+
+    // Live-drill position seed (mirrors harness/run.ts drillSeed): the
+    // inherited position enters the log as a complete submit→fill pair at
+    // tick 0 (forceFill: authored price, zero costs) and the companion
+    // protective stop becomes a REAL pending stop in the book. UI display
+    // state initializes from the drill def in TradingScene's drill mode.
+    if (drillSeed !== undefined) {
+      this.log.append(0, {
+        type: "order_submit",
+        orderId: drillSeed.entryOrderId,
+        orderType: "market",
+        side: drillSeed.side,
+        quantity: drillSeed.quantity,
+        price: null,
+        stopPrice: null,
+        tickIndex: 0,
+        timestamp: 0,
+      });
+      const seedFill = this.orderBook.forceFill(
+        {
+          orderId: drillSeed.entryOrderId,
+          side: drillSeed.side,
+          quantity: drillSeed.quantity,
+          fillPrice: drillSeed.fillPrice,
+        },
+        0,
+        0
+      );
+      if (seedFill.fill !== undefined) {
+        this.log.append(0, seedFill.fill);
+      }
+      const stopSide = drillSeed.side === "buy" ? "sell" : "buy";
+      this.log.append(0, {
+        type: "order_submit",
+        orderId: drillSeed.stopOrderId,
+        orderType: "stop",
+        side: stopSide,
+        quantity: drillSeed.quantity,
+        price: null,
+        stopPrice: drillSeed.stopPrice,
+        tickIndex: 0,
+        timestamp: 0,
+      });
+      this.orderBook.submitOrder(
+        {
+          orderId: drillSeed.stopOrderId,
+          orderType: "stop",
+          side: stopSide,
+          quantity: drillSeed.quantity,
+          price: null,
+          stopPrice: drillSeed.stopPrice,
+          marketType: this.marketType,
+          currentSigma: 0,
+          baseSigma: 0,
+          accountEquity: 10_000,
+          leverageAckReceived: true,
+          sessionOpen: true,
+        },
+        0,
+        0
+      );
+    }
   }
 
   /**

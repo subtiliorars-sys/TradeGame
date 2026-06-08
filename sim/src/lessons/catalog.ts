@@ -16,6 +16,8 @@
 import * as ProgressStore from "../engine/progress.js";
 import type { LessonContent, LessonDef } from "./types.js";
 
+export type { LessonDef, LessonContent } from "./types.js";
+
 import { LESSON_C_I01 } from "../ui/content/lessons/c-i01.js";
 import { LESSON_C_I03 } from "../ui/content/lessons/c-i03.js";
 import { LESSON_S_I01 } from "../ui/content/lessons/s-i01.js";

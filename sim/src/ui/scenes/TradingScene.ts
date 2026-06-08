@@ -55,6 +55,8 @@ import type { PolicyCardData } from "./PolicyCardScene.js";
 import { depositFromFill, lpPanelView, type LpDeposit } from "../engine/lp.js";
 import type { IlCheckpointData } from "./IlCheckpointScene.js";
 import type { LpExplainerData } from "./LpExplainerScene.js";
+import { getLiveDrill, type LiveDrillDef } from "../../drills/liveCatalog.js";
+import type { DrillDebriefData } from "./DrillDebriefScene.js";
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -152,6 +154,9 @@ export class TradingScene extends Phaser.Scene {
   private policyCardShown = false;
   private policyDeclared = false;
 
+  /** Non-null when this session runs a live drill (seeded micro-scenario). */
+  private liveDrill: LiveDrillDef | null = null;
+
   /** Non-null when this session is a replay (set from DebriefScene init data). */
   private replayOfSessionId: string | null = null;
 
@@ -229,6 +234,7 @@ export class TradingScene extends Phaser.Scene {
   init(data: unknown): void {
     let id = "SCN-001";
     this.replayOfSessionId = null;
+    this.liveDrill = null;
     if (data && typeof data === "object") {
       if ("scenarioId" in data) {
         const v = (data as { scenarioId: unknown }).scenarioId;
@@ -239,8 +245,14 @@ export class TradingScene extends Phaser.Scene {
         const r = (data as { replayOf: unknown }).replayOf;
         if (typeof r === "string") this.replayOfSessionId = r;
       }
+      // Live-drill mode: the session runs a drill micro-scenario with a
+      // seeded position; debrief routes to DrillDebriefScene.
+      if ("liveDrillId" in data) {
+        const d = (data as { liveDrillId: unknown }).liveDrillId;
+        if (typeof d === "string") this.liveDrill = getLiveDrill(d) ?? null;
+      }
     }
-    this.def = getScenario(id) ?? scn001;
+    this.def = this.liveDrill !== null ? this.liveDrill.scenario : (getScenario(id) ?? scn001);
   }
 
   /**
@@ -291,7 +303,17 @@ export class TradingScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     this.resetSessionState();
-    this.adapter = new SessionAdapter(this.def);
+    this.adapter =
+      this.liveDrill !== null
+        ? new SessionAdapter(this.def, undefined, {
+            entryOrderId: this.liveDrill.seed.entryOrderId,
+            stopOrderId: this.liveDrill.seed.stopOrderId,
+            side: this.liveDrill.seed.side,
+            quantity: this.liveDrill.seed.quantity,
+            fillPrice: this.liveDrill.seed.fillPrice,
+            stopPrice: this.liveDrill.seed.stopPrice,
+          })
+        : new SessionAdapter(this.def);
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));
     this.adapter.onSessionEnd((data) => this.transitionToDebrief(data));
@@ -324,6 +346,22 @@ export class TradingScene extends Phaser.Scene {
     // Set initial compression to paused so player must press a speed button
     this.adapter.setCompression("paused");
     this.updateSpeedButtonHighlight("paused");
+
+    // Live-drill mode: initialize the UI display to match the engine truth
+    // the adapter seeded (position + companion stop), then show the
+    // briefing card — the premise and the one rule, gated on START.
+    if (this.liveDrill !== null) {
+      const sd = this.liveDrill.seed;
+      this.positions.push({
+        orderId: sd.entryOrderId,
+        side: sd.side,
+        quantity: sd.quantity,
+        entryPrice: sd.fillPrice,
+        stopPrice: sd.stopPrice,
+      });
+      this.stopIdToEntryId.set(sd.stopOrderId, sd.entryOrderId);
+      this.drawDrillBriefing();
+    }
 
     // T-05 LP-panel explainer (SCN-004 UI beat): mandatory two screens on
     // LP scenarios before first input; skippable on replay sessions only.
@@ -1684,9 +1722,65 @@ export class TradingScene extends Phaser.Scene {
    * completes. Transitions to DebriefScene, passing the DebriefData as init
    * data via Phaser's scene.start second argument.
    */
+  /** One-shot blocking briefing card for live drills (premise + one rule). */
+  private drawDrillBriefing(): void {
+    const d = this.liveDrill;
+    if (d === null) return;
+    const { width, height } = this.scale;
+    const items: Phaser.GameObjects.GameObject[] = [];
+    const overlay = this.add.graphics();
+    fillRect(overlay, 0, 0, width, height, C.BG, 0);
+    overlay.setAlpha(0.86);
+    overlay.setDepth(50);
+    items.push(overlay);
+    const blocker = this.add.zone(0, 0, width, height).setOrigin(0, 0).setInteractive().setDepth(50);
+    items.push(blocker);
+    const g = this.add.graphics().setDepth(51);
+    const pw = 600;
+    const ph = 330;
+    const px = width / 2 - pw / 2;
+    const py = height / 2 - ph / 2;
+    panel(g, px, py, pw, ph, 8);
+    strokeRect(g, px, py, pw, 4, C.AMBER, 4, 2);
+    items.push(g);
+    items.push(
+      label(this, width / 2, py + 24, d.title.toUpperCase(), {
+        fontSize: "15px",
+        color: CSS.AMBER,
+        fontStyle: "bold",
+      }).setOrigin(0.5, 0.5).setDepth(51)
+    );
+    d.briefing.forEach((line: string, i: number) => {
+      items.push(
+        label(this, px + 24, py + 52 + i * 19, line, {
+          fontSize: "12px",
+          color: CSS.TEXT,
+        }).setDepth(51)
+      );
+    });
+    const startBtn = button(this, width / 2 - 90, py + ph - 54, 180, 38, "START", () => {
+      for (const it of items) it.destroy();
+      startBtn.bg.destroy();
+      startBtn.label.destroy();
+    }, { fontSize: "13px" });
+    startBtn.bg.setDepth(51);
+    startBtn.label.setDepth(52);
+  }
+
   private transitionToDebrief(data: DebriefData): void {
     this.adapter.offTick(this.onSimTick);
     this.adapter.offFill(this.onEngineFill);
+    // Live-drill sessions debrief on PREDICATES, not scenario metrics —
+    // the micro-manifest's empty rubric means there's no scenario XP to
+    // account for (one-XP-book holds).
+    if (this.liveDrill !== null) {
+      const drillData: DrillDebriefData = {
+        drill: this.liveDrill,
+        logEntries: this.adapter.log.entries,
+      };
+      this.scene.start("DrillDebriefScene", drillData);
+      return;
+    }
     // XP accounting happens in DebriefScene after completeDebrief() — the
     // debrief +30 is part of this session's total, so adding here would
     // either miss it or double-count it.

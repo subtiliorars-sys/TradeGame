@@ -27,6 +27,7 @@ import { DrillScene } from "./ui/scenes/DrillScene.js";
 import { IlCheckpointScene } from "./ui/scenes/IlCheckpointScene.js";
 import { LpExplainerScene } from "./ui/scenes/LpExplainerScene.js";
 import { LessonScene } from "./ui/scenes/LessonScene.js";
+import { DrillDebriefScene } from "./ui/scenes/DrillDebriefScene.js";
 import { DebriefScene } from "./ui/scenes/DebriefScene.js";
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -34,7 +35,7 @@ const config: Phaser.Types.Core.GameConfig = {
   width: 1280,
   height: 800,
   backgroundColor: "#0d0d0f",
-  scene: [AgeGateScene, MenuScene, TradingScene, RiskModalScene, PolicyCardScene, DebriefScene, ReplayScene, DrillScene, IlCheckpointScene, LpExplainerScene, LessonScene],
+  scene: [AgeGateScene, MenuScene, TradingScene, RiskModalScene, PolicyCardScene, DebriefScene, ReplayScene, DrillScene, IlCheckpointScene, LpExplainerScene, LessonScene, DrillDebriefScene],
   parent: document.body,
   dom: { createContainer: false },
   scale: {

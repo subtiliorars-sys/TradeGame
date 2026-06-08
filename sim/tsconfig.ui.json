@@ -8,5 +8,9 @@
     "rootDir": ".",
     "outDir": "dist-ui"
   },
-  "include": ["src/**/*.ts", "index.html"]
+  // Override the INHERITED exclude — the base excludes src/ui/** (engine
+  // purity), which silently propagated here and left the entire UI layer
+  // untypechecked (caught when a deliberately wrong field compiled clean).
+  "exclude": ["node_modules", "dist", "dist-ui", "tests"],
+  "include": ["src/**/*.ts"]
 }
