@@ -9,6 +9,7 @@ import {
   noSizeIncreaseOnSeededSide,
   seededStopMaintained,
   exitJournaled,
+  sessionEngaged,
   evaluateDrawdownSurvival,
   type DrillSeedRef,
 } from "../src/drills/livePredicates.js";
@@ -20,6 +21,7 @@ const SEED: DrillSeedRef = {
   entryOrderId: "seed-entry-001",
   stopOrderId: "seed-stop-001",
   side: "buy",
+  quantity: 10,
   fillPrice: 1.05,
   stopPrice: 0.93,
 };
@@ -117,7 +119,7 @@ describe("seeded_stop_maintained", () => {
   it("cancel AFTER closing the position is free (the stop has no job left)", () => {
     const log = [
       ...seedSequence(),
-      submit("close-1", "sell", 30),
+      submit("close-1", "sell", 30), // helper qty 10 = full seed quantity
       fill("close-1", 31),
       cancel(SEED.stopOrderId, 32),
     ];
@@ -145,7 +147,7 @@ describe("exit_journaled", () => {
 });
 
 describe("harness-integrated: predicates over a REALLY seeded session", () => {
-  it("a clean survival session passes all three; an add-violation session fails exactly predicate 1", () => {
+  it("a clean survival session passes all four; an add-violation session fails exactly predicate 1", () => {
     const base = {
       seed: 4242,
       scenario: scn001,
@@ -168,7 +170,9 @@ describe("harness-integrated: predicates over a REALLY seeded session", () => {
         { type: "debrief_complete" as const, ticksAfter: 0, payload: {} },
       ],
     });
-    const cleanEval = evaluateDrawdownSurvival(clean.log.entries, SEED);
+    // scn001's tick budget differs from the drill micro-scenarios — the
+    // floor is authored per drill at the call site; pass one fitting this run.
+    const cleanEval = evaluateDrawdownSurvival(clean.log.entries, SEED, 60);
     expect(cleanEval.pass).toBe(true);
 
     const adding = runScenario({
@@ -180,9 +184,102 @@ describe("harness-integrated: predicates over a REALLY seeded session", () => {
         { type: "debrief_complete" as const, ticksAfter: 0, payload: {} },
       ],
     });
-    const addEval = evaluateDrawdownSurvival(adding.log.entries, SEED);
+    const addEval = evaluateDrawdownSurvival(adding.log.entries, SEED, 60);
     expect(addEval.pass).toBe(false);
     const failed = addEval.results.filter((r) => !r.pass).map((r) => r.predicateId);
     expect(failed).toContain("no_size_increase_on_seeded_side");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Economy red-team regressions (the four bypass probes, made permanent)
+// ---------------------------------------------------------------------------
+
+describe("red-team regressions — the predicate set as paymaster", () => {
+  it("P1: tick-0 double-down VIOLATES (no tick-0 grace; only the seed's own orders exempt)", () => {
+    const log = [
+      ...seedSequence(),
+      submit("t0-add", "buy", 0), // paused-but-live session, add at tick 0
+    ];
+    const r = noSizeIncreaseOnSeededSide(log, SEED);
+    expect(r.pass).toBe(false);
+    expect(r.violations).toEqual(["t0-add"]);
+  });
+
+  it("P2: dust-close does NOT unlock the stop (close detection is quantity-aware)", () => {
+    const log = [
+      ...seedSequence(),
+      env({ type: "order_submit", orderId: "dust", orderType: "market", side: "sell", quantity: 0.001, price: null, stopPrice: null, tickIndex: 20, timestamp: 20_000 }),
+      fill("dust", 21),
+      cancel(SEED.stopOrderId, 25), // 9.999 units still ride — must violate
+    ];
+    expect(seededStopMaintained(log, SEED).pass).toBe(false);
+  });
+
+  it("P10: the 5-second farm fails session_engaged (journal + instant end < floor)", () => {
+    const log = [
+      ...seedSequence(),
+      journal(["exit"], 0),
+      env({ type: "session_end", tickIndex: 1, timestamp: 1000 }),
+    ];
+    const r = sessionEngaged(log, SEED, 240);
+    expect(r.pass).toBe(false);
+  });
+
+  it("P10b: a stop-out resolves engagement early (the stop doing its job IS the process)", () => {
+    const log = [
+      ...seedSequence(),
+      fill(SEED.stopOrderId, 90), // stop fired at tick 90 < 240
+    ];
+    expect(sessionEngaged(log, SEED, 240).pass).toBe(true);
+  });
+
+  it("P3: closing via the UI's auto-companion-stop pattern does NOT false-fail predicate 1", () => {
+    // The UI submits the protective stop (same side as seed) at the SAME
+    // tick as the opposite-side close — the companion exemption.
+    const log = [
+      ...seedSequence(),
+      env({ type: "order_submit", orderId: "close-stop", orderType: "stop", side: "buy", quantity: 10, price: null, stopPrice: 1.10, tickIndex: 40, timestamp: 40_000 }),
+      env({ type: "order_submit", orderId: "close-mkt", orderType: "market", side: "sell", quantity: 10, price: null, stopPrice: null, tickIndex: 40, timestamp: 40_000 }),
+      fill("close-mkt", 41),
+    ];
+    expect(noSizeIncreaseOnSeededSide(log, SEED).pass).toBe(true);
+  });
+
+  it("P3b: a same-side stop WITHOUT a same-tick close still violates (add-on-strength)", () => {
+    const log = [
+      ...seedSequence(),
+      env({ type: "order_submit", orderId: "buy-stop-add", orderType: "stop", side: "buy", quantity: 10, price: null, stopPrice: 1.20, tickIndex: 50, timestamp: 50_000 }),
+    ];
+    expect(noSizeIncreaseOnSeededSide(log, SEED).pass).toBe(false);
+  });
+
+  it("P7: widen ratchets against the TIGHTEST level reached, not the seed level", () => {
+    const log = [
+      ...seedSequence(),
+      modify(SEED.stopOrderId, 0.99, 20), // tighten 0.93 → 0.99
+      modify(SEED.stopOrderId, 0.95, 30), // "still above seed" — but a widen vs 0.99
+    ];
+    expect(seededStopMaintained(log, SEED).pass).toBe(false);
+  });
+});
+
+describe("F5 regression: the seed stop is REAL in the book on every market", () => {
+  it("forex drill seed no longer silently loses its stop (would now throw on reject)", async () => {
+    const { LIVE_DRILL_CATALOG } = await import("../src/drills/liveCatalog.js");
+    const fx = LIVE_DRILL_CATALOG.find((d) => d.market === "forex")!;
+    // Constructing the run is the assertion — a rejected seed stop throws.
+    const result = runScenario({
+      seed: 9,
+      scenario: fx.scenario,
+      accountEquity: 10_000,
+      actions: [{ type: "debrief_complete", ticksAfter: 10, payload: {} }],
+      sessionId: "f5-regression",
+      drillSeed: { ...fx.seed },
+    });
+    const stopSubmitLogged = result.log.entries.some(
+      (e) => e.event.type === "order_submit" && e.event.orderId === fx.seed.stopOrderId
+    );
+    expect(stopSubmitLogged).toBe(true);
   });
 });

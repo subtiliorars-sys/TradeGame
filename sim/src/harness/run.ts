@@ -318,7 +318,7 @@ export function runScenario(config: HarnessConfig): HarnessResult {
       tickIndex: 0,
       timestamp: 0,
     });
-    orderBook.submitOrder(
+    const seedStopOutcome = orderBook.submitOrder(
       {
         orderId: ds.stopOrderId,
         orderType: "stop",
@@ -329,13 +329,22 @@ export function runScenario(config: HarnessConfig): HarnessResult {
         marketType: manifest.market,
         currentSigma: 0,
         baseSigma: 0,
-        accountEquity: config.accountEquity,
+        // The seed stop protects INHERITED state — the size guard prices
+        // player decisions, not authored premises (red-team F5: the forex
+        // seed's notional exceeds equity and was silently rejected, leaving
+        // the displayed stop nonexistent in the book).
+        accountEquity: Number.MAX_SAFE_INTEGER,
         leverageAckReceived: true,
         sessionOpen: true,
       },
       0,
       0
     );
+    if (seedStopOutcome.type === "reject") {
+      throw new Error(
+        `drillSeed: the book rejected the seed stop (${seedStopOutcome.rejectReason ?? "?"}) — the drill premise would be false`
+      );
+    }
   }
 
   // --- Mutable harness state ---

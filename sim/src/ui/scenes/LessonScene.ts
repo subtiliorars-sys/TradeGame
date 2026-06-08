@@ -160,7 +160,7 @@ export class LessonScene extends Phaser.Scene {
 
     if (!onCta) {
       const lines = l.content.pages[this.page] ?? [];
-      lines.forEach((line, i) => {
+      lines.forEach((line: string, i: number) => {
         label(this, PAD + 22, bodyY + 18 + i * 22, line, {
           fontSize: "13px",
           color: CSS.TEXT,

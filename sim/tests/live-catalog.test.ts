@@ -95,3 +95,53 @@ describe("each drill: deterministic + predicates evaluate end-to-end", () => {
     expect(getLiveDrill("drill:nope")).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// XP attach (post red-team) — awardLiveDrill honest-XP rails
+// ---------------------------------------------------------------------------
+
+import { awardLiveDrill } from "../src/drills/liveCatalog.js";
+import * as ProgressStore from "../src/engine/progress.js";
+import { beforeEach } from "vitest";
+import { currentRank } from "../src/engine/rank.js";
+
+describe("awardLiveDrill", () => {
+  beforeEach(() => ProgressStore.reset());
+
+  it("pays 55 once; repeat passes pay 0; misses pay nothing at all", () => {
+    const d = LIVE_DRILL_CATALOG[0]!;
+    expect(awardLiveDrill(d, false)).toBeNull();
+    expect(ProgressStore.xpTotal()).toBe(0);
+    expect(awardLiveDrill(d, true)).toBe(55);
+    expect(awardLiveDrill(d, true)).toBe(0);
+    expect(ProgressStore.xpTotal()).toBe(55);
+    expect(ProgressStore.completedDrillIds()).toContain(d.drillId);
+  });
+
+  it("a live-drill completion that crosses a rank threshold fires the marker (atomic completeDrill path)", () => {
+    for (const id of [
+      "drill:position-sizing-crypto",
+      "drill:position-sizing-stocks",
+      "drill:position-sizing-forex",
+      "drill:stop-placement-v1",
+    ]) ProgressStore.markDrillCompleted(id);
+    ProgressStore.addXp(190);
+    ProgressStore.clearRankUp();
+    awardLiveDrill(LIVE_DRILL_CATALOG[1]!, true); // +55 → crosses 200
+    expect(ProgressStore.lastRankUp()?.to.rankId).toBe("trainee");
+  });
+
+  it("live-drill IDs share the one drill namespace — no collision with input drills", async () => {
+    const { DRILL_CATALOG } = await import("../src/drills/catalog.js");
+    const inputIds = new Set(DRILL_CATALOG.map((d) => d.id));
+    for (const ld of LIVE_DRILL_CATALOG) {
+      expect(inputIds.has(ld.drillId), ld.drillId).toBe(false);
+    }
+  });
+
+  it("XP alone still cannot vault the Trainee drill gate (economy invariant survives the attach)", () => {
+    for (const ld of LIVE_DRILL_CATALOG) awardLiveDrill(ld, true); // 165 XP
+    expect(ProgressStore.xpTotal()).toBe(165);
+    expect(currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId).toBe("observer");
+  });
+});

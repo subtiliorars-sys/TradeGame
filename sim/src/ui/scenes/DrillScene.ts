@@ -29,6 +29,7 @@ import {
   strokeRect,
   hline,
 } from "../engine/draw.js";
+import { LIVE_DRILL_CATALOG } from "../../drills/liveCatalog.js";
 import {
   DRILL_CATALOG,
   paramsForAttempt,
@@ -164,6 +165,37 @@ export class DrillScene extends Phaser.Scene {
       color: CSS.DIM,
     });
     y += 30;
+
+    // Live drills section (seeded sessions — Drawdown Survival).
+    label(this, PAD, y, "LIVE DRILLS — inherited-position sessions", {
+      fontSize: "11px",
+      color: CSS.AMBER,
+      fontStyle: "bold",
+    });
+    y += 20;
+    for (const ld of LIVE_DRILL_CATALOG) {
+      const ldDone = done.has(ld.drillId);
+      panel(g, PAD, y, 1240, 50, 4);
+      label(this, PAD + 14, y + 8, ld.title, { fontSize: "13px", color: CSS.TEXT, fontStyle: "bold" });
+      label(
+        this,
+        PAD + 14,
+        y + 28,
+        `${ld.tier}  ·  ${ld.market}  ·  ${ld.xp} XP${ldDone ? "  ·  ✓ completed (practice runs: no XP)" : ""}`,
+        { fontSize: "10px", color: ldDone ? CSS.AMBER : CSS.DIM }
+      );
+      button(this, PAD + 1110, y + 9, 110, 32, ldDone ? "PRACTICE" : "START", () => {
+        this.scene.start("TradingScene", { liveDrillId: ld.drillId });
+      });
+      y += 60;
+    }
+    y += 8;
+    label(this, PAD, y, "INPUT DRILLS — apply the formula from the card", {
+      fontSize: "11px",
+      color: CSS.AMBER,
+      fontStyle: "bold",
+    });
+    y += 20;
 
     for (const d of DRILL_CATALOG) {
       const isDone = done.has(d.id);
