@@ -749,6 +749,11 @@ flip wave's brief MUST decide deliberately between (a) grandfathering
 (an explicit one-time notice naming the new drills). Shipping a flip without
 this decision is a player-trust regression — red-team F4, drill wave D.
 
+**OWNER RULED 2026-06-08: (b) demote-with-messaging.** Honest-XP
+consistency — rank reflects current requirements; the one-time notice names
+exactly which new drills restore the rank. Applies to every future gate
+flip, not only Practitioner's.
+
 ## 7. Engine and UI Surface Inventory
 
 ### 7.1 Recommended Architecture — Drills as Micro-Scenarios
