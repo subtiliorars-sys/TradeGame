@@ -155,6 +155,66 @@ export interface SessionEndEvent {
   timestamp: number;
 }
 
+// ---------------------------------------------------------------------------
+// Drill event types (LIVE_DRILL_ENGINE_BRIEF Wave 1)
+// ---------------------------------------------------------------------------
+
+/**
+ * W1-1 — DrillBriefingAckEvent (LIVE_DRILL_ENGINE_BRIEF §1.2).
+ *
+ * Logged when the player clicks "I have read this" on the drill briefing
+ * overlay. Always fires at tickIndex 0, before the first market tick, so
+ * the seeded state and briefing are byte-stable in golden fixtures.
+ */
+export interface DrillBriefingAckEvent {
+  type: "drill_briefing_ack";
+  drillId: string;
+  tickIndex: 0;
+  timestamp: 0;
+}
+
+/**
+ * W1-2 — DrillSessionEndEvent (LIVE_DRILL_ENGINE_BRIEF §1.2).
+ *
+ * Emitted when a drill session ends (tick limit reached, account zeroed, or
+ * player ends it). Contains pass/fail state for each predicate and the
+ * overall pass boolean.
+ *
+ * Anti-PnL rule (owner ruling 2026-06-08): no PnL value, account balance, or
+ * equity figure appears here. Predicates are derived from EventLog process
+ * facts only (order_submit / order_fill / order_cancel / order_modify /
+ * journal_entry events).
+ */
+export interface DrillSessionEndEvent {
+  type: "drill_session_end";
+  drillId: string;
+  /** One entry per passCriteriaMetricId in the DrillScenarioDef. */
+  passPredicates: Array<{ metricId: string; passed: boolean }>;
+  /** AND of all passPredicates[*].passed — convenience flag for the debrief scene. */
+  overallPass: boolean;
+  tickIndex: number;
+  timestamp: number;
+}
+
+/**
+ * W1-3 — DrillPredicateViolationEvent (LIVE_DRILL_ENGINE_BRIEF §3.1).
+ *
+ * Emitted by ScoreTracker the moment a drill predicate is violated (not just
+ * at session end). Allows the debrief to pinpoint the exact order/action that
+ * caused the violation.
+ *
+ * `triggerEventId` is the orderId (or entryId for journal-based predicates)
+ * of the event that caused the violation.
+ */
+export interface DrillPredicateViolationEvent {
+  type: "drill_predicate_violation";
+  drillId: string;
+  predicateId: string; // e.g. 'no_size_increase_on_seeded_side'
+  triggerEventId: string;
+  tickIndex: number;
+  timestamp: number;
+}
+
 /**
  * PolicyDeclaredEvent — scenario-scoped pre-commitment for News/Plan Card
  * scenarios (SIM_ENGINE_SPEC §4.2 policy_match, SCENARIOS_V1 SCN-006).
@@ -199,7 +259,10 @@ export type SimEvent =
   | DebriefCompleteEvent
   | ReplayStartedEvent
   | SessionEndEvent
-  | PolicyDeclaredEvent;
+  | PolicyDeclaredEvent
+  | DrillBriefingAckEvent
+  | DrillSessionEndEvent
+  | DrillPredicateViolationEvent;
 
 // Exhaustive switch helper: TypeScript will error at compile time if a case is
 // missing from a switch on SimEvent["type"].
