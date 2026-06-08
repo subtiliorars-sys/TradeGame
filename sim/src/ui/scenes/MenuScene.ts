@@ -99,6 +99,20 @@ export class MenuScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private drawHeader(g: Phaser.GameObjects.Graphics, width: number): void {
+    // LESSONS entry — read-then-do; lessons feed scenario prereqs (advisory
+    // in wave 1) and the drill provenance chain.
+    const lb = button(
+      this,
+      width - PAD - 150,
+      PAD + 42,
+      150,
+      34,
+      "LESSONS",
+      () => this.scene.start("LessonScene"),
+      { fillColor: C.SURFACE, textColor: CSS.AMBER, fontSize: "12px" }
+    );
+    void lb;
+
     // Title
     const title = label(this, PAD, PAD, "TRADEGAME", {
       fontSize: "28px",
