@@ -832,6 +832,15 @@ export class TradingScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private drawOrderTicket(): void {
+    // Remove the previous draw's objects — this redraws per keystroke and
+    // every label/button/zone created below was previously leaked (confirmed
+    // object churn, consolidation finding; same tag-and-destroy pattern as
+    // the journal drawer).
+    this.children.list
+      .filter((c) => c.getData("ticketEl") === true)
+      .forEach((c) => c.destroy());
+
+    const _before = this.children.list.length;
     const g = this.gTicket;
     const px = SIDE_X + 8;
     const py0 = SIDE_Y + 168 + 10;
@@ -926,6 +935,11 @@ export class TradingScene extends Phaser.Scene {
         color: CSS.RED,
         fontStyle: "italic",
       });
+    }
+    // Tag everything this draw created (snapshot diff — robust against
+    // multi-line creation calls) so the next draw can sweep it.
+    for (let i = _before; i < this.children.list.length; i++) {
+      this.children.list[i]?.setData("ticketEl", true);
     }
   }
 
