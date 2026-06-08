@@ -331,8 +331,208 @@ export const DRILL_CATALOG: DrillDef[] = [
       },
     ],
   },
+  {
+    id: "drill:stop-placement-crypto",
+    title: "Stop Placement — Crypto Volatility",
+    market: "crypto",
+    tier: "Intermediate",
+    xp: 55, // TUNABLE (brief §2.4 Intermediate)
+    provenance: "lesson:F-06 stop placement · crypto beginner (wick environments)",
+    referenceCard: [
+      "Crypto wicks run deeper: clearance must cover the wick environment,",
+      "not just the level. A stop that survives stocks noise dies here.",
+    ],
+    kind: "stop_placement",
+    paramSets: [
+      {
+        side: "long",
+        entryPrice: 52.4,
+        keyLevel: 48.0,
+        passZone: { from: 43.5, to: 46.8 },
+        structureNote:
+          "Long at 52.40 above a 48.00 base; this market prints 4-6% wicks routinely — recent wick low 46.95.",
+      },
+      {
+        side: "short",
+        entryPrice: 4.05,
+        keyLevel: 4.2,
+        passZone: { from: 4.31, to: 4.45 },
+        structureNote:
+          "Short at 4.05 under the 4.20 shelf; failed-breakout wicks above the shelf reached 4.29.",
+      },
+      {
+        side: "long",
+        entryPrice: 148.0,
+        keyLevel: 140.0,
+        passZone: { from: 130.0, to: 136.5 },
+        structureNote:
+          "Long at 148 above 140 support; 5% adverse wicks are normal here — last sweep printed 137.2.",
+      },
+    ],
+  },
+  {
+    id: "drill:stop-placement-stocks",
+    title: "Stop Placement — Session Open & Gaps",
+    market: "stocks",
+    tier: "Intermediate",
+    xp: 55, // TUNABLE
+    provenance: "lesson:F-06 stop placement · stocks beginner (session structure)",
+    referenceCard: [
+      "The opening range and gap edges are magnets for normal tests.",
+      "A stop inside the first 30-minute range is a donation to the open.",
+    ],
+    kind: "stop_placement",
+    paramSets: [
+      {
+        side: "long",
+        entryPrice: 51.2,
+        keyLevel: 49.6,
+        passZone: { from: 47.8, to: 49.1 },
+        structureNote:
+          "Long at 51.20 after an earnings gap from 46; the gap's upper edge at 49.60 has been tested twice; opening-range low 49.75.",
+      },
+      {
+        side: "short",
+        entryPrice: 33.4,
+        keyLevel: 34.6,
+        passZone: { from: 34.95, to: 35.8 },
+        structureNote:
+          "Short at 33.40 under post-gap resistance 34.60; the open's spike high printed 34.88.",
+      },
+      {
+        side: "long",
+        entryPrice: 36.1,
+        keyLevel: 35.5,
+        passZone: { from: 34.4, to: 35.15 },
+        structureNote:
+          "Long at 36.10 above the prior close shelf 35.50; session-open range was 35.60–36.30.",
+      },
+    ],
+  },
+  {
+    id: "drill:stop-placement-forex",
+    title: "Stop Placement — Session Sweeps",
+    market: "forex",
+    tier: "Intermediate",
+    xp: 55, // TUNABLE
+    provenance: "lesson:F-06 stop placement · X-I01 session-open sweeps (SCN-003 archetype)",
+    referenceCard: [
+      "Session opens hunt the obvious level first. The sweep IS the test:",
+      "clearance below the swept low, not below the pre-open range.",
+    ],
+    kind: "stop_placement",
+    paramSets: [
+      {
+        side: "long",
+        entryPrice: 1.2812,
+        keyLevel: 1.279,
+        passZone: { from: 1.2745, to: 1.2778 },
+        structureNote:
+          "Long at 1.2812 after a London-open sweep of the Asian low 1.2790 to a nadir of 1.2783 (the SCN-003 shape).",
+      },
+      {
+        side: "short",
+        entryPrice: 1.3185,
+        keyLevel: 1.321,
+        passZone: { from: 1.3218, to: 1.3245 },
+        structureNote:
+          "Short at 1.3185 under 1.3210 after an upside sweep printed 1.3215 and rejected.",
+      },
+      {
+        side: "long",
+        entryPrice: 0.9152,
+        keyLevel: 0.913,
+        passZone: { from: 0.9095, to: 0.9122 },
+        structureNote:
+          "Long at 0.9152 above 0.9130; the session sweep ran stops to 0.9126 before reversing.",
+      },
+    ],
+  },
 ];
 
 export function getDrill(id: string): DrillDef | undefined {
   return DRILL_CATALOG.find((d) => d.id === id);
+}
+
+// ---------------------------------------------------------------------------
+// Procedural parameter re-roll (wave-D residual: a 3-set cycle is memorizable
+// in ≤4 attempts because the rationale reveals answers by design).
+//
+// Position-sizing problems are generated from the drill's authored sets by a
+// DETERMINISTIC mulberry-style mix of (drillId, attempt) — same attempt
+// number always reproduces the same numbers (debuggable, replayable), but
+// the answer changes every retry, so retry always means redoing the math.
+// Stop-placement stays on authored sets (zones are hand-built structures —
+// procedural structure generation is its own design problem).
+// ---------------------------------------------------------------------------
+
+function mix(seedStr: string, attempt: number): () => number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 16777619) >>> 0;
+  }
+  h = (h + Math.imul(attempt + 1, 2654435761)) >>> 0;
+  return () => {
+    h = (h + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Pick from an inclusive numeric menu deterministically. */
+function pick<T>(rand: () => number, menu: readonly T[]): T {
+  const v = menu[Math.floor(rand() * menu.length) % menu.length];
+  if (v === undefined) throw new Error("empty menu");
+  return v;
+}
+
+/**
+ * The parameter set for (drill, attempt): position-sizing drills generate a
+ * fresh deterministic problem each attempt; stop-placement drills cycle
+ * their authored sets.
+ */
+export function paramsForAttempt(
+  def: DrillDef,
+  attempt: number
+): PositionSizingParams | StopPlacementParams {
+  const authored = def.paramSets[attempt % def.paramSets.length];
+  if (authored === undefined) throw new Error(`drill ${def.id}: empty paramSets`);
+  if (def.kind !== "position_sizing") return authored;
+
+  const rand = mix(def.id, attempt);
+  const account = pick(rand, [5_000, 10_000, 20_000, 25_000, 50_000]);
+  const riskPct = pick(rand, [0.5, 1, 1.5, 2]);
+  const base = authored as PositionSizingParams;
+  switch (base.stop.kind) {
+    case "crypto":
+      return {
+        account,
+        riskPct,
+        stop: {
+          kind: "crypto",
+          entryPrice: pick(rand, [4.2, 12.5, 50, 80, 145]),
+          stopPct: pick(rand, [2, 2.5, 4, 5, 8]),
+        },
+      };
+    case "stocks":
+      return {
+        account,
+        riskPct,
+        stop: { kind: "stocks", stopDollars: pick(rand, [0.5, 0.8, 1.0, 1.25, 2.0, 3.2]) },
+      };
+    case "forex": {
+      const std = rand() < 0.5;
+      return {
+        account,
+        riskPct,
+        stop: {
+          kind: "forex",
+          stopPips: pick(rand, [25, 40, 50, 80, 100]),
+          pipValuePerLot: std ? 10 : 1,
+          lotLabel: std ? "standard lot" : "mini lot",
+        },
+      };
+    }
+  }
 }

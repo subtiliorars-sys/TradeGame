@@ -31,6 +31,7 @@ import {
 } from "../engine/draw.js";
 import {
   DRILL_CATALOG,
+  paramsForAttempt,
   evaluatePositionSizing,
   evaluateStopPlacement,
   awardDrill,
@@ -195,12 +196,10 @@ export class DrillScene extends Phaser.Scene {
     }
   }
 
-  /** Parameter set at the drill's current attempt pointer. */
+  /** Parameter set at the drill's current attempt pointer (procedural for
+   *  position-sizing drills — every retry is a fresh deterministic problem). */
   private paramsAtPointer(d: DrillDef): PositionSizingParams | StopPlacementParams {
-    const attempt = this.attempts.get(d.id) ?? 0;
-    const set = d.paramSets[attempt % d.paramSets.length];
-    if (set === undefined) throw new Error(`drill ${d.id}: empty paramSets`);
-    return set;
+    return paramsForAttempt(d, this.attempts.get(d.id) ?? 0);
   }
 
   /** The set the current problem was POSED from (stable across the result view). */
