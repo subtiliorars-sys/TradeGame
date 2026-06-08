@@ -30,6 +30,8 @@ $SRC/engine/rank.ts
 $SRC/engine/progress.ts
 $SRC/engine/amm.ts
 $SRC/drills/catalog.ts
+$SRC/drills/livePredicates.ts
+$SRC/drills/liveCatalog.ts
 $SRC/ui/engine/gating.ts
 $SRC/ui/engine/lp.ts
 $SRC/ui/engine/replay.ts
@@ -57,6 +59,22 @@ for f in $FILES; do
     echo ""
     echo "$MATCHES" >&2
     echo ""
+    FAILED=1
+  fi
+done
+
+# ---------------------------------------------------------------------------
+# Blowup-classifier containment (OWNER CONDITION 3, 2026-06-08): the
+# classifier legitimately reconstructs equity INTERNALLY (display-domain
+# exception, enum-only output) and is deliberately NOT in the scan list
+# above. Its containment is this STRUCTURAL IMPORT BAN: no scoring-adjacent
+# module may import it, ever. Display-layer scenes may.
+# ---------------------------------------------------------------------------
+for f in $FILES; do
+  [ -f "$f" ] || continue
+  if grep -qE 'blowupClassifier' "$f"; then
+    echo ""
+    echo "lint-pnl: FAIL — $f imports/references blowupClassifier (owner condition 3: structural import ban)" >&2
     FAILED=1
   fi
 done
