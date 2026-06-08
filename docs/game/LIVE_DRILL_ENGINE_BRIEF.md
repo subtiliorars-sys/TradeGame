@@ -629,6 +629,20 @@ At W5 completion: all six live-session drills are playable end-to-end.
 
 ---
 
+## 6a. Owner Rulings (2026-06-08, recorded post-design)
+
+1. **Blowup mechanism classifier: APPROVED WITH HARD CONDITIONS.** Build per
+   §3.2's framing, plus all four conditions are MANDATORY before merge:
+   (1) debrief-display-domain only; (2) output is the BlowupMechanism enum
+   only — no dollar value in any field, log line, or test fixture; (3) a
+   STRUCTURAL import ban: predicate/scoring modules must not import the
+   classifier module (enforced in lint-pnl or a dedicated lint); (4) a
+   dedicated red-team pass on exactly this boundary gates the PR.
+2. **Drawdown predicates: zero-PnL proxy** (ruled earlier, implemented in
+   sim/src/drills/livePredicates.ts — restated here for one-stop reading).
+3. **Gate-flip demotion: demote-with-messaging** (see DRILL_SYSTEM_BRIEF
+   §6.x — applies to all future flips).
+
 ## 6. Open Questions
 
 **OPEN-LDED-1. Drawdown survival: authored vs procedural position sizing.**
