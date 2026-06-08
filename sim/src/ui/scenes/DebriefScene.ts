@@ -36,6 +36,7 @@ import {
 import { SessionAdapter, type DebriefData } from "../engine/SessionAdapter.js";
 import * as ProgressStore from "../../engine/progress.js";
 import { getScenario } from "../../scenarios/registry.js";
+import { resolveContent } from "../content/index.js";
 import type { ReplayData } from "./ReplayScene.js";
 
 // ---------------------------------------------------------------------------
@@ -52,38 +53,6 @@ const RIGHT_W = 1280 - LEFT_W - PAD * 3;
 const LEFT_X = PAD;
 const RIGHT_X = LEFT_X + LEFT_W + PAD;
 
-// Debrief content strings — inline for Phase 2 (no server lookup yet).
-// IDs come from ScenarioDef.manifest.debriefContentIds; we resolve them here
-// by matching the known SCN-001 IDs. Future: replaced by content-loader.
-const DEBRIEF_CONTENT: Record<string, string[]> = {
-  "scn001:what-happened": [
-    "HarborUSD lost its algorithmic peg when selling pressure exceeded the",
-    "protocol's reserve capacity. The initial dip at T0 was a genuine early",
-    "warning, but protocol defense briefly restored price. The T+6 break",
-    "confirmed structural failure; the T+16 bounce was short-covering in a",
-    "broken market, not recovery. The terminal leg at T+26 completed the",
-    "collapse. This is an archetype event: initial ambiguity, partial recovery,",
-    "then collapse faster than most traders can react cleanly.",
-  ],
-  "scn001:good-process": [
-    "• Recognizing that a depeg creates extreme uncertainty in both directions",
-    "  and that position size must reflect that uncertainty.",
-    "• Having a stop placed before entry, defining max loss in account % terms.",
-    "• Journaling the observation at T0 even if no trade was taken.",
-    "• Waiting for the T+6 confirmation before acting was a valid process choice.",
-  ],
-  "scn001:good-process-can-lose": [
-    "A short opened at T+6 with a 1% account-risk stop above 1.00 earns full",
-    "XP — even if stopped out during the T+2–T+5 recovery. That is not a",
-    "process failure. It is market behavior. Good process does not guarantee",
-    "a winning trade. It defines risk before entry and lets the outcome unfold.",
-  ],
-};
-
-// Fallback for unknown IDs (future scenarios).
-function resolveContent(id: string): string[] {
-  return DEBRIEF_CONTENT[id] ?? [`[Content block: ${id}]`];
-}
 
 export class DebriefScene extends Phaser.Scene {
   private debriefData!: DebriefData;
@@ -191,18 +160,18 @@ export class DebriefScene extends Phaser.Scene {
     });
     y += 18;
 
-    panel(g, LEFT_X, y, LEFT_W, 88, 4);
+    panel(g, LEFT_X, y, LEFT_W, 132, 4);
     const goodLines = this.debriefData
       ? resolveContent(this.debriefData.goodProcessId)
       : [];
 
-    goodLines.slice(0, 5).forEach((line, i) => {
+    goodLines.slice(0, 8).forEach((line, i) => {
       label(this, LEFT_X + 10, y + 8 + i * 15, line, {
         fontSize: "11px",
         color: CSS.TEXT,
       });
     });
-    y += 96;
+    y += 140;
 
     // ---- GOOD PROCESS / DIFFERENT RESULT callout box (MANDATORY per spec) ----
     // This callout is required in every scenario — it must always be rendered
@@ -215,20 +184,20 @@ export class DebriefScene extends Phaser.Scene {
     y += 18;
 
     // Visually prominent box — amber border to distinguish from other panels.
-    fillRect(g, LEFT_X, y, LEFT_W, 100, C.SURFACE, 6);
-    strokeRect(g, LEFT_X, y, LEFT_W, 100, C.AMBER, 2, 6);
+    fillRect(g, LEFT_X, y, LEFT_W, 116, C.SURFACE, 6);
+    strokeRect(g, LEFT_X, y, LEFT_W, 116, C.AMBER, 2, 6);
 
     const loseLines = this.debriefData
       ? resolveContent(this.debriefData.goodProcessCanLoseId)
       : [];
 
-    loseLines.slice(0, 6).forEach((line, i) => {
+    loseLines.slice(0, 7).forEach((line, i) => {
       label(this, LEFT_X + 10, y + 8 + i * 15, line, {
         fontSize: "11px",
         color: CSS.TEXT,
       });
     });
-    y += 108;
+    y += 124;
 
     // ---- "Sim is not the market" friction text (Phase 2 cutline requirement) ----
     // Required at the bottom of the left column on every debrief screen.
