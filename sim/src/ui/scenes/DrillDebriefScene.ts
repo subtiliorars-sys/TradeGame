@@ -20,7 +20,8 @@ import {
   strokeRect,
   hline,
 } from "../engine/draw.js";
-import type { LiveDrillDef } from "../../drills/liveCatalog.js";
+import { awardLiveDrill, type LiveDrillDef } from "../../drills/liveCatalog.js";
+import * as ProgressStore from "../../engine/progress.js";
 import {
   evaluateDrawdownSurvival,
   type PredicateResult,
@@ -80,16 +81,33 @@ export class DrillDebriefScene extends Phaser.Scene {
       y += 96;
     }
 
-    // XP line — honest about the unwired state.
-    label(
-      this,
-      PAD,
-      y + 6,
-      evald.pass
-        ? `${drill.xp} XP authored for this drill — award PENDING the drill-economy review (your pass is recorded in this session's log).`
-        : "No XP at stake on a miss — retry freely; the drill re-seeds the same inherited position.",
-      { fontSize: "11px", color: CSS.DIM, fontStyle: "italic", wordWrap: { width: width - PAD * 2 } }
-    );
+    // XP award — once per drill ID (paymaster-grade predicates, wave 5).
+    const granted = awardLiveDrill(drill, evald.pass);
+    const up = granted !== null && granted > 0 ? ProgressStore.lastRankUp() : null;
+    if (up !== null) ProgressStore.clearRankUp();
+
+    let xpLine: string;
+    if (granted === null) {
+      xpLine = "No XP at stake on a miss — retry freely; the drill re-seeds the same inherited position.";
+    } else if (granted > 0) {
+      xpLine = `+${granted} XP — drill completed (feeds rank gates and scenario prerequisites).`;
+    } else {
+      xpLine = "Practice run — already completed, no additional XP (re-practice is free, always).";
+    }
+    label(this, PAD, y + 6, xpLine, {
+      fontSize: "12px",
+      color: granted !== null && granted > 0 ? CSS.AMBER : CSS.DIM,
+      fontStyle: granted !== null && granted > 0 ? "bold" : "italic",
+      wordWrap: { width: width - PAD * 2 },
+    });
+    if (up !== null) {
+      label(this, PAD, y + 28, `RANK UP — ${up.from.displayLabel} → ${up.to.displayLabel}: earned by process, never outcomes.`, {
+        fontSize: "12px",
+        color: CSS.AMBER,
+        fontStyle: "bold",
+      });
+      y += 22;
+    }
 
     button(this, PAD, y + 44, 180, 38, "RETRY DRILL", () => {
       this.scene.start("TradingScene", { liveDrillId: drill.drillId });
