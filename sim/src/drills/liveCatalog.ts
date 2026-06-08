@@ -8,9 +8,8 @@
  * the three zero-PnL predicates in livePredicates.ts — the owner-ruled
  * proxy: process facts only, no equity reads anywhere in grading.
  *
- * XP NOTE: xp values are authored here but NOT yet wired to awards — the
- * award path lands with the DrillScene wiring wave AFTER the economy
- * red-team (hard rail: red-team any XP-economy change before it pays).
+ * XP: awarded via awardLiveDrill (once per ID) — wired AFTER the wave-5
+ * economy red-team hardened the predicates to paymaster grade.
  *
  * Drawdown depths (TUNABLE): crypto −8%, stocks −8% per the brief table;
  * forex repriced to −1% ≈ 130 pips (the brief's −10% would be a 1000+ pip
@@ -20,6 +19,7 @@
 
 import type { ScenarioDef } from "../scenarios/types.js";
 import type { DrillSeedRef } from "./livePredicates.js";
+import * as ProgressStore from "../engine/progress.js";
 
 export interface LiveDrillDef {
   drillId: string;
@@ -182,4 +182,24 @@ export const LIVE_DRILL_CATALOG: LiveDrillDef[] = [
 
 export function getLiveDrill(id: string): LiveDrillDef | undefined {
   return LIVE_DRILL_CATALOG.find((d) => d.drillId === id);
+}
+
+/**
+ * Award a passed live drill — ONCE per drill ID (honest-XP, mirrors
+ * awardDrill). Returns the XP granted: the full amount on first pass,
+ * 0 on repeat passes (re-practice is free, always), null when the
+ * predicates did not pass (nothing at stake on a miss).
+ *
+ * Gated by the wave-5 economy red-team: the predicate set was hardened
+ * to paymaster grade (F1-F8 fixed + probe regressions) and the award
+ * path's double-pay attacks (debrief re-entry, RETRY, scene reuse)
+ * were ATTACKED-BUT-HELD before this function existed.
+ */
+export function awardLiveDrill(def: LiveDrillDef, pass: boolean): number | null {
+  if (!pass) return null;
+  if (ProgressStore.completedDrillIds().includes(def.drillId)) {
+    return 0;
+  }
+  ProgressStore.completeDrill(def.drillId, def.xp);
+  return def.xp;
 }
