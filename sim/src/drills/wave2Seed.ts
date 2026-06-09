@@ -151,18 +151,18 @@ export interface DrillSeedAdapterArg {
  *   3. Add a unit test: applyDrillSeed round-trips all fields unchanged.
  */
 export function applyDrillSeed(
-  _params: ApplyDrillSeedParams
+  params: ApplyDrillSeedParams
 ): DrillSeedAdapterArg {
-  // TODO (W2-3): implement
-  // Expected implementation (1:1 field mapping from DrillSeedConfig):
-  //   const { seedConfig } = _params;
-  //   return {
-  //     entryOrderId: seedConfig.entryOrderId,
-  //     stopOrderId:  seedConfig.stopOrderId,
-  //     side:         seedConfig.positionSide,
-  //     quantity:     seedConfig.quantity,
-  //     fillPrice:    seedConfig.fillPrice,
-  //     stopPrice:    seedConfig.stopPrice,
-  //   };
-  throw new Error("wave2Seed.applyDrillSeed: not yet implemented — W2-3");
+  const { seedConfig } = params;
+  // W2-2: enforce seed- prefix on both authored IDs before handing to the adapter.
+  assertSeedOrderId(seedConfig.entryOrderId);
+  assertSeedOrderId(seedConfig.stopOrderId);
+  return {
+    entryOrderId: seedConfig.entryOrderId,
+    stopOrderId:  seedConfig.stopOrderId,
+    side:         seedConfig.positionSide,
+    quantity:     seedConfig.quantity,
+    fillPrice:    seedConfig.fillPrice,
+    stopPrice:    seedConfig.stopPrice,
+  };
 }

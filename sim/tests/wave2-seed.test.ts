@@ -1,5 +1,5 @@
 /**
- * W2-1 / W2-2 tests — SeedPositionBeat + assertSeedOrderId guard.
+ * W2-1 / W2-2 / W2-3 tests — SeedPositionBeat + assertSeedOrderId guard + applyDrillSeed.
  *
  * Covers:
  *   W2-1a: SeedPositionBeat in the ScenarioBeat union compiles; adapters ignore it.
@@ -11,13 +11,18 @@
  *   W2-2c: assertSeedOrderId does NOT throw on a correctly prefixed ID.
  *   W2-2d: OrderBook.forceFill enforces the guard — rejects a bare UUID.
  *   W2-2e: Red-team: forceFill called with a UUID throws (W2-2 enforcement).
+ *   W2-3a: applyDrillSeed round-trips all fields unchanged from DrillSeedConfig.
+ *   W2-3b: applyDrillSeed maps positionSide → side correctly.
+ *   W2-3c: applyDrillSeed rejects a DrillSeedConfig with non-seed entryOrderId.
+ *   W2-3d: applyDrillSeed rejects a DrillSeedConfig with non-seed stopOrderId.
+ *   W2-3e: applyDrillSeed output is accepted by HarnessConfig.drillSeed (type compat).
  */
 
 import { describe, it, expect } from "vitest";
-import { isSeedOrderId, assertSeedOrderId } from "../src/drills/wave2Seed.js";
+import { isSeedOrderId, assertSeedOrderId, applyDrillSeed } from "../src/drills/wave2Seed.js";
 import { createOrderBook } from "../src/orders/book.js";
 import { runScenario } from "../src/harness/run.js";
-import type { ScenarioDef } from "../src/scenarios/types.js";
+import type { ScenarioDef, DrillSeedConfig } from "../src/scenarios/types.js";
 import type { SeedPositionBeat } from "../src/data/feed.js";
 
 // ---------------------------------------------------------------------------
@@ -229,5 +234,113 @@ describe("W2-1: adapter ignores seed_position beat gracefully", () => {
     expect(() =>
       runScenario({ seed: 1, scenario, accountEquity: 10_000, actions: [] })
     ).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W2-3: applyDrillSeed — DrillSeedConfig → DrillSeedAdapterArg mapping
+// ---------------------------------------------------------------------------
+
+const VALID_SEED_CONFIG: DrillSeedConfig = {
+  seedMethod: "scripted_fill",
+  positionSide: "buy",
+  quantity: 0.25,
+  entryTickIndex: 0,
+  fillPrice: 43_500,
+  stopPrice: 39_000,
+  entryOrderId: "seed-entry-w2-3test",
+  stopOrderId: "seed-stop-w2-3test",
+};
+
+describe("W2-3: applyDrillSeed", () => {
+  it("W2-3a: round-trips entryOrderId, stopOrderId, quantity, fillPrice, stopPrice unchanged", () => {
+    const result = applyDrillSeed({ seedConfig: VALID_SEED_CONFIG });
+    expect(result.entryOrderId).toBe(VALID_SEED_CONFIG.entryOrderId);
+    expect(result.stopOrderId).toBe(VALID_SEED_CONFIG.stopOrderId);
+    expect(result.quantity).toBe(VALID_SEED_CONFIG.quantity);
+    expect(result.fillPrice).toBe(VALID_SEED_CONFIG.fillPrice);
+    expect(result.stopPrice).toBe(VALID_SEED_CONFIG.stopPrice);
+  });
+
+  it("W2-3b: maps positionSide → side (buy)", () => {
+    const result = applyDrillSeed({ seedConfig: VALID_SEED_CONFIG });
+    expect(result.side).toBe("buy");
+  });
+
+  it("W2-3b: maps positionSide → side (sell)", () => {
+    const sellConfig: DrillSeedConfig = {
+      ...VALID_SEED_CONFIG,
+      positionSide: "sell",
+      entryOrderId: "seed-entry-sell",
+      stopOrderId: "seed-stop-sell",
+    };
+    const result = applyDrillSeed({ seedConfig: sellConfig });
+    expect(result.side).toBe("sell");
+  });
+
+  it("W2-3c: throws when entryOrderId lacks the seed- prefix (W2-2 guard)", () => {
+    const badConfig: DrillSeedConfig = {
+      ...VALID_SEED_CONFIG,
+      entryOrderId: "550e8400-e29b-41d4-a716-446655440000",
+    };
+    expect(() => applyDrillSeed({ seedConfig: badConfig })).toThrowError(/seed-/);
+  });
+
+  it("W2-3d: throws when stopOrderId lacks the seed- prefix (W2-2 guard)", () => {
+    const badConfig: DrillSeedConfig = {
+      ...VALID_SEED_CONFIG,
+      stopOrderId: "plain-stop-001",
+    };
+    expect(() => applyDrillSeed({ seedConfig: badConfig })).toThrowError(/seed-/);
+  });
+
+  it("W2-3e: output shape is accepted as HarnessConfig.drillSeed (type-level check)", () => {
+    // This is a runtime-accessible type-compat test: pass the result directly
+    // into runScenario as drillSeed and verify no crash. If the shape diverges
+    // from HarnessConfig.drillSeed the TypeScript compiler would catch it, but
+    // this also guards against accidental field renames at runtime.
+    const result = applyDrillSeed({ seedConfig: VALID_SEED_CONFIG });
+    const scenario: ScenarioDef = {
+      manifest: { ...BASE_MANIFEST, id: "test-w2-3e" },
+      script: [],
+    };
+    expect(() =>
+      runScenario({
+        seed: 7,
+        scenario,
+        accountEquity: 10_000,
+        actions: [],
+        drillSeed: result,
+      })
+    ).not.toThrow();
+  });
+
+  it("W2-3e: harness seeded via applyDrillSeed output emits the same events as direct drillSeed", () => {
+    const scenario: ScenarioDef = {
+      manifest: { ...BASE_MANIFEST, id: "test-w2-3-parity" },
+      script: [],
+    };
+    const via_apply = runScenario({
+      seed: 55,
+      scenario,
+      accountEquity: 10_000,
+      actions: [],
+      drillSeed: applyDrillSeed({ seedConfig: VALID_SEED_CONFIG }),
+    });
+    const direct = runScenario({
+      seed: 55,
+      scenario,
+      accountEquity: 10_000,
+      actions: [],
+      drillSeed: {
+        entryOrderId: VALID_SEED_CONFIG.entryOrderId,
+        stopOrderId: VALID_SEED_CONFIG.stopOrderId,
+        side: VALID_SEED_CONFIG.positionSide,
+        quantity: VALID_SEED_CONFIG.quantity,
+        fillPrice: VALID_SEED_CONFIG.fillPrice,
+        stopPrice: VALID_SEED_CONFIG.stopPrice,
+      },
+    });
+    expect(via_apply.digest.sha256).toBe(direct.digest.sha256);
   });
 });
