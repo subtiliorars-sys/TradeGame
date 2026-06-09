@@ -129,6 +129,99 @@ export interface ScenarioManifest {
 }
 
 // ---------------------------------------------------------------------------
+// Drill types — W1-4 (LIVE_DRILL_ENGINE_BRIEF §1.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * DrillSeedConfig — position-seeding parameters for Drawdown Survival drills.
+ *
+ * Describes the synthetic fill that seeds a losing position at tick 0.
+ * All values are authored; the seed fill bypasses the normal order-trigger
+ * logic and emits `order_submit` + `order_fill` with the authored IDs so
+ * the EventLog is byte-stable for golden fixtures (§2.3 scripted_fill option).
+ *
+ * Null on Blowup drills (no inherited position; player starts from scratch).
+ */
+export interface DrillSeedConfig {
+  /** Only "scripted_fill" is supported (§2.3 recommendation). */
+  seedMethod: "scripted_fill";
+  positionSide: "buy" | "sell";
+  /** In market-appropriate units (BTC-equiv, shares, or lots). */
+  quantity: number;
+  /**
+   * Tick at which the seed fill appears in EventLog.
+   * Always 0 — the seeded state fires before the first PRNG-driven tick.
+   */
+  entryTickIndex: 0;
+  /**
+   * Authored fill price — must be above current price for a losing long,
+   * below for a losing short, so the post-gap price puts the position in
+   * drawdown (§2.4 formula: gap_pct × position_notional / account_balance).
+   */
+  fillPrice: number;
+  /**
+   * Companion stop order placed at tick 0 alongside the seeded entry.
+   * Seeds PositionLedger with a live stop so `seeded_stop_maintained`
+   * predicate has something to watch.
+   */
+  stopPrice: number;
+  /** Authored UUID for the stop order — byte-stable across replays. */
+  stopOrderId: string;
+  /** Authored UUID for the entry order — byte-stable across replays. */
+  entryOrderId: string;
+}
+
+/**
+ * DrillScenarioDef — a ScenarioManifest extended with drill metadata.
+ *
+ * A live-session drill loads through the same `runScenario(manifest)` entry
+ * point as scenarios (TradingScene is scenario-agnostic per §7.1 ruling).
+ * The additional fields here control drill-specific init, pass predicates,
+ * and completion routing.
+ *
+ * LIVE_DRILL_ENGINE_BRIEF §1.1 contract.
+ */
+export interface DrillScenarioDef extends ScenarioManifest {
+  /** Canonical drill ID, e.g. "drill:drawdown-survival-crypto". */
+  drillId: string;
+  drillType: "drawdown-survival" | "blowup";
+
+  // Session parameters
+  /** Total session length in ticks. TUNABLE per §1.1 table. */
+  simDurationTicks: number;
+  /** Rule card text shown at session start (anti-PnL, educational framing only). */
+  briefingText: string;
+  /**
+   * When true, TradingScene shows the briefing overlay and suppresses the
+   * first tick until the player fires a `drill_briefing_ack` event.
+   */
+  briefingRequiresAck: boolean;
+
+  /**
+   * Metric IDs evaluated at session end to determine `overallPass`.
+   * Each ID must resolve to a metric in ScoreTracker — no freeform strings.
+   * The drill passes iff ALL predicates are satisfied (AND logic).
+   */
+  passCriteriaMetricIds: string[];
+
+  /**
+   * Position seeding config for Drawdown Survival.
+   * Null for Blowup drills (player starts with an empty account).
+   */
+  seedConfig: DrillSeedConfig | null;
+
+  /**
+   * Sentinel that tells TradingScene to route session-end to DrillDebriefScene
+   * instead of ScenarioDebriefScene.
+   */
+  completionRoute: "drill_debrief";
+  /** XP awarded on pass (all predicates true + debrief reached). TUNABLE. */
+  xpOnPass: number;
+  /** Optional bonus XP entries — e.g. blowup mechanism correctly identified. */
+  bonusMetrics: XpRubricEntry[];
+}
+
+// ---------------------------------------------------------------------------
 // ScenarioDef — manifest + beat schedule
 // ---------------------------------------------------------------------------
 

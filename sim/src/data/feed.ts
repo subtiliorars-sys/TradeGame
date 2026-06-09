@@ -135,13 +135,47 @@ export interface NewsEventBeat {
   trendDriftPips: number;    // total drift after whipsaw normalises
 }
 
+/**
+ * W2-1 — Seed a losing position at tick 0 before the first PRNG-driven tick
+ * (LIVE_DRILL_ENGINE_BRIEF §2.3 "scripted_fill" seeding).
+ *
+ * Processed by the harness (run.ts), NOT by the market-feed adapters.
+ * The adapters ignore this beat kind (it has no price-feed effect).
+ * The harness calls OrderBook.forceFill(entryOrderId, ...) + OrderBook.submitOrder
+ * for the companion stop, then appends the corresponding order_submit /
+ * order_fill events to the EventLog — making the seed byte-stable on replay.
+ *
+ * Constraints:
+ *   - simTimeMs MUST be 0 (fires before the first PRNG tick).
+ *   - entryOrderId and stopOrderId MUST carry the "seed-" prefix (W2-2 guard).
+ */
+export interface SeedPositionBeat {
+  kind: "seed_position";
+  /** Must be 0 — fires before the first PRNG-driven tick. */
+  simTimeMs: 0;
+  positionSide: "buy" | "sell";
+  quantity: number;
+  /** Authored fill price — verbatim to OrderBook.forceFill; zero slippage. */
+  fillPrice: number;
+  /** Companion stop placed at the same tick. */
+  stopPrice: number;
+  /**
+   * Authored IDs — must carry the "seed-" prefix so W2-2's
+   * assertSeedOrderId guard fires on authoring errors.
+   * Example: "seed-entry-ddc", "seed-stop-ddc".
+   */
+  entryOrderId: string;
+  stopOrderId: string;
+}
+
 export type ScenarioBeat =
   | PriceOverrideBeat
   | RegimeOverrideBeat
   | SpreadOverrideBeat
   | DepegTriggerBeat
   | EarningsGapBeat
-  | NewsEventBeat;
+  | NewsEventBeat
+  | SeedPositionBeat;
 
 /** An ordered collection of beats for one scenario. */
 export type ScenarioScript = ScenarioBeat[];

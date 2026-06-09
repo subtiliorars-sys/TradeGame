@@ -467,6 +467,10 @@ function applyDueBeats(s: ForexAdapterState, currentSimTimeMs: number): void {
         // Not applicable to forex adapter.
         break;
 
+      case "seed_position":
+        // Handled by the harness (run.ts) before tick 0; no price-feed effect.
+        break;
+
       default:
         assertNeverBeat(beat);
     }

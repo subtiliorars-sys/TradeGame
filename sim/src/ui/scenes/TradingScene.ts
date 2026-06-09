@@ -157,6 +157,14 @@ export class TradingScene extends Phaser.Scene {
   /** Non-null when this session runs a live drill (seeded micro-scenario). */
   private liveDrill: LiveDrillDef | null = null;
 
+  /**
+   * True when the active session is a drill (completionRoute === "drill_debrief"
+   * OR liveDrill !== null). Set in init(); used to gate drill-specific logic
+   * and route session-end to DrillDebriefScene instead of DebriefScene.
+   * W1-5 (LIVE_DRILL_ENGINE_BRIEF §1.2).
+   */
+  private isDrillMode = false;
+
   /** Non-null when this session is a replay (set from DebriefScene init data). */
   private replayOfSessionId: string | null = null;
 
@@ -253,6 +261,13 @@ export class TradingScene extends Phaser.Scene {
       }
     }
     this.def = this.liveDrill !== null ? this.liveDrill.scenario : (getScenario(id) ?? scn001);
+
+    // W1-5: set isDrillMode when either (a) a liveDrill was resolved above, or
+    // (b) a future DrillScenarioDef manifest signals completionRoute directly.
+    // Cast is safe — ScenarioManifest does not carry completionRoute, so the
+    // property access is undefined on non-drill manifests (no runtime error).
+    const maybeRoute = (this.def.manifest as { completionRoute?: string }).completionRoute;
+    this.isDrillMode = this.liveDrill !== null || maybeRoute === "drill_debrief";
   }
 
   /**
@@ -297,6 +312,10 @@ export class TradingScene extends Phaser.Scene {
     this.fillOverlay = null;
     this.fillTimer = null;
     this.sessionEndFired = false;
+    // isDrillMode is set in init() before resetSessionState() is called from
+    // create(); reset it here so a second scene.start() from a non-drill path
+    // doesn't carry over a previous session's drill flag.
+    this.isDrillMode = false;
   }
 
   create(): void {
@@ -1784,10 +1803,11 @@ export class TradingScene extends Phaser.Scene {
   private transitionToDebrief(data: DebriefData): void {
     this.adapter.offTick(this.onSimTick);
     this.adapter.offFill(this.onEngineFill);
-    // Live-drill sessions debrief on PREDICATES, not scenario metrics —
-    // the micro-manifest's empty rubric means there's no scenario XP to
-    // account for (one-XP-book holds).
-    if (this.liveDrill !== null) {
+    // W1-5: isDrillMode gates drill-debrief routing.
+    // Live-drill sessions (and future DrillScenarioDef sessions) debrief on
+    // PREDICATES, not scenario metrics — the micro-manifest's empty rubric
+    // means there's no scenario XP to account for (one-XP-book holds).
+    if (this.isDrillMode && this.liveDrill !== null) {
       const drillData: DrillDebriefData = {
         drill: this.liveDrill,
         logEntries: this.adapter.log.entries,
