@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Trader's Process Checklist — TradeGame</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0d0f; --surface: #16171b; --raised: #1e2026;
+      --border: #2a2c33; --accent: #e8a020; --accent-dk: #b87c10;
+      --text: #d4d6db; --text-dim: #8a8d96; --text-hi: #f0f1f3;
+      --radius: 6px;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      line-height: 1.6; min-height: 100vh;
+    }
+    .wrap { max-width: 50rem; margin: 0 auto; padding: 2rem 1.25rem; }
+    h1 { color: var(--text-hi); font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; margin-bottom: .75rem; }
+    h1 span { color: var(--accent); }
+    h2 { color: var(--accent); font-size: 1.2rem; font-weight: 700; margin: 2rem 0 .75rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    h2:first-of-type { border-top: none; padding-top: 0; }
+    p, li { color: var(--text-dim); margin-bottom: .6rem; font-size: .95rem; }
+    strong { color: var(--text-hi); }
+    .subtitle { font-size: 1rem; color: var(--text-dim); margin-bottom: 1.5rem; }
+    .disclaimer {
+      background: var(--raised); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent); border-radius: var(--radius);
+      padding: 1rem 1.25rem; margin-bottom: 2rem;
+      font-size: .85rem; font-style: italic; color: var(--text-dim);
+    }
+    .checklist { list-style: none; }
+    .checklist li {
+      background: var(--raised); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.25rem;
+      margin-bottom: .5rem;
+      display: flex; align-items: flex-start; gap: .75rem;
+    }
+    .checklist li::before {
+      content: "";
+      flex-shrink: 0;
+      width: 1.1rem; height: 1.1rem;
+      margin-top: .2rem;
+      border: 2px solid var(--border);
+      border-radius: 3px;
+      background: var(--surface);
+    }
+    .cat-label {
+      display: inline-block;
+      font-size: .7rem; font-weight: 700; letter-spacing: .05em;
+      text-transform: uppercase;
+      padding: .15rem .55rem; border-radius: 3px;
+      margin-right: .4rem;
+    }
+    .cat-pre { background: #1a2a10; color: #6dcf5a; border: 1px solid #3a5a28; }
+    .cat-during { background: #1a1a2a; color: #6a9cf5; border: 1px solid #2a3a5a; }
+    .cat-post { background: #2a1a10; color: #e8a020; border: 1px solid #4a3018; }
+    .cat-bonus { background: #2a1020; color: #c97bb5; border: 1px solid #4a2038; }
+    @media print {
+      @page { margin: 1.5cm; size: A4 portrait; }
+      body { background: #fff; color: #111; font-size: 11pt; }
+      .wrap { max-width: 100%; padding: 0; }
+      h1 { color: #000; }
+      h1 span { color: #b87c10; }
+      h2 { color: #b87c10; border-top-color: #ccc; }
+      p, li { color: #333; }
+      strong { color: #000; }
+      .disclaimer { background: #f5f5f5; border-color: #ccc; color: #555; }
+      .checklist li { background: #fafafa; border-color: #ddd; break-inside: avoid; }
+      .checklist li::before { border-color: #999; background: #fff; }
+      .cat-pre { background: #e8f5e8; color: #2e7d32; border-color: #a5d6a7; }
+      .cat-during { background: #e3f0fa; color: #1565c0; border-color: #90caf9; }
+      .cat-post { background: #fff3e0; color: #b87c10; border-color: #ffcc80; }
+      .cat-bonus { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
+      .no-print { display: none; }
+    }
+    .print-btn {
+      display: inline-block;
+      background: var(--accent); color: #000;
+      font-weight: 800; font-size: 1rem;
+      padding: .75rem 2rem; border-radius: var(--radius);
+      text-decoration: none; cursor: pointer;
+      border: none; margin-bottom: 2rem;
+    }
+    .print-btn:hover { background: var(--accent-dk); }
+    .footer-meta { font-size: .8rem; color: var(--text-dim); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .footer-meta p { margin-bottom: .25rem; font-size: .8rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1><span>Trader's</span> Process Checklist</h1>
+    <p class="subtitle">Before every trade. One page. No shortcuts.</p>
+    <p class="subtitle" style="margin-top:-1rem">Use this checklist before every sim or live trade. A process that passes all five gates is a process you can trust — regardless of outcome.</p>
+
+    <div class="no-print">
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+
+    <div class="disclaimer">
+      Education, not financial advice. Trading involves risk of significant loss.
+      Simulated results are not real trading. No signals, ever. — TradeGame
+    </div>
+
+    <h2>Before the Trade</h2>
+    <ul class="checklist">
+      <li><span><span class="cat-label cat-pre">SETUP</span> <strong>What is the market condition?</strong><br>Is it trending, ranging, choppy, or low-volume? Write it down before you look at entry levels. Do not enter if you cannot name the condition.</span></li>
+      <li><span><span class="cat-label cat-pre">RISK</span> <strong>What is my account-risk percentage for this trade?</strong><br>Max 1-2% of simulation account on any single position. Calculate the dollar amount before you open the trade.</span></li>
+      <li><span><span class="cat-label cat-pre">STOP</span> <strong>Where is my stop loss, and is it placed before entry?</strong><br>The stop goes in before the order. Not after. If the stop is not set before you click buy/sell, the trade does not happen.</span></li>
+      <li><span><span class="cat-label cat-pre">SIZE</span> <strong>Does my position size match my risk rule?</strong><br>Position size = (account × risk %) / (entry − stop distance in dollars). Do the math. If the result feels too small, the position is the right size.</span></li>
+      <li><span><span class="cat-label cat-pre">INTENT</span> <strong>Why am I taking this trade?</strong><br>One sentence: "Because [specific condition] aligns with my [specific rule]." If you cannot write the sentence, do not enter.</span></li>
+    </ul>
+
+    <h2>During the Trade</h2>
+    <ul class="checklist">
+      <li><span><span class="cat-label cat-during">MONITOR</span> <strong>Is the trade still within my conditions?</strong><br>Re-check at a defined interval (e.g., every 15m, every candle close). If conditions have changed, reassess — do not hold out of hope.</span></li>
+      <li><span><span class="cat-label cat-during">HOLD</span> <strong>Am I watching the P&L and feeling emotional?</strong><br>If you feel the urge to cancel your stop, move your target, or add size: stop. Step away. Let the stop do its job.</span></li>
+      <li><span><span class="cat-label cat-during">ADJUST</span> <strong>Have my risk parameters been violated?</strong><br>Only move a stop to tighten (reduce risk) — never to widen. A moved stop is a new position. Re-run the Before checklist if you widen.</span></li>
+    </ul>
+
+    <h2>After the Trade</h2>
+    <ul class="checklist">
+      <li><span><span class="cat-label cat-post">DEBRIEF</span> <strong>Did I follow my rules — not did I win or lose?</strong><br>Journal the answer before you look at the P&L. Correct process × losing trade = full learning value. Lucky win × bad process = flag it.</span></li>
+      <li><span><span class="cat-label cat-post">JOURNAL</span> <strong>What did the process reveal?</strong><br>Write one thing you would do the same and one thing you would change. No outcome language. "I followed my stop rule" not "I should have held longer."</span></li>
+      <li><span><span class="cat-label cat-post">RESET</span> <strong>What is my state before the next trade?</strong><br>If I am chasing a loss, celebrating a win, or feeling urgent about the next setup: stop. The sim will be there tomorrow.</span></li>
+    </ul>
+
+    <h2>Bonus — Red Flag Quick-Check</h2>
+    <ul class="checklist">
+      <li><span><span class="cat-label cat-bonus">FLAG</span> <strong>Am I sizing up because I feel "sure" about this one?</strong><br>Confidence is not a sizing input. Your risk rule is. If you are deviating from the rule because of certainty, you are gambling.</span></li>
+      <li><span><span class="cat-label cat-bonus">FLAG</span> <strong>Am I taking this trade because I need to recover a loss?</strong><br>Revenge trading is the fastest way to blow up a sim account. Walk away for 15 minutes. If the setup is still there when you come back, re-run the checklist from the top.</span></li>
+      <li><span><span class="cat-label cat-bonus">FLAG</span> <strong>Am I bored and just want to do something?</strong><br>"Do nothing, journal why" earns more XP in TradeGame than an impulsive trade. Patience is a skill.</span></li>
+    </ul>
+
+    <div class="footer-meta">
+      <p>TradeGame — community-first trading education and sim game. Education only. No signals, no financial advice.</p>
+      <p>tradingame.org — (site under construction)</p>
+    </div>
+  </div>
+</body>
+</html>
