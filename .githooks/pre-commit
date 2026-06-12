@@ -1,32 +1,22 @@
 #!/usr/bin/env bash
 #
-# Pre-commit secret scanner for MeniscusMaximus.
-# Blocks any commit whose staged changes contain credentials (GitHub tokens,
-# Google API keys, OpenAI keys, private keys). This is what stops accidental
-# leaks like the Config-file token.
+# Composable pre-commit DISPATCHER (agent-corps git-guards kit).
+# Runs every script in .githooks/pre-commit.d/ in lexical order. A blocking
+# sub-hook (e.g. 10-secret-scan) exits non-zero to ABORT the commit; an advisory
+# sub-hook (e.g. 20-add-all-advisory) exits 0 and only warns.
 #
-# To bypass intentionally (rare): git commit --no-verify
+# Sub-hooks are invoked via `bash <file>` so they need no +x bit (a fresh
+# checkout often drops it). Bypass everything (rare): git commit --no-verify
 #
 set -uo pipefail
 
-# Regexes for things that should never be committed.
-SECRET_PATTERNS='github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|ghs_[A-Za-z0-9]{30,}|AIza[0-9A-Za-z_-]{30,}|sk-[A-Za-z0-9]{20,}|-----BEGIN[A-Z ]*PRIVATE KEY-----'
+top="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+d="$top/.githooks/pre-commit.d"
+[ -d "$d" ] || exit 0
 
-# Only look at lines being ADDED in this commit (ignore +++ file headers).
-added_lines="$(git diff --cached --diff-filter=ACM -U0 | grep '^+' | grep -v '^+++' || true)"
-
-hits="$(printf '%s\n' "$added_lines" | grep -E "$SECRET_PATTERNS" || true)"
-
-if [ -n "$hits" ]; then
-  echo ""
-  echo "🚫  COMMIT BLOCKED — a possible secret was found in your staged changes:"
-  echo ""
-  printf '%s\n' "$hits" | sed -E 's/(github_pat_|ghp_|gho_|ghs_|AIza|sk-)[A-Za-z0-9_-]+/\1***REDACTED***/g'
-  echo ""
-  echo "Remove the secret (or unstage that file) and commit again."
-  echo "If you are 100% sure this is a false positive: git commit --no-verify"
-  echo ""
-  exit 1
-fi
-
-exit 0
+status=0
+for h in "$d"/*; do
+  [ -f "$h" ] || continue
+  bash "$h" "$@" || status=$?
+done
+exit "$status"
