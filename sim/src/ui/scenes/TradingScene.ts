@@ -798,20 +798,22 @@ export class TradingScene extends Phaser.Scene {
       g.strokePath();
     }
 
-    // Price labels on y-axis (3 levels)
+    // Price labels on y-axis (3 levels) — tag-and-destroy (UX-W1; same as ticket/journal)
+    this.children.list
+      .filter((c) => c.getData("chartAxisLabel") === true)
+      .forEach((c) => c.destroy());
+
     for (let i = 0; i <= 2; i++) {
       const p = minPrice + (range * i) / 2;
       const py = priceToY(p);
-      const priceTxt = this.add.text(
+      this.add.text(
         chartX + chartW + 2,
         py,
         p.toFixed(4),
         { fontFamily: "monospace", fontSize: "10px", color: CSS.DIM }
-      ).setOrigin(0, 0.5);
-      // Destroy after one frame (chart redraws every tick that closes a candle)
-      this.time.delayedCall(0, () => {
-        if (priceTxt.active) priceTxt.destroy();
-      });
+      )
+        .setOrigin(0, 0.5)
+        .setData("chartAxisLabel", true);
     }
   }
 

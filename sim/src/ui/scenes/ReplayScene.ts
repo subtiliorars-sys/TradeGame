@@ -290,6 +290,10 @@ export class ReplayScene extends Phaser.Scene {
     if (started) g.strokePath();
 
     // Markers at or before the cursor.
+    this.children.list
+      .filter((c) => c.getData("replayMarkerLabel") === true)
+      .forEach((c) => c.destroy());
+
     for (const m of this.model.markers) {
       if (m.tickIdx > this.cursor) continue;
       const x = xAt(m.tickIdx);
@@ -309,13 +313,6 @@ export class ReplayScene extends Phaser.Scene {
           .setData("replayMarkerLabel", true);
       }
     }
-    // Clean up marker labels from previous draws (cheap sweep).
-    const labels = this.children.list.filter(
-      (c) => c.getData("replayMarkerLabel") === true
-    );
-    // Keep only the most recent set: destroy extras beyond markers count.
-    const maxLabels = this.model.markers.filter((m) => m.kind !== "fill").length;
-    for (let i = 0; i < labels.length - maxLabels; i++) labels[i]?.destroy();
   }
 
   private redrawScrubber(): void {
