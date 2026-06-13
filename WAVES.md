@@ -79,6 +79,7 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 **Depends on:** LD-W5  
 **Spec:** `docs/game/LIVE_DRILL_ENGINE_BRIEF.md` §5 Wave 6; `DRILL_SYSTEM_BRIEF.md` §6  
 **Branch slug:** `automation/wave-ld-w6-gates`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/47  
 **Completed:** 2026-06-13
 
 **Acceptance criteria:**
