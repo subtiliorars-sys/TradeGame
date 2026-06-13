@@ -142,7 +142,8 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 **Status:** `in_review`  
 **Spec:** `docs/lessons/FOUNDATION.md` §F-07–F-10  
-**Branch slug:** `automation/wave-less-w4-foundation-f07-f10`
+**Branch slug:** `automation/wave-less-w4-foundation-f07-f10`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/54
 
 **Acceptance criteria:**
 - [x] Port F-07 through F-10 (journaling, psychology, retail losses, scam defense)
