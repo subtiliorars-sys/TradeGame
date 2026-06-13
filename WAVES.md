@@ -79,7 +79,6 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 **Depends on:** LD-W5  
 **Spec:** `docs/game/LIVE_DRILL_ENGINE_BRIEF.md` §5 Wave 6; `DRILL_SYSTEM_BRIEF.md` §6  
 **Branch slug:** `automation/wave-ld-w6-gates`  
-**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/47  
 **Completed:** 2026-06-13
 
 **Acceptance criteria:**
@@ -95,15 +94,16 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave UX-W1 — TradingScene object churn audit
 
-**Status:** `pending`  
+**Status:** `done`  
 **Spec:** OWNER_RUNBOOK N-8 follow-up (drawOrderTicket tag-and-destroy landed; audit rest)  
-**Branch slug:** `automation/wave-ux-w1-churn`
+**Branch slug:** `automation/wave-ux-w1-churn`  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
-- [ ] Audit all Phaser scenes for per-frame/per-keystroke object creation without destroy
-- [ ] Fix any confirmed leaks (journal drawer pattern: tag + destroy before redraw)
-- [ ] Add one regression test or dev-only counter if practical
-- [ ] `npm run verify` green
+- [x] Audit all Phaser scenes for per-frame/per-keystroke object creation without destroy
+- [x] Fix any confirmed leaks (position panel on stop fill; chart/ticket/journal already tagged)
+- [x] Add one regression test or dev-only counter if practical (`ui-churn-guard.test.ts`)
+- [x] `npm run verify` green
 
 ---
 
