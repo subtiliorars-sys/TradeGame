@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Support TradeGame — help keep the community running.">
+  <title>Support TradeGame</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .donate-options { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 2rem; }
+    @media (min-width: 640px) { .donate-options { grid-template-columns: 1fr 1fr; } }
+    .donate-card {
+      background: var(--raised); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      text-align: center;
+    }
+    .donate-card h3 { color: var(--accent); }
+    .donate-card .price { font-size: 2rem; font-weight: 800; color: var(--text-hi); margin: .5rem 0; }
+    .donate-card .price span { font-size: 1rem; color: var(--text-dim); font-weight: 400; }
+    .donate-card p { font-size: .9rem; margin-bottom: 1.25rem; }
+    .joke-block {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent); border-radius: var(--radius);
+      padding: 1.25rem; margin: 2rem 0; font-style: italic;
+    }
+  </style>
+</head>
+<body>
+<header class="site-header" role="banner">
+  <div class="wrap">
+    <a class="site-logo" href="index.html" aria-label="TradeGame home">Trade<span>Game</span></a>
+    <nav aria-label="Site navigation">
+      <ul class="site-nav">
+        <li><a href="index.html#pillars">What We Cover</a></li>
+        <li><a href="play/">Play Now</a></li>
+        <li><a href="play/">Play Demo</a></li>
+        <li><a href="index.html#community">Community</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <section aria-labelledby="donate-heading">
+    <div class="wrap">
+      <h1 id="donate-heading">Help Keep TradeGame Running</h1>
+      <p class="subtitle" style="font-size: 1.1rem; color: var(--text-dim); margin-bottom: 1.5rem;">
+        We try to keep this free. We really do. If you learn something here, throw a few bucks in the hat.
+      </p>
+
+      <div class="joke-block">
+        <p><strong>Pony up, you cheapskate.</strong> You're literally learning how to make money online. If you can't afford it right now — no worries at all, really. Skip this page and go practice in the sim. Come back when you can.</p>
+        <p style="margin-top: .5rem;">If you can spare a few bucks: it covers server costs, domain renewals, and the occasional coffee that keeps this project alive. Every bit helps, and nobody gets special treatment for donating — the community stays equal regardless.</p>
+      </div>
+
+      <div class="donate-options">
+        <div class="donate-card">
+          <h3>One-Time</h3>
+          <div class="price">$5 <span>or whatever</span></div>
+          <p>Buy us a coffee. Or a domain renewal. Same difference.</p>
+          <a class="btn-cta" href="https://ko-fi.com/subtiliorars" target="_blank" rel="noopener">Donate on Ko-fi</a>
+        </div>
+        <div class="donate-card">
+          <h3>Monthly</h3>
+          <div class="price">$3 <span>/ mo</span></div>
+          <p>Less than a Discord Nitro. Helps us keep the lights on and the sim running.</p>
+          <a class="btn-cta" href="https://ko-fi.com/subtiliorars" target="_blank" rel="noopener">Subscribe on Ko-fi</a>
+        </div>
+      </div>
+
+      <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+        <h2>What Your Donation Supports</h2>
+        <ul style="color: var(--text-dim); margin-top: .75rem; list-style: disc; padding-left: 1.25rem;">
+          <li>Server hosting for the sim game and website</li>
+          <li>Domain registration (tradegame.game or wherever we end up)</li>
+          <li>Discord server boosts for better audio quality and upload limits</li>
+          <li>Development tools and API costs</li>
+          <li><strong>Nothing else</strong> — nobody takes a salary, nobody gets paid. Every cent goes back into the project.</li>
+        </ul>
+      </div>
+
+      <div style="margin-top: 2rem; padding: 1rem 1.25rem; background: var(--raised); border: 1px solid var(--border); border-radius: var(--radius); font-size: .85rem; color: var(--text-dim);">
+        <p><strong>No promises.</strong> We're doing our best to keep TradeGame free and open. If donations don't cover costs, we may need to figure something else out. If donations exceed costs, the surplus goes into development — more scenarios, better sim tools, more community features. Either way, this page is honest with you about it.</p>
+        <p style="margin-top: .5rem;">TradeGame is education, not financial advice. Trading involves risk. Donations are not investments — they're tips from people who found the community useful.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="wrap">
+    <blockquote class="disclaimer-block">
+      Education, not financial advice. Trading involves risk of significant loss.
+      Simulated results are not real trading. No signals, ever.
+    </blockquote>
+    <nav aria-label="Footer navigation">
+      <ul class="footer-nav">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="play/">Play Now</a></li>
+        <li><a href="features.html">Free vs Full</a></li>
+        <li><a href="index.html#community">Community</a></li>
+        <li><a href="quiz/">Trading Vocab Quiz</a></li>
+        <li><a href="legal.html">License / Legal</a></li>
+      </ul>
+    </nav>
+    <div class="footer-meta">
+      <p>We do not run advertising trackers or sell data.</p>
+      <p>TradeGame &mdash; education only. Not financial advice.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
