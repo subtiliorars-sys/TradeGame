@@ -1,10 +1,10 @@
 /**
- * Lesson catalog — wave 1 scenario-linked lessons + LESS-W3 foundation
- * track F-01–F-10 (LESS-W3 + LESS-W4). Intermediate wave-2 (LESS-W2) lands separately.
+ * Lesson catalog — foundation F-01–F-10 + wave 1 scenario-linked lessons +
+ * wave 2 intermediate (LESSON_SYSTEM_BRIEF §4.2, §4.4): C-I02/C-I04,
+ * S-I03/S-I04, X-I03/X-I04. Beginner tracks remain a later wave.
  *
- * Lesson prereqs remain ADVISORY (brief §4.3: wave-1 chains pass through
- * wave-2 content that doesn't exist yet — the hard flip waits for wave 2
- * under the same shipped-only rule as drills).
+ * Lesson prereqs remain ADVISORY (brief §4.3 / §7.3: full chains still pass
+ * through Foundation + Beginner content not yet shipped — hard flip waits).
  *
  * Honest-XP: awardLesson pays once per lesson ID (re-reading is free,
  * always — re-reading is the point).
@@ -26,14 +26,20 @@ import { LESSON_F_08 } from "../ui/content/lessons/f-08.js";
 import { LESSON_F_09 } from "../ui/content/lessons/f-09.js";
 import { LESSON_F_10 } from "../ui/content/lessons/f-10.js";
 import { LESSON_C_I01 } from "../ui/content/lessons/c-i01.js";
+import { LESSON_C_I02 } from "../ui/content/lessons/c-i02.js";
 import { LESSON_C_I03 } from "../ui/content/lessons/c-i03.js";
+import { LESSON_C_I04 } from "../ui/content/lessons/c-i04.js";
 import { LESSON_S_I01 } from "../ui/content/lessons/s-i01.js";
 import { LESSON_S_I02 } from "../ui/content/lessons/s-i02.js";
+import { LESSON_S_I03 } from "../ui/content/lessons/s-i03.js";
+import { LESSON_S_I04 } from "../ui/content/lessons/s-i04.js";
 import { LESSON_S_I05 } from "../ui/content/lessons/s-i05.js";
 import { LESSON_X_B03 } from "../ui/content/lessons/x-b03.js";
 import { LESSON_X_B04 } from "../ui/content/lessons/x-b04.js";
 import { LESSON_X_I01 } from "../ui/content/lessons/x-i01.js";
 import { LESSON_X_I02 } from "../ui/content/lessons/x-i02.js";
+import { LESSON_X_I03 } from "../ui/content/lessons/x-i03.js";
+import { LESSON_X_I04 } from "../ui/content/lessons/x-i04.js";
 
 /** XP by length tier (GDD §7 'fixed by lesson length'). TUNABLE. */
 export const LESSON_XP: Record<LessonDef["tier"], number> = {
@@ -57,14 +63,20 @@ export const LESSON_CATALOG: LessonDef[] = [
   def(LESSON_F_09),
   def(LESSON_F_10),
   def(LESSON_C_I01),
+  def(LESSON_C_I02),
   def(LESSON_C_I03),
+  def(LESSON_C_I04),
   def(LESSON_S_I01),
   def(LESSON_S_I02),
+  def(LESSON_S_I03),
+  def(LESSON_S_I04),
   def(LESSON_S_I05),
   def(LESSON_X_B03, "short"), // pillar-intro length
   def(LESSON_X_B04, "short"), // beginner-completion length
   def(LESSON_X_I01),
   def(LESSON_X_I02),
+  def(LESSON_X_I03),
+  def(LESSON_X_I04),
 ];
 
 export function getLesson(id: string): LessonDef | undefined {

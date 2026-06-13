@@ -85,7 +85,7 @@ export const scn005: ScenarioDef = {
     prereqs: [
       "scenario:SCN-002",
       "lesson:earnings-seasons",            // S-I01
-      "lesson:index-rebalancing-mechanics", // S-I-supp01 (pending authoring)
+      "lesson:index-rebalancing-mechanics", // S-I05
       "drill:position-sizing-stocks",
       "drill:stop-placement-v1",
     ],

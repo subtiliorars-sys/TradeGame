@@ -1,7 +1,7 @@
 /**
  * LessonScene — lesson selection + paged reader (LESSON_SYSTEM_BRIEF §5).
  *
- * SELECT view: the wave-1 catalog with track/XP/completion state.
+ * SELECT view: the lesson catalog with track/XP/completion state.
  * READ view: paged body (BACK/NEXT, page counter — a counter, NEVER a
  * timer), final page = the Process Check (reflective, nothing collected)
  * + the "do it now" CTA. Completion = reaching the final page; marking

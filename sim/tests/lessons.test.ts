@@ -1,6 +1,7 @@
 /**
- * Lesson system wave-1 tests — catalog invariants, prereq-ID alignment,
+ * Lesson system tests — catalog invariants, prereq-ID alignment,
  * honest-XP awards, posture sweep (LESSON_SYSTEM_BRIEF §2-§7).
+ * Foundation F-01–F-10, wave 1 (nine scenario-linked), wave 2 intermediate (six).
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -9,24 +10,48 @@ import * as ProgressStore from "../src/engine/progress.js";
 import { allScenarios } from "../src/scenarios/registry.js";
 import { currentRank, CANONICAL_LADDER } from "../src/engine/rank.js";
 
+const WAVE1_IDS = new Set([
+  "lesson:stablecoin-peg-mechanics",
+  "lesson:liquidity-pools-impermanent-loss",
+  "lesson:earnings-seasons",
+  "lesson:earnings-gaps-form-and-fail",
+  "lesson:index-rebalancing-mechanics",
+  "lesson:forex-session-windows",
+  "lesson:spreads-cost-of-trading",
+  "lesson:session-open-sweeps",
+  "lesson:high-impact-news-events",
+]);
+
+const WAVE2_INTERMEDIATE_IDS = new Set([
+  "lesson:flash-crash-anatomy",
+  "lesson:volatility-regimes",
+  "lesson:sector-rotation",
+  "lesson:dividends",
+  "lesson:carry-concept",
+  "lesson:why-retail-forex-loses",
+]);
+
 beforeEach(() => {
   ProgressStore.reset();
 });
 
 describe("catalog invariants", () => {
-  it("ships wave-1 plus full foundation F-01–F-10 (19 lessons)", () => {
-    expect(LESSON_CATALOG).toHaveLength(19);
-  });
-
-  it("foundation F-01 through F-10 are in the catalog", () => {
-    const ids = new Set(LESSON_CATALOG.map((l) => l.content.curriculumId));
+  it("ships foundation (ten) + wave-1 (nine) + wave-2 intermediate (six) lessons", () => {
+    expect(LESSON_CATALOG).toHaveLength(25);
+    const curriculumIds = new Set(LESSON_CATALOG.map((l) => l.content.curriculumId));
     for (let n = 1; n <= 10; n++) {
       const fid = `F-${String(n).padStart(2, "0")}`;
-      expect(ids.has(fid), fid).toBe(true);
+      expect(curriculumIds.has(fid), fid).toBe(true);
+    }
+    for (const id of WAVE1_IDS) {
+      expect(LESSON_CATALOG.some((l) => l.content.id === id), id).toBe(true);
+    }
+    for (const id of WAVE2_INTERMEDIATE_IDS) {
+      expect(LESSON_CATALOG.some((l) => l.content.id === id), id).toBe(true);
     }
   });
 
-  it("every scenario lesson-prereq resolves to a shipped lesson (wave-1 covers the live IDs)", () => {
+  it("every scenario lesson-prereq resolves to a shipped lesson", () => {
     const shipped = new Set(LESSON_CATALOG.map((l) => l.content.id));
     for (const def of allScenarios()) {
       for (const p of def.manifest.prereqs) {
@@ -73,6 +98,15 @@ describe("catalog invariants", () => {
       expect(l.content.curriculumId).toMatch(/^(F-\d\d|[CSX]-[BI]\d\d)$/);
     }
   });
+
+  it("wave-2 intermediate lessons carry curriculum provenance (C/S/X-I tier)", () => {
+    for (const l of LESSON_CATALOG) {
+      if (!WAVE2_INTERMEDIATE_IDS.has(l.content.id)) continue;
+      expect(l.content.curriculumId).toMatch(/^[CSX]-I\d\d$/);
+      expect(l.content.pages.length).toBeGreaterThanOrEqual(2);
+      expect(l.content.processCheck.length).toBeGreaterThan(10);
+    }
+  });
 });
 
 describe("posture sweep — lesson copy carries no directives", () => {
@@ -113,9 +147,9 @@ describe("awardLesson — honest-XP", () => {
     expect(up?.to.rankId).toBe("trainee");
   });
 
-  it("all nineteen lessons = 445 XP (3 short + 16 standard); rank respects the live ladder's Trainee gate", () => {
+  it("all twenty-five lessons = 595 XP (3 short + 22 standard); rank respects the live ladder's Trainee gate", () => {
     for (const l of LESSON_CATALOG) awardLesson(l);
-    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 16 * 25);
+    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 22 * 25);
     // Ladder-aware: pre-drill-gate branches rank Trainee on XP alone; once
     // the drill-gate flip (PR #18 line) merges, reading alone stays Observer.
     const trainee = CANONICAL_LADDER.find((r) => r.rankId === "trainee");
