@@ -822,6 +822,12 @@ export class TradingScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
 
   private drawPositionPanel(): void {
+    // Tag-and-destroy — onEngineFill used to call this and leak Text objects (UX-W1).
+    this.children.list
+      .filter((c) => c.getData("positionEl") === true)
+      .forEach((c) => c.destroy());
+
+    const _before = this.children.list.length;
     const g = this.gTicket;
     const px = SIDE_X + 8;
     let py = SIDE_Y + 12;
@@ -839,7 +845,7 @@ export class TradingScene extends Phaser.Scene {
     });
     py += 18;
 
-    this.positionLbl = label(this, px, py, "Open positions: 0", {
+    this.positionLbl = label(this, px, py, `Open positions: ${this.positions.length}`, {
       fontSize: "13px",
       color: CSS.TEXT,
     });
@@ -855,6 +861,10 @@ export class TradingScene extends Phaser.Scene {
       fontSize: "12px",
       color: CSS.DIM,
     });
+
+    for (let i = _before; i < this.children.list.length; i++) {
+      this.children.list[i]?.setData("positionEl", true);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -1407,7 +1417,12 @@ export class TradingScene extends Phaser.Scene {
       this.stopIdToEntryId.delete(fill.orderId);
       const pos = this.positions.find((p) => p.orderId === entryForStop);
       this.positions = this.positions.filter((p) => p.orderId !== entryForStop);
-      this.drawPositionPanel();
+      if (this.positionLbl) {
+        this.positionLbl.setText(`Open positions: ${this.positions.length}`);
+      }
+      if (this.balanceLbl) {
+        this.balanceLbl.setText(`Account: ${this.adapter.accountBalance.toFixed(2)} USVC`);
+      }
       // LP scenarios: a triggered withdrawal trigger closes the deposit —
       // freeze the panel at the final snapshot.
       if (this.def.manifest.showLpPanel && this.lpDeposit !== null) {
