@@ -90,9 +90,10 @@ export function markDrillCompleted(id: string): void {
  * marker never fired on the primary on-ramp path).
  */
 export function completeDrill(id: string, xp: number): void {
+  const already = _completedDrillIds.has(id);
   const before = currentRank(_xpTotal, completedDrillIds()).rank;
   _completedDrillIds.add(id);
-  if (Number.isFinite(xp) && xp > 0) {
+  if (!already && Number.isFinite(xp) && xp > 0) {
     _xpTotal += xp;
   }
   const after = currentRank(_xpTotal, completedDrillIds()).rank;
@@ -120,9 +121,10 @@ export function awardBonus(id: string, xp: number): number {
  * enforced by the caller checking completedLessonIds first).
  */
 export function completeLesson(id: string, xp: number): void {
+  const already = _completedLessonIds.has(id);
   const before = currentRank(_xpTotal, completedDrillIds()).rank;
   _completedLessonIds.add(id);
-  if (Number.isFinite(xp) && xp > 0) {
+  if (!already && Number.isFinite(xp) && xp > 0) {
     _xpTotal += xp;
   }
   const after = currentRank(_xpTotal, completedDrillIds()).rank;
@@ -136,18 +138,45 @@ export function completedLessonIds(): string[] {
   return Array.from(_completedLessonIds);
 }
 
+/** Metric IDs that may pay XP on scenario replays (first-clear rule). */
+const REPLAY_AWARD_METRICS = new Set<string>(["session_reviewed"]);
+
 /**
- * Mark a scenario as completed (debrief reached). Feeds the Main Menu's
- * scenario-prereq gates ("scenario:SCN-00X" in manifest.prereqs).
- * Completion = process flow finished, regardless of outcome — no PnL input.
+ * Award debrief XP for a scenario — first clear pays the full rubric total;
+ * replays pay only replay-specific metrics (e.g. session_reviewed +10).
+ * Always marks the scenario completed (idempotent).
  */
-export function markScenarioCompleted(id: string): void {
-  _completedScenarioIds.add(id);
+export function awardScenarioDebriefXp(
+  scenarioId: string,
+  xpTotal: number,
+  rubricRows: ReadonlyArray<{ metricId: string; xpEarned: number }>,
+): number {
+  const firstClear = !_completedScenarioIds.has(scenarioId);
+  let granted = 0;
+  if (firstClear) {
+    granted = xpTotal;
+    if (granted > 0) addXp(granted);
+  } else {
+    granted = rubricRows
+      .filter((r) => REPLAY_AWARD_METRICS.has(r.metricId))
+      .reduce((sum, r) => sum + r.xpEarned, 0);
+    if (granted > 0) addXp(granted);
+  }
+  _completedScenarioIds.add(scenarioId);
+  return granted;
 }
 
 /** IDs of scenarios completed this browser session. */
 export function completedScenarioIds(): string[] {
   return Array.from(_completedScenarioIds);
+}
+
+/**
+ * Mark a scenario as completed without awarding XP (tests / admin hooks).
+ * Debrief flow should use awardScenarioDebriefXp instead.
+ */
+export function markScenarioCompleted(id: string): void {
+  _completedScenarioIds.add(id);
 }
 
 /**

@@ -4,7 +4,7 @@
  *
  * The Phaser layer (DebriefScene/TradingScene) emits exactly these calls:
  *   - DebriefScene.create → SessionAdapter.lastSession.completeDebrief()
- *     → ProgressStore.addXp(refreshed.xpTotal)
+ *     → ProgressStore.awardScenarioDebriefXp(refreshed) (PERS-W1 first-clear)
  *   - REPLAY button → new session with a replay_started event at t0
  * These tests drive those emissions and assert the scoring/progress outcome.
  */

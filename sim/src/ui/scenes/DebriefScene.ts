@@ -87,10 +87,12 @@ export class DebriefScene extends Phaser.Scene {
     const refreshed = SessionAdapter.lastSession?.completeDebrief() ?? null;
     if (refreshed !== null && refreshed.sessionId === this.debriefData?.sessionId) {
       this.debriefData = refreshed;
-      ProgressStore.addXp(refreshed.xpTotal); // single XP accounting point (§4.5)
-      // Scenario-completion prereq gates (wave D): completing the debrief
-      // completes the scenario — outcome plays no part.
-      ProgressStore.markScenarioCompleted(refreshed.scenarioId);
+      // First-clear XP only; replays may still earn session_reviewed (PERS-W1).
+      ProgressStore.awardScenarioDebriefXp(
+        refreshed.scenarioId,
+        refreshed.xpTotal,
+        refreshed.rubricRows,
+      );
     }
 
     this.drawHeader(g, width);
