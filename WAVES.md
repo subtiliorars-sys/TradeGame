@@ -123,17 +123,34 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ---
 
-### Wave LESS-W3 — Foundation track (partial)
+### Wave LESS-W3 — Foundation track (F-01–F-06)
 
 **Status:** `in_review`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §2.1, §4.4  
-**Branch slug:** `automation/wave-less-w3-foundation-f01-f02`
+**Branch slug:** `automation/wave-less-w3-foundation-f01-f02`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/53
 
 **Acceptance criteria:**
-- [x] Port F-01 and F-02 from `docs/lessons/FOUNDATION.md`
-- [x] Drill CTAs to position-sizing drills (foundation has no scenario gates)
-- [x] `tests/lessons.test.ts` updated for foundation curriculum IDs
+- [x] Port F-01 through F-06 from `docs/lessons/FOUNDATION.md`
+- [x] Drill CTAs to existing drills (foundation has no scenario gates)
+- [x] `tests/lessons.test.ts` updated for foundation curriculum IDs and XP totals
 - [x] `npm run verify` green
+
+---
+
+### Wave LESS-W4 — Foundation track (F-07–F-10)
+
+**Status:** `in_review`  
+**Spec:** `docs/lessons/FOUNDATION.md` §F-07–F-10  
+**Branch slug:** `automation/wave-less-w4-foundation-f07-f10`
+
+**Acceptance criteria:**
+- [x] Port F-07 through F-10 (journaling, psychology, retail losses, scam defense)
+- [x] Scenario or drill CTAs per shipped content (F-10 uses observe-style scenario CTA)
+- [x] `tests/lessons.test.ts` updated for 19-lesson catalog and XP totals
+- [x] `npm run verify` green
+
+**Note:** Stack after **#53** (LESS-W3); rebase both after **#50** (LESS-W2) merges.
 
 ---
 

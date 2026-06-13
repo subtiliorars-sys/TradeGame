@@ -1,0 +1,56 @@
+/** F-04 — Stop-losses. Source: docs/lessons/FOUNDATION.md §F-04. */
+import type { LessonContent } from "../../../lessons/types.js";
+
+export const LESSON_F_04: LessonContent = {
+  id: "lesson:stop-losses",
+  curriculumId: "F-04",
+  title: "Stop-Losses",
+  track: "foundation",
+  pages: [
+    [
+      "A stop-loss is a pre-committed decision about when",
+      "your thesis is wrong — not a safety net you move when",
+      "price gets close.",
+      "",
+      "Place the stop where the idea is invalidated: below",
+      "support, beyond structure that should hold if you are",
+      "right. Pain tolerance is not a placement method.",
+      "",
+      "Order matters: stop first, then entry size from F-03.",
+      "If the stop is so wide that size shrinks to nothing,",
+      "that is the correct size — do not widen the stop to",
+      "justify a larger position.",
+    ],
+    [
+      "Where stops fail:",
+      "",
+      "Wicks / liquidity sweeps — price spikes through your",
+      "level, triggers, reverses. Often a placement issue at",
+      "obvious round numbers or recent lows.",
+      "",
+      "Gaps — overnight jumps can skip your level. Stop-market",
+      "fills at first bid; stop-limit may not fill (F-02).",
+      "",
+      "Slippage — fast markets fill below your stop level.",
+      "The order is correct; liquidity moved faster.",
+    ],
+    [
+      "None of this argues against stops. It argues for sizing",
+      "small enough that a bad fill on a gapped stop is still",
+      "survivable.",
+      "",
+      "Example — stop at $50.00, stop-market triggers at",
+      "$49.97, fills $49.85: not a malfunction, just slippage.",
+      "",
+      "Gap opens below a stop-limit at $40 / limit $39.90;",
+      "first bids at $38.50 — order may never fill while you",
+      "hold the loss.",
+    ],
+  ],
+  processCheck: "Do you place the stop before the entry every time — and accept that gaps and wicks can still hurt?",
+  cta: {
+    kind: "drill",
+    id: "drill:stop-placement-v1",
+    line: "Practice next: pick a stop level and explain why the thesis fails there.",
+  },
+};

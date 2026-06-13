@@ -14,14 +14,16 @@ beforeEach(() => {
 });
 
 describe("catalog invariants", () => {
-  it("ships wave-1 plus foundation starters (11 lessons)", () => {
-    expect(LESSON_CATALOG).toHaveLength(11);
+  it("ships wave-1 plus full foundation F-01–F-10 (19 lessons)", () => {
+    expect(LESSON_CATALOG).toHaveLength(19);
   });
 
-  it("foundation F-01 and F-02 are in the catalog", () => {
+  it("foundation F-01 through F-10 are in the catalog", () => {
     const ids = new Set(LESSON_CATALOG.map((l) => l.content.curriculumId));
-    expect(ids.has("F-01")).toBe(true);
-    expect(ids.has("F-02")).toBe(true);
+    for (let n = 1; n <= 10; n++) {
+      const fid = `F-${String(n).padStart(2, "0")}`;
+      expect(ids.has(fid), fid).toBe(true);
+    }
   });
 
   it("every scenario lesson-prereq resolves to a shipped lesson (wave-1 covers the live IDs)", () => {
@@ -111,9 +113,9 @@ describe("awardLesson — honest-XP", () => {
     expect(up?.to.rankId).toBe("trainee");
   });
 
-  it("all eleven lessons = 245 XP (3 short + 8 standard); rank respects the live ladder's Trainee gate", () => {
+  it("all nineteen lessons = 445 XP (3 short + 16 standard); rank respects the live ladder's Trainee gate", () => {
     for (const l of LESSON_CATALOG) awardLesson(l);
-    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 8 * 25);
+    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 16 * 25);
     // Ladder-aware: pre-drill-gate branches rank Trainee on XP alone; once
     // the drill-gate flip (PR #18 line) merges, reading alone stays Observer.
     const trainee = CANONICAL_LADDER.find((r) => r.rankId === "trainee");
