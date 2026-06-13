@@ -1,0 +1,30 @@
+name: sim-verify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sim/**"
+      - "WAVES.md"
+      - ".github/workflows/sim-verify.yml"
+  pull_request:
+    paths:
+      - "sim/**"
+      - "WAVES.md"
+      - ".github/workflows/sim-verify.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sim
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: sim/package-lock.json
+      - run: npm ci
+      - run: node scripts/verify.mjs

@@ -16,7 +16,11 @@ cd sim
 npm install
 npm test          # vitest run — determinism + scoring tests
 npm run lint-pnl  # grep guard: zero PnL reads in scoring.ts
+npm run verify    # full pre-PR gate (typecheck + lint-pnl + test + build:ui)
 ```
+
+On Windows, `npm run verify` uses PowerShell scripts under `scripts/`.
+On Linux/macOS/CI, it uses the bash equivalents.
 
 ## Note
 

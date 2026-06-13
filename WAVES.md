@@ -1,0 +1,218 @@
+# TradeGame — Wave Registry
+
+**Purpose:** Ordered vertical slices for autonomous workers and human sessions.
+Each wave is **one PR**. Workers pick the **first incomplete wave** below, implement
+only that wave, run `sim/scripts/verify.ps1` (Windows) or `sim/scripts/verify.sh`
+(Linux/macOS/CI), then open a PR. **Never merge your own PR.**
+
+**Ethics rail (every wave):** process-only scoring; no PnL-ranked output; education
+not advice. Run `npm run lint-pnl` before opening a PR.
+
+**Status legend:** `done` | `active` | `pending` | `blocked`
+
+---
+
+## How workers use this file
+
+1. Read open PRs — do not collide with in-flight work.
+2. Find the first wave with `status: pending` or `active` (top to bottom).
+3. Implement **only** that wave's acceptance criteria.
+4. Run verify script; all checks must pass.
+5. Update this file in the same PR: set wave `status: done`, add `completed:` date,
+   link the PR.
+6. If blocked on owner decision → queue JSON to AgentCorps
+   `fleet/owner-queue/items/`; do **not** stop the automation — pick the next
+   non-blocked wave if one exists.
+
+---
+
+## Completed — Phase 2 foundation
+
+| Wave | Title | Status | Notes |
+|------|-------|--------|-------|
+| P2-01 | Deterministic sim engine + golden SCN-001..003 | done | 530+ vitest tests green |
+| P2-02 | Phaser UI — six scenarios playable | done | PR #8 merged 2026-06-08 |
+| P2-03 | Rank/XP, gating, debrief, replay flow | done | Process-only scoring enforced |
+| P2-04 | Input-screen drills (sizing + stop placement) | done | Required before scenarios |
+| P2-05 | Lessons wave 1 (nine lessons) | done | PR #26 stack |
+| P2-06 | SCN-004..006 + policy card + AMM IL | done | Golden fixtures locked |
+| LD-W1 | Live-drill engine plumbing (events, types) | done | LIVE_DRILL §5 Wave 1 |
+| LD-W2 | Position seeding (`applyDrillSeed`, forceFill) | done | wave2-seed.test.ts |
+| LD-W3 | Drawdown pass predicates (zero-PnL proxy) | done | livePredicates.test.ts |
+| LD-W4 | Drawdown Survival playable (×3 markets) | done | liveCatalog.ts + DrillDebriefScene |
+
+---
+
+## Active queue — implement in order
+
+### Wave LD-W5 — Blow Up on Purpose drills
+
+**Status:** `active`  
+**Spec:** `docs/game/LIVE_DRILL_ENGINE_BRIEF.md` §5 Wave 5  
+**Branch slug:** `automation/wave-ld-w5-blowup`
+
+**Scope:** Ship all three `drill:blowup-*` live-session drills end-to-end.
+Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + debrief.
+
+**Acceptance criteria:**
+- [ ] `liveCatalog.ts` (or sibling) registers `drill:blowup-crypto`, `-stocks`, `-forex`
+- [ ] `DrillDebriefScene` blowup path: annotated timeline, mechanism MCQ, no dollar
+      values in rendered output (owner condition 2)
+- [ ] `ProgressStore.awardBonus()` wired for correct mechanism identification
+- [ ] Non-dismissible 5-second practice-account reminder at blowup session start
+- [ ] Golden fixtures for all three blowup drills in `tests/golden-drills.test.ts`
+- [ ] Red-team pass documented in PR body (classifier boundary, posture rails §8)
+- [ ] `npm run verify` green
+
+**Blocked by:** none (owner approved classifier with hard conditions — see brief §6a)
+
+---
+
+### Wave LD-W6 — Rank gate flips (Practitioner / Journeyman)
+
+**Status:** `pending`  
+**Depends on:** LD-W5  
+**Spec:** `docs/game/LIVE_DRILL_ENGINE_BRIEF.md` §5 Wave 6; `DRILL_SYSTEM_BRIEF.md` §6  
+**Branch slug:** `automation/wave-ld-w6-gates`
+
+**Acceptance criteria:**
+- [ ] All six Practitioner drills reachable from zero state (3 stop + 3 drawdown)
+- [ ] All three Journeyman blowup drills reachable after Practitioner
+- [ ] `rank.ts`: `drillsRequired` populated for Practitioner and Journeyman
+- [ ] `gating.ts`: hard-lock list includes drawdown + blowup drill IDs
+- [ ] Existing scenario golden digests **byte-identical** (no drill events leaked)
+- [ ] Integration test: gate blocks SCN-001 until required drills complete
+- [ ] `npm run verify` green
+
+---
+
+### Wave UX-W1 — TradingScene object churn audit
+
+**Status:** `pending`  
+**Spec:** OWNER_RUNBOOK N-8 follow-up (drawOrderTicket tag-and-destroy landed; audit rest)  
+**Branch slug:** `automation/wave-ux-w1-churn`
+
+**Acceptance criteria:**
+- [ ] Audit all Phaser scenes for per-frame/per-keystroke object creation without destroy
+- [ ] Fix any confirmed leaks (journal drawer pattern: tag + destroy before redraw)
+- [ ] Add one regression test or dev-only counter if practical
+- [ ] `npm run verify` green
+
+---
+
+### Wave LESS-W2 — Lessons wave 2 (intermediate tier)
+
+**Status:** `pending`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4  
+**Branch slug:** `automation/wave-less-w2`
+
+**Acceptance criteria:**
+- [ ] Ship next lesson set per brief (market-specific intermediate lessons)
+- [ ] Each lesson: provenance tag, no directive buy/sell language
+- [ ] `tests/lessons.test.ts` covers new catalog entries
+- [ ] Cross-link from scenario prereqs where brief specifies
+- [ ] `npm run verify` green
+
+---
+
+### Wave PERS-W1 — Replay first-clear XP rule
+
+**Status:** `pending`  
+**Spec:** OWNER_RUNBOOK P-8 Tier-B reminder; SIM_ENGINE_SPEC replay ethics  
+**Branch slug:** `automation/wave-pers-w1-replay-xp`
+
+**Acceptance criteria:**
+- [ ] XP for scenario/drill completion awards on **first clear only** per ID
+- [ ] Replays show debrief + coaching but do not re-award base XP
+- [ ] Tests lock the rule (attempt replay → XP unchanged)
+- [ ] `npm run verify` green
+
+**Note:** In-memory progress today; rule must survive future Tier-B persistence.
+
+---
+
+### Wave PERS-W2 — Tier-B local persistence scaffold
+
+**Status:** `blocked`  
+**Owner gate:** G-2 COPPA analysis (`OWNER_RUNBOOK.md`) before accounts ship  
+**Spec:** `docs/GDD.md` §9; `GOVERNANCE.md` Tier B trigger  
+**Branch slug:** `automation/wave-pers-w2-localstorage`
+
+**Acceptance criteria:**
+- [ ] `ProgressStore` persists to `localStorage` with schema version + migration stub
+- [ ] Age-gate acknowledgment stored (no PII beyond boolean + timestamp)
+- [ ] Export/erase path stubbed (`docs/legal/PRIVACY_DRAFT.md` aligned)
+- [ ] Queue owner item if COPPA flow needs counsel input — do not ship public beta
+
+**Blocked by:** owner COPPA gate (G-2). Worker must queue, not implement public accounts.
+
+---
+
+### Wave COACH-W1 — Progression ↔ coaching ladder hooks
+
+**Status:** `pending`  
+**Spec:** `docs/ROADMAP.md` Phase 3; `docs/COMMUNITY.md` coaching ladder  
+**Branch slug:** `automation/wave-coach-w1`
+
+**Acceptance criteria:**
+- [ ] Document rank milestones → Discord coaching tier mapping (docs only)
+- [ ] In-game copy references coaching as process review, not trade advice
+- [ ] No Discord bot integration (docs + UI strings only)
+- [ ] Queue any outbound/Discord automation to owner
+
+---
+
+### Wave DEPLOY-W1 — Staging deploy pipeline
+
+**Status:** `blocked`  
+**Owner gate:** deploy automation + Tier B privacy policy  
+**Branch slug:** `automation/wave-deploy-w1`
+
+**Acceptance criteria:**
+- [ ] CI builds `sim/dist-ui` artifact on green verify
+- [ ] Deploy gate pre-push hook if deploy-on-push added (copy MM pattern)
+- [ ] No secrets in repo; staging URL documented in README
+
+**Blocked by:** owner deploy decision + G-2. Queue only until cleared.
+
+---
+
+## Worker safety rails
+
+**Safe to implement without asking:**
+- Next pending wave in this file (not `blocked`)
+- Test/fixture additions that lock existing behavior
+- UI copy that preserves education-not-advice posture
+- Doc cross-links, typos, verify script improvements
+
+**Must queue (AgentCorps `fleet/owner-queue/items/`):**
+- Merge to main, deploy, secrets, COPPA/account flows
+- Legal/compliance wording changes
+- Real market data licensing
+- Broker/referral integration
+- Anything implying financial advice or performance promises
+
+**Never in worker PRs:**
+- Push to main, merge own PR, edit production configs
+- PnL-based scoring or outcome leaderboards
+- Real-money or broker API integration
+
+---
+
+## Verify command
+
+```powershell
+# Windows (local + Cursor cloud if PowerShell available)
+cd sim
+npm install
+npm run verify
+```
+
+```bash
+# Linux/macOS / GitHub Actions
+cd sim && npm ci && npm run verify
+```
+
+---
+
+*Last updated: 2026-06-13 — wave worker bootstrap.*

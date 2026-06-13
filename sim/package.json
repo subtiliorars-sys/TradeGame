@@ -11,7 +11,8 @@
     "typecheck:ui": "tsc --noEmit --project tsconfig.ui.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint-pnl": "bash scripts/lint-pnl.sh"
+    "lint-pnl": "node scripts/lint-pnl.mjs",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
     "phaser": "^3.85.0"
