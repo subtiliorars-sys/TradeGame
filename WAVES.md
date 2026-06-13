@@ -2,8 +2,11 @@
 
 **Purpose:** Ordered vertical slices for autonomous workers and human sessions.
 Each wave is **one PR**. Workers pick the **first incomplete wave** below, implement
-only that wave, run `sim/scripts/verify.ps1` (Windows) or `sim/scripts/verify.sh`
-(Linux/macOS/CI), then open a PR. **Never merge your own PR.**
+only that wave, run `npm run verify` in `sim/`, then open a PR. **Never merge your own PR.**
+
+**Office hours (Option C):** Cloud worker every 2h (9–5 weekdays) + optional local
+`/loop 45m` while at desk. See `OFFICE_HOURS.md`. Owner merges same day — workers
+**never wait to be restarted**; next run starts the following wave automatically.
 
 **Ethics rail (every wave):** process-only scoring; no PnL-ranked output; education
 not advice. Run `npm run lint-pnl` before opening a PR.
@@ -14,15 +17,15 @@ not advice. Run `npm run lint-pnl` before opening a PR.
 
 ## How workers use this file
 
-1. Read open PRs — do not collide with in-flight work.
-2. Find the first wave with `status: pending` or `active` (top to bottom).
-3. Implement **only** that wave's acceptance criteria.
-4. Run verify script; all checks must pass.
-5. Update this file in the same PR: set wave `status: done`, add `completed:` date,
-   link the PR.
-6. If blocked on owner decision → queue JSON to AgentCorps
-   `fleet/owner-queue/items/`; do **not** stop the automation — pick the next
-   non-blocked wave if one exists.
+1. List open wave-worker PRs (`automation/*` branches). **If one exists → stop** (wave in flight).
+2. Fetch latest `main` — especially after owner merged since last run.
+3. Find the first wave with `status: pending` or `active` (skip `blocked`).
+4. Implement **only** that wave's acceptance criteria.
+5. Run `cd sim && npm run verify` — all gates must pass.
+6. Update this file in the PR: set wave `status: done`, add `completed:` date, PR link.
+7. **Do not ask the owner to start the next wave** — the schedule or local loop handles pickup.
+8. If blocked on owner decision → queue JSON to AgentCorps `fleet/owner-queue/items/`;
+   pick the next non-blocked wave if one exists.
 
 ---
 

@@ -15,22 +15,19 @@ performance promises. See `docs/RISK_REGISTER.md`.
 - `docs/ROADMAP.md` — phased build-out
 - `docs/RISK_REGISTER.md` — compliance & risk posture (red-teamed)
 - `GOVERNANCE.md` — governance tier + audit trail
-- `WAVES.md` — **wave registry for autonomous workers** (vertical slices + verify gate)
+- `WAVES.md` — **wave registry** for autonomous workers (vertical slices + verify gate)
+- `OFFICE_HOURS.md` — **same-day merge/playtest checklist** + local `/loop` starter
 - `sim/` — deterministic sim engine + Phaser UI (see `sim/README.md`)
 
-## Autonomous development
+## Autonomous development (Option C)
 
-Game work ships in **waves** — one PR per wave. See `WAVES.md` for the ordered queue.
+| Engine | Cadence | You do |
+|--------|---------|--------|
+| Cloud wave worker | Every 2h, 9–5 weekdays | Merge + 5-min playtest (`OFFICE_HOURS.md`) |
+| Local `/loop` | Every 45m at desk | Paste starter from AgentCorps `prompts/tradegame-office-loop.md` |
+| Chat | Anytime | *"Do LD-W5 from WAVES.md"* for immediate burst |
 
-```powershell
-cd sim
-npm install
-npm run verify    # typecheck + lint-pnl + tests + UI build
-```
-
-Cursor automation **TradeGame — wave worker** (AgentCorps
-`cursor/automation-autonomous-worker.md`) picks the next pending wave, runs
-verify, and opens a PR. Owner merges in batch when green.
+After you merge, the **next wave starts automatically** — no manual restart.
 
 ## Repo pattern
 This is the private HQ. The sanitized public face is
