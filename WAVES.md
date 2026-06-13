@@ -97,6 +97,7 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 **Status:** `done`  
 **Spec:** OWNER_RUNBOOK N-8 follow-up (drawOrderTicket tag-and-destroy landed; audit rest)  
 **Branch slug:** `automation/wave-ux-w1-churn`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/48  
 **Completed:** 2026-06-13
 
 **Acceptance criteria:**
@@ -118,17 +119,18 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 - [x] Ship next lesson set per brief (C-I02, C-I04, S-I03, S-I04, X-I03, X-I04)
 - [x] Each lesson: provenance tag, no directive buy/sell language
 - [x] `tests/lessons.test.ts` covers new catalog entries
-- [ ] Cross-link from scenario prereqs where brief specifies
+- [x] Cross-link from scenario prereqs where brief specifies (`scn003.ts` → `lesson:session-open-sweeps`, LESSON_SYSTEM_BRIEF §3.2)
 - [x] `npm run verify` green
 
 ---
 
 ### Wave LESS-W3 — Foundation track (F-01–F-06)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §2.1, §4.4  
 **Branch slug:** `automation/wave-less-w3-foundation-f01-f02`  
-**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/53
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/53  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] Port F-01 through F-06 from `docs/lessons/FOUNDATION.md`
@@ -140,9 +142,11 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W4 — Foundation track (F-07–F-10)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/lessons/FOUNDATION.md` §F-07–F-10  
-**Branch slug:** `automation/wave-less-w4-foundation-f07-f10`
+**Branch slug:** `automation/wave-less-w4-foundation-f07-f10`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/55  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] Port F-07 through F-10 (journaling, psychology, retail losses, scam defense)
@@ -151,6 +155,19 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 - [x] `npm run verify` green
 
 **Note:** Stack after **#53** (LESS-W3); rebase both after **#50** (LESS-W2) merges.
+
+---
+
+### Wave LESS-W5 — Lesson prereq DAG validation
+
+**Status:** `in_review`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §7.4  
+**Branch slug:** `automation/wave-less-w5-prereq-dag`
+
+**Acceptance criteria:**
+- [x] `sim/src/lessons/prereqGraph.ts` — shipped curriculum edges + cycle detector
+- [x] `sim/tests/lesson-prereq-dag.test.ts` — no cycles; foundation F-01..F-10 chain locked
+- [x] `npm run verify` green
 
 ---
 
@@ -257,4 +274,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-13 — LD-W5 Blow Up on Purpose shipped.*
+*Last updated: 2026-06-13 — LESS-W2 rebase onto main (LESS-W3 merged).*
