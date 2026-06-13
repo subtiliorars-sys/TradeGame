@@ -18,6 +18,13 @@ describe("UI object-churn guards (UX-W1)", () => {
     expect(src).not.toMatch(/delayedCall\(0,\s*\(\)\s*=>\s*\{[^}]*priceTxt\.destroy/s);
   });
 
+  it("TradingScene position panel uses positionEl tag-and-destroy (no onEngineFill redraw leak)", () => {
+    const src = readFileSync(join(ROOT, "TradingScene.ts"), "utf8");
+    expect(src).toContain('setData("positionEl", true)');
+    expect(src).toContain('getData("positionEl")');
+    expect(src).not.toMatch(/onEngineFill[\s\S]{0,800}drawPositionPanel\(\)/);
+  });
+
   it("ReplayScene marker labels destroy all replayMarkerLabel objects before redraw", () => {
     const src = readFileSync(join(ROOT, "ReplayScene.ts"), "utf8");
     const destroyBlock = src.indexOf('getData("replayMarkerLabel")');

@@ -157,15 +157,16 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave COACH-W1 — Progression ↔ coaching ladder hooks
 
-**Status:** `pending`  
+**Status:** `done`  
 **Spec:** `docs/ROADMAP.md` Phase 3; `docs/COMMUNITY.md` coaching ladder  
-**Branch slug:** `automation/wave-coach-w1`
+**Branch slug:** `automation/wave-coach-w1`  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
-- [ ] Document rank milestones → Discord coaching tier mapping (docs only)
-- [ ] In-game copy references coaching as process review, not trade advice
-- [ ] No Discord bot integration (docs + UI strings only)
-- [ ] Queue any outbound/Discord automation to owner
+- [x] Document rank milestones → Discord coaching tier mapping (`docs/COACHING_LADDER_RANK_MAP.md`)
+- [x] In-game copy references coaching as process review, not trade advice (`MenuScene` + `coachingLadderHints.ts`)
+- [x] No Discord bot integration (docs + UI strings only)
+- [x] Queue any outbound/Discord automation to owner (noted in doc)
 
 ---
 
