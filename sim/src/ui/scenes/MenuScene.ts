@@ -40,6 +40,7 @@ import { allScenarios, scenarioSeed } from "../../scenarios/registry.js";
 import { currentRank, ladderViewModel } from "../../engine/rank.js";
 import * as ProgressStore from "../../engine/progress.js";
 import { scenarioLockState } from "../engine/gating.js";
+import { communityCoachingHint } from "../coachingLadderHints.js";
 
 // ---------------------------------------------------------------------------
 // Card-only display fields — not duplicated in the manifest
@@ -412,6 +413,17 @@ export class MenuScene extends Phaser.Scene {
       "Drill gates per rank arrive with the drill system — XP alone will not advance past them (GDD §7).",
       { fontSize: "9px", color: CSS.DIM, fontStyle: "italic" }
     );
+
+    const coachingHint = communityCoachingHint(
+      currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId
+    );
+    if (coachingHint !== null) {
+      label(this, PAD, stripY + segH + 20, coachingHint, {
+        fontSize: "9px",
+        color: CSS.DIM,
+        fontStyle: "italic",
+      });
+    }
   }
 
   // -------------------------------------------------------------------------
