@@ -1,6 +1,6 @@
 /**
  * Lesson catalog — wave 1 scenario-linked lessons + LESS-W3 foundation
- * track F-01–F-06. Intermediate wave-2 (LESS-W2) lands separately.
+ * track F-01–F-10 (LESS-W3 + LESS-W4). Intermediate wave-2 (LESS-W2) lands separately.
  *
  * Lesson prereqs remain ADVISORY (brief §4.3: wave-1 chains pass through
  * wave-2 content that doesn't exist yet — the hard flip waits for wave 2
@@ -21,6 +21,10 @@ import { LESSON_F_03 } from "../ui/content/lessons/f-03.js";
 import { LESSON_F_04 } from "../ui/content/lessons/f-04.js";
 import { LESSON_F_05 } from "../ui/content/lessons/f-05.js";
 import { LESSON_F_06 } from "../ui/content/lessons/f-06.js";
+import { LESSON_F_07 } from "../ui/content/lessons/f-07.js";
+import { LESSON_F_08 } from "../ui/content/lessons/f-08.js";
+import { LESSON_F_09 } from "../ui/content/lessons/f-09.js";
+import { LESSON_F_10 } from "../ui/content/lessons/f-10.js";
 import { LESSON_C_I01 } from "../ui/content/lessons/c-i01.js";
 import { LESSON_C_I03 } from "../ui/content/lessons/c-i03.js";
 import { LESSON_S_I01 } from "../ui/content/lessons/s-i01.js";
@@ -48,6 +52,10 @@ export const LESSON_CATALOG: LessonDef[] = [
   def(LESSON_F_04),
   def(LESSON_F_05),
   def(LESSON_F_06),
+  def(LESSON_F_07),
+  def(LESSON_F_08),
+  def(LESSON_F_09),
+  def(LESSON_F_10),
   def(LESSON_C_I01),
   def(LESSON_C_I03),
   def(LESSON_S_I01),
