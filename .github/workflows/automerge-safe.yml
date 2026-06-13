@@ -1,0 +1,78 @@
+# Auto-merge safe automation PRs when verify CI passes.
+# Skips sensitive paths — owner review still required for those.
+
+name: automerge-safe
+
+on:
+  workflow_run:
+    workflows: ["sim-verify"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const prs = run.pull_requests || [];
+            if (prs.length === 0) {
+              console.log("No PR on workflow run — skip");
+              return;
+            }
+            const prNumber = prs[0].number;
+            const { owner, repo } = context.repo;
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: prNumber,
+            });
+            if (pr.draft || pr.merged) return;
+
+            const branch = pr.head.ref;
+            const labels = (
+              await github.rest.issues.listLabelsOnIssue({
+                owner, repo, issue_number: prNumber,
+              })
+            ).data.map((l) => l.name);
+            const branchOk =
+              branch.startsWith("automation/") || branch.startsWith("work/wave-");
+            const labelOk = labels.includes("automerge-safe");
+            if (!branchOk && !labelOk) {
+              console.log(`Skip: branch ${branch} not automerge-eligible`);
+              return;
+            }
+
+            const SENSITIVE = [
+              "docs/RISK_REGISTER.md",
+              "docs/legal/",
+              "GOVERNANCE.md",
+              "OWNER_RUNBOOK.md",
+              "SECURITY.md",
+              ".env",
+              "fly.toml",
+              ".github/workflows/deploy",
+            ];
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number: prNumber, per_page: 100 }
+            );
+            for (const f of files) {
+              for (const s of SENSITIVE) {
+                if (f.filename === s || f.filename.startsWith(s)) {
+                  console.log(`Skip: sensitive file ${f.filename}`);
+                  return;
+                }
+              }
+            }
+
+            await github.rest.pulls.merge({
+              owner, repo, pull_number: prNumber, merge_method: "squash",
+            });
+            console.log(`Automerged PR #${prNumber}`);
