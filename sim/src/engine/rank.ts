@@ -72,8 +72,19 @@ export const CANONICAL_LADDER: readonly RankThreshold[] = [
     "drill:position-sizing-forex",
     "drill:stop-placement-v1",
   ] },
-  { rankId: "practitioner",      displayLabel: "Practitioner",      xpRequired:  800, drillsRequired: [] }, // TUNABLE — brief assigns 6 Intermediate drills; flips when they ship
-  { rankId: "journeyman",        displayLabel: "Journeyman",        xpRequired: 2000, drillsRequired: [] }, // TUNABLE — brief assigns 3 blowup drills; flips when they ship
+  { rankId: "practitioner",      displayLabel: "Practitioner",      xpRequired:  800, drillsRequired: [   // TUNABLE (brief §3.3, LD-W6 flip)
+    "drill:stop-placement-crypto",
+    "drill:stop-placement-stocks",
+    "drill:stop-placement-forex",
+    "drill:drawdown-survival-crypto",
+    "drill:drawdown-survival-stocks",
+    "drill:drawdown-survival-forex",
+  ] },
+  { rankId: "journeyman",        displayLabel: "Journeyman",        xpRequired: 2000, drillsRequired: [   // TUNABLE (brief §3.3, LD-W6 flip)
+    "drill:blowup-crypto",
+    "drill:blowup-stocks",
+    "drill:blowup-forex",
+  ] },
   { rankId: "strategist",        displayLabel: "Strategist",        xpRequired: 4500, drillsRequired: [] }, // TUNABLE — brief assigns 3 correlation drills; flips when they ship
   { rankId: "senior_strategist", displayLabel: "Senior Strategist", xpRequired: 8000, drillsRequired: [] }, // TUNABLE — no gate by design
 ];

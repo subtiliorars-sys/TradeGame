@@ -21,9 +21,13 @@
 import type { ScenarioManifest } from "../../scenarios/types.js";
 import { CANONICAL_LADDER, type RankThreshold } from "../../engine/rank.js";
 import { DRILL_CATALOG } from "../../drills/catalog.js";
+import { LIVE_DRILL_CATALOG } from "../../drills/liveCatalog.js";
 
 /** IDs of drills that actually exist (shipped-drills-only flip rule). */
-const SHIPPED_DRILL_IDS = new Set(DRILL_CATALOG.map((d) => d.id));
+const SHIPPED_DRILL_IDS = new Set([
+  ...DRILL_CATALOG.map((d) => d.id),
+  ...LIVE_DRILL_CATALOG.map((d) => d.drillId),
+]);
 
 export interface ScenarioLockState {
   /** True when the card must not be startable. */
