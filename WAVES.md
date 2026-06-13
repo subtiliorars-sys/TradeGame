@@ -158,6 +158,19 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ---
 
+### Wave LESS-W5 — Lesson prereq DAG validation
+
+**Status:** `in_review`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §7.4  
+**Branch slug:** `automation/wave-less-w5-prereq-dag`
+
+**Acceptance criteria:**
+- [x] `sim/src/lessons/prereqGraph.ts` — shipped curriculum edges + cycle detector
+- [x] `sim/tests/lesson-prereq-dag.test.ts` — no cycles; foundation F-01..F-10 chain locked
+- [x] `npm run verify` green
+
+---
+
 ### Wave PERS-W1 — Replay first-clear XP rule
 
 **Status:** `done`  
