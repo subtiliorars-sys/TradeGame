@@ -44,6 +44,8 @@ not advice. Run `npm run lint-pnl` before opening a PR.
 | LD-W3 | Drawdown pass predicates (zero-PnL proxy) | done | livePredicates.test.ts |
 | LD-W4 | Drawdown Survival playable (×3 markets) | done | liveCatalog.ts + DrillDebriefScene |
 | LD-W5 | Blow Up on Purpose drills (×3 markets) | done | blowup debrief + catalog + goldens |
+| UX-W1 | TradingScene object churn audit | done | PR #48 — tag-and-destroy + ui-churn-guard |
+| LESS-W2 | Lessons wave 2 (intermediate tier) | done | six pillar intermediate lessons in catalog |
 
 ---
 
@@ -95,30 +97,33 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave UX-W1 — TradingScene object churn audit
 
-**Status:** `pending`  
+**Status:** `done`  
 **Spec:** OWNER_RUNBOOK N-8 follow-up (drawOrderTicket tag-and-destroy landed; audit rest)  
-**Branch slug:** `automation/wave-ux-w1-churn`
+**Branch slug:** `automation/wave-ux-w1-churn`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/48  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
-- [ ] Audit all Phaser scenes for per-frame/per-keystroke object creation without destroy
-- [ ] Fix any confirmed leaks (journal drawer pattern: tag + destroy before redraw)
-- [ ] Add one regression test or dev-only counter if practical
-- [ ] `npm run verify` green
+- [x] Audit all Phaser scenes for per-frame/per-keystroke object creation without destroy
+- [x] Fix any confirmed leaks (journal drawer pattern: tag + destroy before redraw)
+- [x] Add one regression test or dev-only counter if practical
+- [x] `npm run verify` green
 
 ---
 
 ### Wave LESS-W2 — Lessons wave 2 (intermediate tier)
 
-**Status:** `pending`  
-**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4  
-**Branch slug:** `automation/wave-less-w2`
+**Status:** `done`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4.4 (remaining intermediate tier)  
+**Branch slug:** `automation/wave-less-w2`  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
-- [ ] Ship next lesson set per brief (market-specific intermediate lessons)
-- [ ] Each lesson: provenance tag, no directive buy/sell language
-- [ ] `tests/lessons.test.ts` covers new catalog entries
-- [ ] Cross-link from scenario prereqs where brief specifies
-- [ ] `npm run verify` green
+- [x] Ship next lesson set per brief (market-specific intermediate lessons)
+- [x] Each lesson: provenance tag, no directive buy/sell language
+- [x] `tests/lessons.test.ts` covers new catalog entries
+- [x] Cross-link from scenario prereqs where brief specifies
+- [x] `npm run verify` green
 
 ---
 
@@ -222,4 +227,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-13 — LD-W5 Blow Up on Purpose shipped.*
+*Last updated: 2026-06-13 — LESS-W2 intermediate lessons shipped.*
