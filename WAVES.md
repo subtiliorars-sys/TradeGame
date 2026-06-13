@@ -124,15 +124,15 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave PERS-W1 — Replay first-clear XP rule
 
-**Status:** `pending`  
+**Status:** `in_review`  
 **Spec:** OWNER_RUNBOOK P-8 Tier-B reminder; SIM_ENGINE_SPEC replay ethics  
 **Branch slug:** `automation/wave-pers-w1-replay-xp`
 
 **Acceptance criteria:**
-- [ ] XP for scenario/drill completion awards on **first clear only** per ID
-- [ ] Replays show debrief + coaching but do not re-award base XP
-- [ ] Tests lock the rule (attempt replay → XP unchanged)
-- [ ] `npm run verify` green
+- [x] XP for scenario/drill completion awards on **first clear only** per ID
+- [x] Replays show debrief + coaching but do not re-award base XP (`session_reviewed` still pays on replay)
+- [x] Tests lock the rule (`sim/tests/progress-replay-xp.test.ts`)
+- [x] `npm run verify` green
 
 **Note:** In-memory progress today; rule must survive future Tier-B persistence.
 
