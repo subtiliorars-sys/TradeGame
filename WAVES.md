@@ -109,24 +109,41 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W2 — Lessons wave 2 (intermediate tier)
 
-**Status:** `pending`  
-**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4  
-**Branch slug:** `automation/wave-less-w2`
+**Status:** `in_review`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4.4  
+**Branch slug:** `automation/wave-less-w2`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/50
 
 **Acceptance criteria:**
-- [ ] Ship next lesson set per brief (market-specific intermediate lessons)
-- [ ] Each lesson: provenance tag, no directive buy/sell language
-- [ ] `tests/lessons.test.ts` covers new catalog entries
+- [x] Ship next lesson set per brief (C-I02, C-I04, S-I03, S-I04, X-I03, X-I04)
+- [x] Each lesson: provenance tag, no directive buy/sell language
+- [x] `tests/lessons.test.ts` covers new catalog entries
 - [ ] Cross-link from scenario prereqs where brief specifies
-- [ ] `npm run verify` green
+- [x] `npm run verify` green
+
+---
+
+### Wave LESS-W3 — Foundation track (partial)
+
+**Status:** `in_review`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §2.1, §4.4  
+**Branch slug:** `automation/wave-less-w3-foundation-f01-f02`
+
+**Acceptance criteria:**
+- [x] Port F-01 and F-02 from `docs/lessons/FOUNDATION.md`
+- [x] Drill CTAs to position-sizing drills (foundation has no scenario gates)
+- [x] `tests/lessons.test.ts` updated for foundation curriculum IDs
+- [x] `npm run verify` green
 
 ---
 
 ### Wave PERS-W1 — Replay first-clear XP rule
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** OWNER_RUNBOOK P-8 Tier-B reminder; SIM_ENGINE_SPEC replay ethics  
-**Branch slug:** `automation/wave-pers-w1-replay-xp`
+**Branch slug:** `automation/wave-pers-w1-replay-xp`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/49  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] XP for scenario/drill completion awards on **first clear only** per ID

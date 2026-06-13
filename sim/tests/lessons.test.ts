@@ -14,8 +14,14 @@ beforeEach(() => {
 });
 
 describe("catalog invariants", () => {
-  it("ships the nine wave-1 lessons", () => {
-    expect(LESSON_CATALOG).toHaveLength(9);
+  it("ships wave-1 plus foundation starters (11 lessons)", () => {
+    expect(LESSON_CATALOG).toHaveLength(11);
+  });
+
+  it("foundation F-01 and F-02 are in the catalog", () => {
+    const ids = new Set(LESSON_CATALOG.map((l) => l.content.curriculumId));
+    expect(ids.has("F-01")).toBe(true);
+    expect(ids.has("F-02")).toBe(true);
   });
 
   it("every scenario lesson-prereq resolves to a shipped lesson (wave-1 covers the live IDs)", () => {
@@ -35,12 +41,26 @@ describe("catalog invariants", () => {
     }
   });
 
-  it("every lesson's CTA targets a registered scenario (lesson-then-immediately-do)", () => {
-    const ids = new Set(allScenarios().map((d) => d.manifest.id));
+  it("every lesson CTA targets a registered scenario or drill", () => {
+    const scenarioIds = new Set(allScenarios().map((d) => d.manifest.id));
     for (const l of LESSON_CATALOG) {
-      expect(l.content.cta.kind).toBe("scenario");
-      expect(ids.has(l.content.cta.id), `${l.content.id} CTA → ${l.content.cta.id}`).toBe(true);
       expect(l.content.cta.line.length).toBeGreaterThan(0);
+      if (l.content.cta.kind === "scenario") {
+        expect(scenarioIds.has(l.content.cta.id), `${l.content.id} CTA → ${l.content.cta.id}`).toBe(true);
+      } else {
+        expect(l.content.cta.id.startsWith("drill:"), l.content.id).toBe(true);
+      }
+    }
+  });
+
+  it("scenario-linked lessons still use scenario CTAs (lesson-then-immediately-do)", () => {
+    const scenarioLinked = new Set(
+      allScenarios().flatMap((d) => d.manifest.prereqs.filter((p) => p.startsWith("lesson:")))
+    );
+    for (const l of LESSON_CATALOG) {
+      if (scenarioLinked.has(l.content.id)) {
+        expect(l.content.cta.kind, l.content.id).toBe("scenario");
+      }
     }
   });
 
@@ -48,7 +68,7 @@ describe("catalog invariants", () => {
     for (const l of LESSON_CATALOG) {
       expect(l.content.pages.length, l.content.id).toBeGreaterThanOrEqual(2);
       expect(l.content.processCheck.length).toBeGreaterThan(10);
-      expect(l.content.curriculumId).toMatch(/^[CSXF]-[BI]\d\d$/);
+      expect(l.content.curriculumId).toMatch(/^(F-\d\d|[CSX]-[BI]\d\d)$/);
     }
   });
 });
@@ -91,9 +111,9 @@ describe("awardLesson — honest-XP", () => {
     expect(up?.to.rankId).toBe("trainee");
   });
 
-  it("all nine lessons = 205 XP (2 short + 7 standard); rank respects the live ladder's Trainee gate", () => {
+  it("all eleven lessons = 245 XP (3 short + 8 standard); rank respects the live ladder's Trainee gate", () => {
     for (const l of LESSON_CATALOG) awardLesson(l);
-    expect(ProgressStore.xpTotal()).toBe(2 * 15 + 7 * 25);
+    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 8 * 25);
     // Ladder-aware: pre-drill-gate branches rank Trainee on XP alone; once
     // the drill-gate flip (PR #18 line) merges, reading alone stays Observer.
     const trainee = CANONICAL_LADDER.find((r) => r.rankId === "trainee");
