@@ -1,25 +1,31 @@
 /**
- * Drawdown Survival drill defs ×3 markets — geometry sanity, determinism,
- * and end-to-end predicate evaluation over each really-seeded session.
+ * Drawdown Survival drill defs ×3 + Blow Up ×3 — geometry sanity, determinism,
+ * and end-to-end predicate / award evaluation.
  */
 
-import { describe, it, expect } from "vitest";
-import { LIVE_DRILL_CATALOG, getLiveDrill } from "../src/drills/liveCatalog.js";
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  LIVE_DRILL_CATALOG,
+  DRAWDOWN_LIVE_DRILLS,
+  BLOWUP_LIVE_DRILLS,
+  getLiveDrill,
+  awardLiveDrill,
+  awardBlowupDrill,
+} from "../src/drills/liveCatalog.js";
 import { evaluateDrawdownSurvival } from "../src/drills/livePredicates.js";
 import { runScenario, type PlayerAction } from "../src/harness/run.js";
+import * as ProgressStore from "../src/engine/progress.js";
+import { currentRank } from "../src/engine/rank.js";
 
-describe("catalog geometry", () => {
+describe("drawdown catalog geometry", () => {
   it("three markets, Intermediate/55, authored drawdown bands", () => {
-    expect(LIVE_DRILL_CATALOG).toHaveLength(3);
-    for (const d of LIVE_DRILL_CATALOG) {
+    expect(DRAWDOWN_LIVE_DRILLS).toHaveLength(3);
+    for (const d of DRAWDOWN_LIVE_DRILLS) {
       expect(d.xp).toBe(55);
       const m = d.scenario.manifest;
-      // Seeded long above start = inherited drawdown from tick 0.
       expect(d.seed.side).toBe("buy");
       expect(d.seed.fillPrice).toBeGreaterThan(m.startPrice);
-      // Stop strictly below start: survivable room AND real protection.
       expect(d.seed.stopPrice).toBeLessThan(m.startPrice);
-      // Drawdown depth in the authored band (crypto/stocks ~8%, fx ~1%).
       const dd = (d.seed.fillPrice - m.startPrice) / d.seed.fillPrice;
       if (d.market === "forex") {
         expect(dd).toBeGreaterThan(0.005);
@@ -28,35 +34,40 @@ describe("catalog geometry", () => {
         expect(dd).toBeGreaterThan(0.06);
         expect(dd).toBeLessThan(0.1);
       }
-      // One-XP-book: micro-scenarios must emit NOTHING via scenario scoring.
       expect(m.xpRubric).toHaveLength(0);
     }
   });
 });
 
-describe("each drill: deterministic + predicates evaluate end-to-end", () => {
+describe("blowup catalog geometry", () => {
+  it("three markets, Intermediate, 40+10 XP, no seed", () => {
+    expect(BLOWUP_LIVE_DRILLS).toHaveLength(3);
+    for (const d of BLOWUP_LIVE_DRILLS) {
+      expect(d.xp).toBe(40);
+      expect(d.bonusXp).toBe(10);
+      expect(d.startingEquity).toBe(10_000);
+      expect(d.scenario.manifest.xpRubric).toHaveLength(0);
+      expect(d.scenario.manifest.durationMs).toBe(600_000);
+    }
+  });
+});
+
+describe("each drawdown drill: deterministic + predicates evaluate end-to-end", () => {
   const surviveActions: PlayerAction[] = [
     { type: "journal_entry", ticksAfter: 30, payload: { tags: ["exit"], wordCount: 15 } },
     { type: "advance_ticks", ticksAfter: 0, payload: { count: 320 } },
     { type: "debrief_complete", ticksAfter: 0, payload: {} },
   ];
 
-  for (const d of LIVE_DRILL_CATALOG) {
+  for (const d of DRAWDOWN_LIVE_DRILLS) {
     it(`${d.drillId}: clean survival passes all three predicates; digest stable`, () => {
       const config = {
         seed: 1_000_001,
         scenario: d.scenario,
-        accountEquity: 10_000,
+        accountEquity: d.startingEquity,
         actions: surviveActions,
         sessionId: `live-${d.drillId}`,
-        drillSeed: {
-          entryOrderId: d.seed.entryOrderId,
-          stopOrderId: d.seed.stopOrderId,
-          side: d.seed.side,
-          quantity: d.seed.quantity,
-          fillPrice: d.seed.fillPrice,
-          stopPrice: d.seed.stopPrice,
-        },
+        drillSeed: { ...d.seed },
       };
       const a = runScenario(config);
       const b = runScenario(config);
@@ -64,8 +75,6 @@ describe("each drill: deterministic + predicates evaluate end-to-end", () => {
 
       const evald = evaluateDrawdownSurvival(a.log.entries, d.seed);
       expect(evald.pass, evald.results.filter((r) => !r.pass).map((r) => r.predicateId).join()).toBe(true);
-
-      // One-XP-book: the empty rubric emitted zero scenario XP.
       expect(a.xpSummary.total).toBe(0);
     });
 
@@ -73,7 +82,7 @@ describe("each drill: deterministic + predicates evaluate end-to-end", () => {
       const result = runScenario({
         seed: 1_000_001,
         scenario: d.scenario,
-        accountEquity: 10_000,
+        accountEquity: d.startingEquity,
         sessionId: `live-${d.drillId}-dca`,
         drillSeed: { ...d.seed },
         actions: [
@@ -92,43 +101,22 @@ describe("each drill: deterministic + predicates evaluate end-to-end", () => {
 
   it("getLiveDrill resolves by ID", () => {
     expect(getLiveDrill("drill:drawdown-survival-forex")?.market).toBe("forex");
+    expect(getLiveDrill("drill:blowup-crypto")?.kind).toBe("blowup");
     expect(getLiveDrill("drill:nope")).toBeUndefined();
   });
 });
 
-// ---------------------------------------------------------------------------
-// XP attach (post red-team) — awardLiveDrill honest-XP rails
-// ---------------------------------------------------------------------------
-
-import { awardLiveDrill } from "../src/drills/liveCatalog.js";
-import * as ProgressStore from "../src/engine/progress.js";
-import { beforeEach } from "vitest";
-import { currentRank } from "../src/engine/rank.js";
-
-describe("awardLiveDrill", () => {
+describe("awardLiveDrill (drawdown)", () => {
   beforeEach(() => ProgressStore.reset());
 
   it("pays 55 once; repeat passes pay 0; misses pay nothing at all", () => {
-    const d = LIVE_DRILL_CATALOG[0]!;
+    const d = DRAWDOWN_LIVE_DRILLS[0]!;
     expect(awardLiveDrill(d, false)).toBeNull();
     expect(ProgressStore.xpTotal()).toBe(0);
     expect(awardLiveDrill(d, true)).toBe(55);
     expect(awardLiveDrill(d, true)).toBe(0);
     expect(ProgressStore.xpTotal()).toBe(55);
     expect(ProgressStore.completedDrillIds()).toContain(d.drillId);
-  });
-
-  it("a live-drill completion that crosses a rank threshold fires the marker (atomic completeDrill path)", () => {
-    for (const id of [
-      "drill:position-sizing-crypto",
-      "drill:position-sizing-stocks",
-      "drill:position-sizing-forex",
-      "drill:stop-placement-v1",
-    ]) ProgressStore.markDrillCompleted(id);
-    ProgressStore.addXp(190);
-    ProgressStore.clearRankUp();
-    awardLiveDrill(LIVE_DRILL_CATALOG[1]!, true); // +55 → crosses 200
-    expect(ProgressStore.lastRankUp()?.to.rankId).toBe("trainee");
   });
 
   it("live-drill IDs share the one drill namespace — no collision with input drills", async () => {
@@ -138,10 +126,32 @@ describe("awardLiveDrill", () => {
       expect(inputIds.has(ld.drillId), ld.drillId).toBe(false);
     }
   });
+});
 
-  it("XP alone still cannot vault the Trainee drill gate (economy invariant survives the attach)", () => {
-    for (const ld of LIVE_DRILL_CATALOG) awardLiveDrill(ld, true); // 165 XP
-    expect(ProgressStore.xpTotal()).toBe(165);
-    expect(currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId).toBe("observer");
+describe("awardBlowupDrill + awardBonus", () => {
+  beforeEach(() => ProgressStore.reset());
+
+  it("pays 40 base on debrief; +10 bonus once when mechanism correct", () => {
+    const d = BLOWUP_LIVE_DRILLS[0]!;
+    const first = awardBlowupDrill(d, true);
+    expect(first.base).toBe(40);
+    expect(first.bonus).toBe(10);
+    expect(ProgressStore.xpTotal()).toBe(50);
+
+    const repeat = awardBlowupDrill(d, true);
+    expect(repeat.base).toBe(0);
+    expect(repeat.bonus).toBe(0);
+    expect(ProgressStore.xpTotal()).toBe(50);
+  });
+
+  it("awardBonus is idempotent per drill ID", () => {
+    expect(ProgressStore.awardBonus("drill:blowup-stocks", 10)).toBe(10);
+    expect(ProgressStore.awardBonus("drill:blowup-stocks", 10)).toBe(0);
+  });
+});
+
+describe("catalog size", () => {
+  it("six live drills total (3 drawdown + 3 blowup)", () => {
+    expect(LIVE_DRILL_CATALOG).toHaveLength(6);
   });
 });

@@ -20,6 +20,7 @@ import { currentRank, type RankThreshold } from "./rank.js";
 
 let _xpTotal = 0;
 const _completedDrillIds = new Set<string>();
+const _bonusAwardedDrillIds = new Set<string>();
 const _completedScenarioIds = new Set<string>();
 const _completedLessonIds = new Set<string>();
 let _lastRankUp: { from: RankThreshold; to: RankThreshold } | null = null;
@@ -101,6 +102,19 @@ export function completeDrill(id: string, xp: number): void {
 }
 
 /**
+ * Award bonus XP for a drill without re-calling completeDrill (LIVE_DRILL
+ * §4.2 blowup mechanism bonus). Idempotent per drill ID — second call pays 0.
+ */
+export function awardBonus(id: string, xp: number): number {
+  if (_bonusAwardedDrillIds.has(id) || !Number.isFinite(xp) || xp <= 0) {
+    return 0;
+  }
+  _bonusAwardedDrillIds.add(id);
+  addXp(xp);
+  return xp;
+}
+
+/**
  * Complete a lesson AND award its XP atomically (mirrors completeDrill —
  * same rank-change detection across both mutations; once-per-lesson is
  * enforced by the caller checking completedLessonIds first).
@@ -143,6 +157,7 @@ export function completedScenarioIds(): string[] {
 export function reset(): void {
   _xpTotal = 0;
   _completedDrillIds.clear();
+  _bonusAwardedDrillIds.clear();
   _completedScenarioIds.clear();
   _completedLessonIds.clear();
   _lastRankUp = null;
