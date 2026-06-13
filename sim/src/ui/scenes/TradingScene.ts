@@ -322,16 +322,24 @@ export class TradingScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     this.resetSessionState();
-    this.adapter =
-      this.liveDrill !== null
-        ? new SessionAdapter(this.def, undefined, {
+    const maybeRoute = (this.def.manifest as { completionRoute?: string }).completionRoute;
+    this.isDrillMode = this.liveDrill !== null || maybeRoute === "drill_debrief";
+
+    const drawdownSeed =
+      this.liveDrill !== null && this.liveDrill.kind === "drawdown-survival"
+        ? {
             entryOrderId: this.liveDrill.seed.entryOrderId,
             stopOrderId: this.liveDrill.seed.stopOrderId,
             side: this.liveDrill.seed.side,
             quantity: this.liveDrill.seed.quantity,
             fillPrice: this.liveDrill.seed.fillPrice,
             stopPrice: this.liveDrill.seed.stopPrice,
-          })
+          }
+        : undefined;
+
+    this.adapter =
+      drawdownSeed !== undefined
+        ? new SessionAdapter(this.def, undefined, drawdownSeed)
         : new SessionAdapter(this.def);
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));
@@ -366,19 +374,20 @@ export class TradingScene extends Phaser.Scene {
     this.adapter.setCompression("paused");
     this.updateSpeedButtonHighlight("paused");
 
-    // Live-drill mode: initialize the UI display to match the engine truth
-    // the adapter seeded (position + companion stop), then show the
-    // briefing card — the premise and the one rule, gated on START.
+    // Live-drill mode: drawdown drills seed position UI; all live drills
+    // show a blocking briefing card before START.
     if (this.liveDrill !== null) {
-      const sd = this.liveDrill.seed;
-      this.positions.push({
-        orderId: sd.entryOrderId,
-        side: sd.side,
-        quantity: sd.quantity,
-        entryPrice: sd.fillPrice,
-        stopPrice: sd.stopPrice,
-      });
-      this.stopIdToEntryId.set(sd.stopOrderId, sd.entryOrderId);
+      if (this.liveDrill.kind === "drawdown-survival") {
+        const sd = this.liveDrill.seed;
+        this.positions.push({
+          orderId: sd.entryOrderId,
+          side: sd.side,
+          quantity: sd.quantity,
+          entryPrice: sd.fillPrice,
+          stopPrice: sd.stopPrice,
+        });
+        this.stopIdToEntryId.set(sd.stopOrderId, sd.entryOrderId);
+      }
       this.drawDrillBriefing();
     }
 
@@ -1760,6 +1769,7 @@ export class TradingScene extends Phaser.Scene {
     const d = this.liveDrill;
     if (d === null) return;
     const { width, height } = this.scale;
+    const isBlowup = d.kind === "blowup";
     const items: Phaser.GameObjects.GameObject[] = [];
     const overlay = this.add.graphics();
     fillRect(overlay, 0, 0, width, height, C.BG, 0);
@@ -1769,8 +1779,8 @@ export class TradingScene extends Phaser.Scene {
     const blocker = this.add.zone(0, 0, width, height).setOrigin(0, 0).setInteractive().setDepth(50);
     items.push(blocker);
     const g = this.add.graphics().setDepth(51);
-    const pw = 600;
-    const ph = 330;
+    const pw = 620;
+    const ph = isBlowup ? 360 : 330;
     const px = width / 2 - pw / 2;
     const py = height / 2 - ph / 2;
     panel(g, px, py, pw, ph, 8);
@@ -1783,21 +1793,80 @@ export class TradingScene extends Phaser.Scene {
         fontStyle: "bold",
       }).setOrigin(0.5, 0.5).setDepth(51)
     );
+
+    if (isBlowup) {
+      items.push(
+        label(this, width / 2, py + 48, "PRACTICE ACCOUNT — no real money involved", {
+          fontSize: "12px",
+          color: CSS.AMBER,
+          fontStyle: "bold",
+        }).setOrigin(0.5, 0.5).setDepth(51)
+      );
+    }
+
+    const briefingStartY = isBlowup ? py + 72 : py + 52;
     d.briefing.forEach((line: string, i: number) => {
       items.push(
-        label(this, px + 24, py + 52 + i * 19, line, {
+        label(this, px + 24, briefingStartY + i * 19, line, {
           fontSize: "12px",
           color: CSS.TEXT,
         }).setDepth(51)
       );
     });
-    const startBtn = button(this, width / 2 - 90, py + ph - 54, 180, 38, "START", () => {
-      for (const it of items) it.destroy();
-      startBtn.bg.destroy();
-      startBtn.label.destroy();
-    }, { fontSize: "13px" });
-    startBtn.bg.setDepth(51);
-    startBtn.label.setDepth(52);
+
+    const frictionY = py + ph - (isBlowup ? 98 : 78);
+    items.push(
+      label(this, px + 24, frictionY,
+        "This is a practice simulation. It is not financial advice and does not reflect real market conditions.",
+        {
+          fontSize: "10px",
+          color: CSS.DIM,
+          fontStyle: "italic",
+          wordWrap: { width: pw - 48 },
+        }
+      ).setDepth(51)
+    );
+
+    let startBtn: ReturnType<typeof button> | null = null;
+    const countdownLbl = isBlowup
+      ? label(this, width / 2, py + ph - 62, "Starting in 5…", {
+          fontSize: "11px",
+          color: CSS.AMBER,
+          fontStyle: "bold",
+        }).setOrigin(0.5, 0.5).setDepth(51)
+      : null;
+    if (countdownLbl !== null) items.push(countdownLbl);
+
+    const enableStart = (): void => {
+      if (startBtn !== null) return;
+      if (countdownLbl !== null) countdownLbl.destroy();
+      startBtn = button(this, width / 2 - 90, py + ph - 54, 180, 38, "START", () => {
+        for (const it of items) it.destroy();
+        startBtn!.bg.destroy();
+        startBtn!.label.destroy();
+      }, { fontSize: "13px" });
+      startBtn.bg.setDepth(51);
+      startBtn.label.setDepth(52);
+    };
+
+    if (isBlowup) {
+      // Non-dismissible 5-second practice-account reminder (DRILL_SYSTEM_BRIEF §1.5).
+      let remaining = 5;
+      this.time.addEvent({
+        delay: 1000,
+        repeat: 4,
+        callback: () => {
+          remaining -= 1;
+          if (remaining > 0) {
+            countdownLbl?.setText(`Starting in ${remaining}…`);
+          } else {
+            enableStart();
+          }
+        },
+      });
+    } else {
+      enableStart();
+    }
   }
 
   private transitionToDebrief(data: DebriefData): void {

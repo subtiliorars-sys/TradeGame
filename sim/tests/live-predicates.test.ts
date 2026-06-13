@@ -266,8 +266,8 @@ describe("red-team regressions — the predicate set as paymaster", () => {
 
 describe("F5 regression: the seed stop is REAL in the book on every market", () => {
   it("forex drill seed no longer silently loses its stop (would now throw on reject)", async () => {
-    const { LIVE_DRILL_CATALOG } = await import("../src/drills/liveCatalog.js");
-    const fx = LIVE_DRILL_CATALOG.find((d) => d.market === "forex")!;
+    const { DRAWDOWN_LIVE_DRILLS } = await import("../src/drills/liveCatalog.js");
+    const fx = DRAWDOWN_LIVE_DRILLS.find((d) => d.market === "forex")!;
     // Constructing the run is the assertion — a rejected seed stop throws.
     const result = runScenario({
       seed: 9,

@@ -43,6 +43,7 @@ not advice. Run `npm run lint-pnl` before opening a PR.
 | LD-W2 | Position seeding (`applyDrillSeed`, forceFill) | done | wave2-seed.test.ts |
 | LD-W3 | Drawdown pass predicates (zero-PnL proxy) | done | livePredicates.test.ts |
 | LD-W4 | Drawdown Survival playable (×3 markets) | done | liveCatalog.ts + DrillDebriefScene |
+| LD-W5 | Blow Up on Purpose drills (×3 markets) | done | blowup debrief + catalog + goldens |
 
 ---
 
@@ -50,22 +51,23 @@ not advice. Run `npm run lint-pnl` before opening a PR.
 
 ### Wave LD-W5 — Blow Up on Purpose drills
 
-**Status:** `active`  
+**Status:** `done`  
 **Spec:** `docs/game/LIVE_DRILL_ENGINE_BRIEF.md` §5 Wave 5  
-**Branch slug:** `automation/wave-ld-w5-blowup`
+**Branch slug:** `automation/wave-ld-w5-blowup`  
+**Completed:** 2026-06-13
 
 **Scope:** Ship all three `drill:blowup-*` live-session drills end-to-end.
 Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + debrief.
 
 **Acceptance criteria:**
-- [ ] `liveCatalog.ts` (or sibling) registers `drill:blowup-crypto`, `-stocks`, `-forex`
-- [ ] `DrillDebriefScene` blowup path: annotated timeline, mechanism MCQ, no dollar
+- [x] `liveCatalog.ts` (or sibling) registers `drill:blowup-crypto`, `-stocks`, `-forex`
+- [x] `DrillDebriefScene` blowup path: annotated timeline, mechanism MCQ, no dollar
       values in rendered output (owner condition 2)
-- [ ] `ProgressStore.awardBonus()` wired for correct mechanism identification
-- [ ] Non-dismissible 5-second practice-account reminder at blowup session start
-- [ ] Golden fixtures for all three blowup drills in `tests/golden-drills.test.ts`
-- [ ] Red-team pass documented in PR body (classifier boundary, posture rails §8)
-- [ ] `npm run verify` green
+- [x] `ProgressStore.awardBonus()` wired for correct mechanism identification
+- [x] Non-dismissible 5-second practice-account reminder at blowup session start
+- [x] Golden fixtures for all three blowup drills in `tests/golden-drills.test.ts`
+- [x] Red-team pass documented in PR body (classifier boundary, posture rails §8)
+- [x] `npm run verify` green
 
 **Blocked by:** none (owner approved classifier with hard conditions — see brief §6a)
 
@@ -218,4 +220,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-13 — wave worker bootstrap.*
+*Last updated: 2026-06-13 — LD-W5 Blow Up on Purpose shipped.*
