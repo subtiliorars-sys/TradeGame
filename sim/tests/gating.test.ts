@@ -12,8 +12,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { scenarioLockState } from "../src/ui/engine/gating.js";
 import { DRILL_CATALOG } from "../src/drills/catalog.js";
+import { LIVE_DRILL_CATALOG } from "../src/drills/liveCatalog.js";
 
-const ALL_SHIPPED = DRILL_CATALOG.map((d) => d.id);
+const ALL_SHIPPED = [
+  ...DRILL_CATALOG.map((d) => d.id),
+  ...LIVE_DRILL_CATALOG.map((d) => d.drillId),
+];
 import { getScenario, allScenarios } from "../src/scenarios/registry.js";
 import * as ProgressStore from "../src/engine/progress.js";
 
@@ -55,6 +59,19 @@ describe("scenarioLockState — hard locks (scenario prereqs)", () => {
       expect(state.locked, id).toBe(true);
       expect(state.reasons.some((r) => r.includes("drill")), id).toBe(true);
     }
+  });
+
+  it("drill flip: live drawdown/blowup IDs hard-lock when listed on a scenario prereq", () => {
+    const fakeManifest = {
+      id: "SCN-TEST",
+      minRank: "Observer",
+      prereqs: ["drill:drawdown-survival-crypto"],
+    } as import("../src/scenarios/types.js").ScenarioManifest;
+    const locked = scenarioLockState(fakeManifest, "observer", [], undefined, []);
+    expect(locked.locked).toBe(true);
+    expect(locked.reasons.some((r) => r.includes("drawdown"))).toBe(true);
+    const open = scenarioLockState(fakeManifest, "observer", [], undefined, ["drill:drawdown-survival-crypto"]);
+    expect(open.locked).toBe(false);
   });
 
   it("no-softlock (path-shaped): shipped drill prereqs are zero-state earnable and open the V0 scenarios", () => {

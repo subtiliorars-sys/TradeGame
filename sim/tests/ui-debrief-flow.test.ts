@@ -149,8 +149,14 @@ describe("ProgressStore rank-up marker (§4.5 congratulation card hook)", () => 
       "drill:position-sizing-stocks",
       "drill:position-sizing-forex",
       "drill:stop-placement-v1",
+      "drill:stop-placement-crypto",
+      "drill:stop-placement-stocks",
+      "drill:stop-placement-forex",
+      "drill:drawdown-survival-crypto",
+      "drill:drawdown-survival-stocks",
+      "drill:drawdown-survival-forex",
     ]) ProgressStore.markDrillCompleted(id);
-    ProgressStore.addXp(900); // observer → practitioner in one add
+    ProgressStore.addXp(900); // observer → practitioner in one add (LD-W6 gate)
     const up = ProgressStore.lastRankUp();
     expect(up?.from.rankId).toBe("observer");
     expect(up?.to.rankId).toBe("practitioner");

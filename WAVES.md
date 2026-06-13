@@ -75,19 +75,20 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LD-W6 — Rank gate flips (Practitioner / Journeyman)
 
-**Status:** `pending`  
+**Status:** `done`  
 **Depends on:** LD-W5  
 **Spec:** `docs/game/LIVE_DRILL_ENGINE_BRIEF.md` §5 Wave 6; `DRILL_SYSTEM_BRIEF.md` §6  
-**Branch slug:** `automation/wave-ld-w6-gates`
+**Branch slug:** `automation/wave-ld-w6-gates`  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
-- [ ] All six Practitioner drills reachable from zero state (3 stop + 3 drawdown)
-- [ ] All three Journeyman blowup drills reachable after Practitioner
-- [ ] `rank.ts`: `drillsRequired` populated for Practitioner and Journeyman
-- [ ] `gating.ts`: hard-lock list includes drawdown + blowup drill IDs
-- [ ] Existing scenario golden digests **byte-identical** (no drill events leaked)
-- [ ] Integration test: gate blocks SCN-001 until required drills complete
-- [ ] `npm run verify` green
+- [x] All six Practitioner drills reachable from zero state (3 stop + 3 drawdown)
+- [x] All three Journeyman blowup drills reachable after Practitioner
+- [x] `rank.ts`: `drillsRequired` populated for Practitioner and Journeyman
+- [x] `gating.ts`: hard-lock list includes drawdown + blowup drill IDs
+- [x] Existing scenario golden digests **byte-identical** (no drill events leaked)
+- [x] Integration test: gate blocks SCN-001 until required drills complete
+- [x] `npm run verify` green
 
 ---
 

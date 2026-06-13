@@ -17,6 +17,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { currentRank, CANONICAL_LADDER, type RankThreshold } from "../src/engine/rank.js";
 import { addXp, xpTotal, completedDrillIds, markDrillCompleted, reset } from "../src/engine/progress.js";
 import { DRILL_CATALOG } from "../src/drills/catalog.js";
+import { LIVE_DRILL_CATALOG } from "../src/drills/liveCatalog.js";
 
 // Trainee's shipped drill gate (wave C) — boundary tests that probe XP
 // thresholds pass these so the drill gate is satisfied.
@@ -26,6 +27,23 @@ const GATE_DRILLS = [
   "drill:position-sizing-forex",
   "drill:stop-placement-v1",
 ];
+
+const PRACTITIONER_DRILLS = [
+  "drill:stop-placement-crypto",
+  "drill:stop-placement-stocks",
+  "drill:stop-placement-forex",
+  "drill:drawdown-survival-crypto",
+  "drill:drawdown-survival-stocks",
+  "drill:drawdown-survival-forex",
+];
+
+const JOURNEYMAN_DRILLS = [
+  "drill:blowup-crypto",
+  "drill:blowup-stocks",
+  "drill:blowup-forex",
+];
+
+const ALL_RANK_DRILLS = [...GATE_DRILLS, ...PRACTITIONER_DRILLS, ...JOURNEYMAN_DRILLS];
 
 // ---------------------------------------------------------------------------
 // Synthetic ladder for drill-gate tests (keeps them independent of tunable values)
@@ -63,59 +81,74 @@ describe("currentRank — canonical ladder boundaries", () => {
     expect(r.rank.rankId).toBe("trainee");
   });
 
-  it("800 XP → Practitioner (exact threshold)", () => {
+  it("800 XP without Practitioner drills → Trainee (drill gate blocks)", () => {
     const r = currentRank(800, GATE_DRILLS);
+    expect(r.rank.rankId).toBe("trainee");
+    expect(r.drillsMissing.length).toBe(6);
+  });
+
+  it("800 XP → Practitioner (exact threshold, all Practitioner drills done)", () => {
+    const r = currentRank(800, [...GATE_DRILLS, ...PRACTITIONER_DRILLS]);
     expect(r.rank.rankId).toBe("practitioner");
   });
 
   it("1999 XP → Practitioner (below Journeyman threshold)", () => {
-    const r = currentRank(1999, GATE_DRILLS);
+    const r = currentRank(1999, [...GATE_DRILLS, ...PRACTITIONER_DRILLS]);
     expect(r.rank.rankId).toBe("practitioner");
   });
 
-  it("2000 XP → Journeyman (exact threshold)", () => {
-    const r = currentRank(2000, GATE_DRILLS);
+  it("2000 XP without Journeyman drills → Practitioner (drill gate blocks)", () => {
+    const r = currentRank(2000, [...GATE_DRILLS, ...PRACTITIONER_DRILLS]);
+    expect(r.rank.rankId).toBe("practitioner");
+    expect(r.drillsMissing).toEqual(JOURNEYMAN_DRILLS);
+  });
+
+  it("2000 XP → Journeyman (exact threshold, all Journeyman drills done)", () => {
+    const r = currentRank(2000, ALL_RANK_DRILLS);
     expect(r.rank.rankId).toBe("journeyman");
   });
 
   it("4499 XP → Journeyman (below Strategist threshold)", () => {
-    const r = currentRank(4499, GATE_DRILLS);
+    const r = currentRank(4499, ALL_RANK_DRILLS);
     expect(r.rank.rankId).toBe("journeyman");
   });
 
   it("4500 XP → Strategist (exact threshold)", () => {
-    const r = currentRank(4500, GATE_DRILLS);
+    const r = currentRank(4500, ALL_RANK_DRILLS);
     expect(r.rank.rankId).toBe("strategist");
   });
 
   it("7999 XP → Strategist (below Senior Strategist threshold)", () => {
-    const r = currentRank(7999, GATE_DRILLS);
+    const r = currentRank(7999, ALL_RANK_DRILLS);
     expect(r.rank.rankId).toBe("strategist");
   });
 
   it("8000 XP → Senior Strategist (exact threshold)", () => {
-    const r = currentRank(8000, GATE_DRILLS);
+    const r = currentRank(8000, ALL_RANK_DRILLS);
     expect(r.rank.rankId).toBe("senior_strategist");
   });
 
   it("8000+ XP → Senior Strategist; nextRank is null (top rank)", () => {
-    const r = currentRank(99999, GATE_DRILLS);
+    const r = currentRank(99999, ALL_RANK_DRILLS);
     expect(r.rank.rankId).toBe("senior_strategist");
     expect(r.nextRank).toBeNull();
   });
 
   it("top rank: xpToNextRank is 0", () => {
-    const r = currentRank(8000, GATE_DRILLS);
+    const r = currentRank(8000, ALL_RANK_DRILLS);
     expect(r.xpToNextRank).toBe(0);
   });
 
   it("top rank: drillsMissing is empty", () => {
-    const r = currentRank(8000, GATE_DRILLS);
+    const r = currentRank(8000, ALL_RANK_DRILLS);
     expect(r.drillsMissing).toHaveLength(0);
   });
 
   it("gates only on SHIPPED drills (a gate on an unshipped drill would softlock the ladder)", () => {
-    const shipped = new Set(DRILL_CATALOG.map((d) => d.id));
+    const shipped = new Set([
+      ...DRILL_CATALOG.map((d) => d.id),
+      ...LIVE_DRILL_CATALOG.map((d) => d.drillId),
+    ]);
     for (const rank of CANONICAL_LADDER) {
       for (const id of rank.drillsRequired) {
         expect(shipped.has(id), `${rank.rankId} gates on unshipped drill ${id}`).toBe(true);
@@ -126,6 +159,16 @@ describe("currentRank — canonical ladder boundaries", () => {
   it("Trainee gates on the four wave-A drills (brief §3.3, market-balanced)", () => {
     const trainee = CANONICAL_LADDER.find((r) => r.rankId === "trainee");
     expect([...(trainee?.drillsRequired ?? [])].sort()).toEqual([...GATE_DRILLS].sort());
+  });
+
+  it("Practitioner gates on six intermediate drills (brief §3.3, LD-W6)", () => {
+    const practitioner = CANONICAL_LADDER.find((r) => r.rankId === "practitioner");
+    expect([...(practitioner?.drillsRequired ?? [])].sort()).toEqual([...PRACTITIONER_DRILLS].sort());
+  });
+
+  it("Journeyman gates on three blowup drills (brief §3.3, LD-W6)", () => {
+    const journeyman = CANONICAL_LADDER.find((r) => r.rankId === "journeyman");
+    expect([...(journeyman?.drillsRequired ?? [])].sort()).toEqual([...JOURNEYMAN_DRILLS].sort());
   });
 
   it("200 XP without the drills → still Observer, gate explicit in drillsMissing", () => {
@@ -156,7 +199,7 @@ describe("currentRank — xpIntoRank and xpToNextRank math", () => {
   });
 
   it("exact at Practitioner threshold: xpIntoRank=0, xpToNextRank=1200", () => {
-    const r = currentRank(800, GATE_DRILLS);
+    const r = currentRank(800, [...GATE_DRILLS, ...PRACTITIONER_DRILLS]);
     expect(r.xpIntoRank).toBe(0);
     expect(r.xpToNextRank).toBe(1200);
   });
@@ -310,7 +353,7 @@ import { ladderViewModel } from "../src/engine/rank.js";
 
 describe("ladderViewModel — §4.5 rank-ladder display", () => {
   it("marks achieved / current / future across the canonical ladder (gate satisfied)", () => {
-    const rungs = ladderViewModel(850, GATE_DRILLS);
+    const rungs = ladderViewModel(850, [...GATE_DRILLS, ...PRACTITIONER_DRILLS]);
     expect(rungs.map((r) => r.state)).toEqual([
       "achieved", // observer
       "achieved", // trainee
@@ -335,7 +378,7 @@ describe("ladderViewModel — §4.5 rank-ladder display", () => {
   });
 
   it("top rank: last rung current, all others achieved", () => {
-    const rungs = ladderViewModel(10_000, GATE_DRILLS);
+    const rungs = ladderViewModel(10_000, ALL_RANK_DRILLS);
     expect(rungs[rungs.length - 1]?.state).toBe("current");
     expect(rungs.slice(0, -1).every((r) => r.state === "achieved")).toBe(true);
   });
