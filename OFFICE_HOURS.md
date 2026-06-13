@@ -57,7 +57,7 @@ Quick checks:
 - [ ] Coaching tone = process, not buy/sell advice
 
 ### 4. Decide (30 sec)
-- [ ] **Merge** — good enough to unblock the next wave
+- [ ] **Merge** — good enough to unblock the next wave (or wait — **automerge-safe** merges automatically when CI is green and branch is `automation/*`)
 - [ ] **Comment** — one specific fix; worker picks up on next run
 - [ ] **Queue** — only for owner gates (legal, deploy, COPPA); not for "keep going"
 
