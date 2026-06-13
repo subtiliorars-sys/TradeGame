@@ -1,9 +1,6 @@
 /**
- * Lesson catalog — wave 1 (LESSON_SYSTEM_BRIEF §4.2): the nine lessons that
- * shipped scenario manifests actually reference in prereqs — the minimum
- * set giving every scenario an unlockable prereq lesson. Foundation track
- * is deliberately NOT wave-1 (no scenario gates on it; forcing 10 lessons
- * before play would violate the lesson-then-immediately-do model).
+ * Lesson catalog — wave 1 scenario-linked lessons + LESS-W3 foundation
+ * starters (F-01, F-02). Intermediate wave-2 (LESS-W2) lands separately.
  *
  * Lesson prereqs remain ADVISORY (brief §4.3: wave-1 chains pass through
  * wave-2 content that doesn't exist yet — the hard flip waits for wave 2
@@ -18,6 +15,8 @@ import type { LessonContent, LessonDef } from "./types.js";
 
 export type { LessonDef, LessonContent } from "./types.js";
 
+import { LESSON_F_01 } from "../ui/content/lessons/f-01.js";
+import { LESSON_F_02 } from "../ui/content/lessons/f-02.js";
 import { LESSON_C_I01 } from "../ui/content/lessons/c-i01.js";
 import { LESSON_C_I03 } from "../ui/content/lessons/c-i03.js";
 import { LESSON_S_I01 } from "../ui/content/lessons/s-i01.js";
@@ -39,6 +38,8 @@ function def(content: LessonContent, tier: LessonDef["tier"] = "standard"): Less
 }
 
 export const LESSON_CATALOG: LessonDef[] = [
+  def(LESSON_F_01, "short"),
+  def(LESSON_F_02),
   def(LESSON_C_I01),
   def(LESSON_C_I03),
   def(LESSON_S_I01),
