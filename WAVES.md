@@ -138,6 +138,22 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ---
 
+### Wave LESS-W4 — Foundation track (F-07–F-10)
+
+**Status:** `in_review`  
+**Spec:** `docs/lessons/FOUNDATION.md` §F-07–F-10  
+**Branch slug:** `automation/wave-less-w4-foundation-f07-f10`
+
+**Acceptance criteria:**
+- [x] Port F-07 through F-10 (journaling, psychology, retail losses, scam defense)
+- [x] Scenario or drill CTAs per shipped content (F-10 uses observe-style scenario CTA)
+- [x] `tests/lessons.test.ts` updated for 19-lesson catalog and XP totals
+- [x] `npm run verify` green
+
+**Note:** Stack after **#53** (LESS-W3); rebase both after **#50** (LESS-W2) merges.
+
+---
+
 ### Wave PERS-W1 — Replay first-clear XP rule
 
 **Status:** `done`  
