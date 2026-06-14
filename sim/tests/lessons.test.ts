@@ -1,7 +1,8 @@
 /**
  * Lesson system tests — catalog invariants, prereq-ID alignment,
  * honest-XP awards, posture sweep (LESSON_SYSTEM_BRIEF §2-§7).
- * Foundation F-01–F-10, wave 1 (nine scenario-linked), wave 2 intermediate (six).
+ * Foundation F-01–F-10, wave 1 (nine scenario-linked), wave 2 intermediate (six),
+ * LESS-W6 crypto beginner (five).
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -31,17 +32,28 @@ const WAVE2_INTERMEDIATE_IDS = new Set([
   "lesson:why-retail-forex-loses",
 ]);
 
+const CRYPTO_BEGINNER_IDS = new Set([
+  "lesson:spot-mechanics-crypto",
+  "lesson:wallets-and-custody",
+  "lesson:crypto-sessions-volatility",
+  "lesson:grid-strategies-how-they-work",
+  "lesson:grid-failure-modes",
+]);
+
 beforeEach(() => {
   ProgressStore.reset();
 });
 
 describe("catalog invariants", () => {
-  it("ships foundation (ten) + wave-1 (nine) + wave-2 intermediate (six) lessons", () => {
-    expect(LESSON_CATALOG).toHaveLength(25);
+  it("ships foundation (ten) + crypto beginner (five) + wave-1 (nine) + wave-2 intermediate (six) lessons", () => {
+    expect(LESSON_CATALOG).toHaveLength(30);
     const curriculumIds = new Set(LESSON_CATALOG.map((l) => l.content.curriculumId));
     for (let n = 1; n <= 10; n++) {
       const fid = `F-${String(n).padStart(2, "0")}`;
       expect(curriculumIds.has(fid), fid).toBe(true);
+    }
+    for (const id of CRYPTO_BEGINNER_IDS) {
+      expect(LESSON_CATALOG.some((l) => l.content.id === id), id).toBe(true);
     }
     for (const id of WAVE1_IDS) {
       expect(LESSON_CATALOG.some((l) => l.content.id === id), id).toBe(true);
@@ -99,6 +111,15 @@ describe("catalog invariants", () => {
     }
   });
 
+  it("crypto beginner lessons carry C-B curriculum provenance", () => {
+    for (const l of LESSON_CATALOG) {
+      if (!CRYPTO_BEGINNER_IDS.has(l.content.id)) continue;
+      expect(l.content.curriculumId).toMatch(/^C-B\d\d$/);
+      expect(l.content.pages.length).toBeGreaterThanOrEqual(2);
+      expect(l.content.processCheck.length).toBeGreaterThan(10);
+    }
+  });
+
   it("wave-2 intermediate lessons carry curriculum provenance (C/S/X-I tier)", () => {
     for (const l of LESSON_CATALOG) {
       if (!WAVE2_INTERMEDIATE_IDS.has(l.content.id)) continue;
@@ -147,9 +168,9 @@ describe("awardLesson — honest-XP", () => {
     expect(up?.to.rankId).toBe("trainee");
   });
 
-  it("all twenty-five lessons = 595 XP (3 short + 22 standard); rank respects the live ladder's Trainee gate", () => {
+  it("all thirty lessons = 720 XP (3 short + 27 standard); rank respects the live ladder's Trainee gate", () => {
     for (const l of LESSON_CATALOG) awardLesson(l);
-    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 22 * 25);
+    expect(ProgressStore.xpTotal()).toBe(3 * 15 + 27 * 25);
     // Ladder-aware: pre-drill-gate branches rank Trainee on XP alone; once
     // the drill-gate flip (PR #18 line) merges, reading alone stays Observer.
     const trainee = CANONICAL_LADDER.find((r) => r.rankId === "trainee");
