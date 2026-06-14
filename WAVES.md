@@ -193,20 +193,39 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W7 — Stocks beginner track (S-B01–S-B04)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/lessons/PILLAR_INTROS.md`, `docs/lessons/BEGINNER_COMPLETIONS.md`  
-**Branch slug:** `automation/wave-less-w7-stocks-beginner-sb01-sb04`
+**Branch slug:** `automation/wave-less-w7-stocks-beginner-sb01-sb04`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/59  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] Port S-B01–S-B04 with process checks and drill/scenario CTAs
 - [x] `catalog.ts` — insert S-B chain before S-I01; 34-lesson catalog
 - [x] `prereqGraph.ts` — S-B chain; S-I01 parent → S-B04 per brief §7.4
 - [x] `tests/lessons.test.ts` — 34 lessons, 820 XP
+- [x] `npm run verify` green
+
+**Deferred (follow-up, not blocking merge):**
+- Dedicated DCA/rebalance sim CTAs from source docs — no shipped DCA drill yet
+
+---
+
+### Wave LESS-W8 — Forex beginner gap fill (X-B01–X-B02)
+
+**Status:** `in_review`  
+**Spec:** `docs/lessons/PILLAR_INTROS.md` §X-B01–X-B02  
+**Branch slug:** `automation/wave-less-w8-forex-beginner-xb01-xb02`
+
+**Acceptance criteria:**
+- [x] Port X-B01–X-B02 (pairs/pips, leverage bluntly) with drill CTAs
+- [x] Insert before shipped X-B03/X-B04; rewire X-B03 parent → X-B02
+- [x] `tests/lessons.test.ts` — 36 lessons, 870 XP
 - [ ] `npm run verify` green
 
-**Deferred (not in this wave):**
-- Dedicated DCA/rebalance sim CTAs from source docs — no shipped DCA drill yet; lessons use `drill:position-sizing-stocks` / SCN-005 stand-ins
-- Lesson prereq **hard-flip** gating — still advisory until full beginner tracks ship (Forex X-B01/X-B02 remain)
+**Deferred (owner / later waves):**
+- Lesson prereq **hard-flip** to enforce full chains — catalog complete; flip is a governance decision (brief §7.4)
+- Close superseded **PR #57** (cursor batch ships overlapping beginner content)
 
 ---
 
@@ -313,4 +332,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-13 — LESS-W2 rebase onto main (LESS-W3 merged).*
+*Last updated: 2026-06-13 — LESS-W8 forex beginner (X-B01–X-B02) in review; all beginner tracks in catalog.*

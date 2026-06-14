@@ -2,10 +2,10 @@
  * Lesson catalog — foundation F-01–F-10 + wave 1 scenario-linked lessons +
  * wave 2 intermediate (LESSON_SYSTEM_BRIEF §4.2, §4.4): C-I02/C-I04,
  * S-I03/S-I04, X-I03/X-I04; LESS-W6 crypto beginner C-B01–C-B05;
- * LESS-W7 stocks beginner S-B01–S-B04.
+ * LESS-W7 stocks beginner S-B01–S-B04; LESS-W8 forex beginner X-B01–X-B02.
  *
- * Lesson prereqs remain ADVISORY (brief §4.3 / §7.3: full chains still pass
- * through Foundation + Beginner content not yet shipped — hard flip waits).
+ * Lesson prereqs remain ADVISORY until owner flips hard gates (brief §7.3);
+ * all three beginner tracks are now shipped in catalog.
  *
  * Honest-XP: awardLesson pays once per lesson ID (re-reading is free,
  * always — re-reading is the point).
@@ -44,6 +44,8 @@ import { LESSON_S_I02 } from "../ui/content/lessons/s-i02.js";
 import { LESSON_S_I03 } from "../ui/content/lessons/s-i03.js";
 import { LESSON_S_I04 } from "../ui/content/lessons/s-i04.js";
 import { LESSON_S_I05 } from "../ui/content/lessons/s-i05.js";
+import { LESSON_X_B01 } from "../ui/content/lessons/x-b01.js";
+import { LESSON_X_B02 } from "../ui/content/lessons/x-b02.js";
 import { LESSON_X_B03 } from "../ui/content/lessons/x-b03.js";
 import { LESSON_X_B04 } from "../ui/content/lessons/x-b04.js";
 import { LESSON_X_I01 } from "../ui/content/lessons/x-i01.js";
@@ -90,6 +92,8 @@ export const LESSON_CATALOG: LessonDef[] = [
   def(LESSON_S_I03),
   def(LESSON_S_I04),
   def(LESSON_S_I05),
+  def(LESSON_X_B01),
+  def(LESSON_X_B02),
   def(LESSON_X_B03, "short"), // pillar-intro length
   def(LESSON_X_B04, "short"), // beginner-completion length
   def(LESSON_X_I01),
