@@ -178,7 +178,8 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 **Status:** `in_review`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §2.2–§2.6, §4.4  
-**Branch slug:** `automation/wave-less-w6-beginner`
+**Branch slug:** `automation/wave-less-w6-beginner`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/57
 
 **Acceptance criteria:**
 - [x] Port eleven beginner lessons from `PILLAR_INTROS.md` + `BEGINNER_COMPLETIONS.md`
