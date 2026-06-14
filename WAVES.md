@@ -229,14 +229,15 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave GOV-W1 — Lesson prereq hard-flip (governance)
 
-**Status:** `pending`  
+**Status:** `done`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §7.4  
-**Branch slug:** `automation/wave-gov-w1-prereq-hard-flip`
+**Branch slug:** `automation/wave-gov-w1-prereq-hard-flip`  
+**Completed:** 2026-06-14
 
 **Acceptance criteria:**
-- [ ] Flip gating to enforce full beginner chains (crypto, stocks, forex) before intermediate lessons
-- [ ] Integration test: blocked lesson shows clear prereq path (no PnL language)
-- [ ] `npm run verify` green
+- [x] Flip gating to enforce full beginner chains (crypto, stocks, forex) before intermediate lessons
+- [x] Integration test: blocked lesson shows clear prereq path (no PnL language)
+- [x] `npm run verify` green
 
 **Owner note:** Catalog chains complete; flip is a governance decision — queue if copy/gating needs sign-off.
 
@@ -345,4 +346,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-13 — LESS-W8 forex beginner (X-B01–X-B02) in review; all beginner tracks in catalog.*
+*Last updated: 2026-06-14 — GOV-W1 lesson prereq hard-flip; queue clear except blocked PERS-W2 / DEPLOY-W1.*
