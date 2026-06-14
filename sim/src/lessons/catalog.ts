@@ -1,7 +1,7 @@
 /**
  * Lesson catalog — foundation F-01–F-10 + wave 1 scenario-linked lessons +
  * wave 2 intermediate (LESSON_SYSTEM_BRIEF §4.2, §4.4): C-I02/C-I04,
- * S-I03/S-I04, X-I03/X-I04. Beginner tracks remain a later wave.
+ * S-I03/S-I04, X-I03/X-I04; LESS-W6 crypto beginner C-B01–C-B05.
  *
  * Lesson prereqs remain ADVISORY (brief §4.3 / §7.3: full chains still pass
  * through Foundation + Beginner content not yet shipped — hard flip waits).
@@ -25,6 +25,11 @@ import { LESSON_F_07 } from "../ui/content/lessons/f-07.js";
 import { LESSON_F_08 } from "../ui/content/lessons/f-08.js";
 import { LESSON_F_09 } from "../ui/content/lessons/f-09.js";
 import { LESSON_F_10 } from "../ui/content/lessons/f-10.js";
+import { LESSON_C_B01 } from "../ui/content/lessons/c-b01.js";
+import { LESSON_C_B02 } from "../ui/content/lessons/c-b02.js";
+import { LESSON_C_B03 } from "../ui/content/lessons/c-b03.js";
+import { LESSON_C_B04 } from "../ui/content/lessons/c-b04.js";
+import { LESSON_C_B05 } from "../ui/content/lessons/c-b05.js";
 import { LESSON_C_I01 } from "../ui/content/lessons/c-i01.js";
 import { LESSON_C_I02 } from "../ui/content/lessons/c-i02.js";
 import { LESSON_C_I03 } from "../ui/content/lessons/c-i03.js";
@@ -62,6 +67,11 @@ export const LESSON_CATALOG: LessonDef[] = [
   def(LESSON_F_08),
   def(LESSON_F_09),
   def(LESSON_F_10),
+  def(LESSON_C_B01),
+  def(LESSON_C_B02),
+  def(LESSON_C_B03),
+  def(LESSON_C_B04),
+  def(LESSON_C_B05),
   def(LESSON_C_I01),
   def(LESSON_C_I02),
   def(LESSON_C_I03),

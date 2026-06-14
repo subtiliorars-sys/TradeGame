@@ -110,10 +110,11 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W2 — Lessons wave 2 (intermediate tier)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4.4  
 **Branch slug:** `automation/wave-less-w2`  
-**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/50
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/50  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] Ship next lesson set per brief (C-I02, C-I04, S-I03, S-I04, X-I03, X-I04)
@@ -160,13 +161,30 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W5 — Lesson prereq DAG validation
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §7.4  
-**Branch slug:** `automation/wave-less-w5-prereq-dag`
+**Branch slug:** `automation/wave-less-w5-prereq-dag`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/56  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] `sim/src/lessons/prereqGraph.ts` — shipped curriculum edges + cycle detector
 - [x] `sim/tests/lesson-prereq-dag.test.ts` — no cycles; foundation F-01..F-10 chain locked
+- [x] `npm run verify` green
+
+---
+
+### Wave LESS-W6 — Crypto beginner track (C-B01–C-B05)
+
+**Status:** `in_review`  
+**Spec:** `docs/lessons/PILLAR_INTROS.md`, `docs/lessons/BEGINNER_COMPLETIONS.md`  
+**Branch slug:** `automation/wave-less-w6-crypto-beginner-cb01-cb05`
+
+**Acceptance criteria:**
+- [x] Port C-B01–C-B05 into lesson modules with process checks and drill/scenario CTAs
+- [x] `catalog.ts` — insert beginner chain before C-I01; 30-lesson catalog
+- [x] `prereqGraph.ts` — C-B chain; C-I01 parent → C-B05 per brief §7.4
+- [x] `tests/lessons.test.ts` — 30 lessons, 720 XP
 - [x] `npm run verify` green
 
 ---
