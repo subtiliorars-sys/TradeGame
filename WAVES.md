@@ -213,19 +213,32 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W8 — Forex beginner gap fill (X-B01–X-B02)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/lessons/PILLAR_INTROS.md` §X-B01–X-B02  
-**Branch slug:** `automation/wave-less-w8-forex-beginner-xb01-xb02`
+**Branch slug:** `automation/wave-less-w8-forex-beginner-xb01-xb02`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/60  
+**Completed:** 2026-06-14
 
 **Acceptance criteria:**
 - [x] Port X-B01–X-B02 (pairs/pips, leverage bluntly) with drill CTAs
 - [x] Insert before shipped X-B03/X-B04; rewire X-B03 parent → X-B02
 - [x] `tests/lessons.test.ts` — 36 lessons, 870 XP
+- [x] `npm run verify` green
+
+---
+
+### Wave GOV-W1 — Lesson prereq hard-flip (governance)
+
+**Status:** `pending`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §7.4  
+**Branch slug:** `automation/wave-gov-w1-prereq-hard-flip`
+
+**Acceptance criteria:**
+- [ ] Flip gating to enforce full beginner chains (crypto, stocks, forex) before intermediate lessons
+- [ ] Integration test: blocked lesson shows clear prereq path (no PnL language)
 - [ ] `npm run verify` green
 
-**Deferred (owner / later waves):**
-- Lesson prereq **hard-flip** to enforce full chains — catalog complete; flip is a governance decision (brief §7.4)
-- Close superseded **PR #57** (cursor batch ships overlapping beginner content)
+**Owner note:** Catalog chains complete; flip is a governance decision — queue if copy/gating needs sign-off.
 
 ---
 
