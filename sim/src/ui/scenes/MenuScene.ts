@@ -112,8 +112,7 @@ export class MenuScene extends Phaser.Scene {
       { fillColor: C.SURFACE, textColor: CSS.AMBER, fontSize: "12px" }
     );
     void db;
-    // LESSONS entry — read-then-do; lessons feed scenario prereqs (advisory
-    // in wave 1) and the drill provenance chain.
+    // LESSONS entry — read-then-do; lesson prereqs enforce the curriculum DAG.
     const lb = button(
       this,
       width - PAD - 150,
@@ -229,16 +228,15 @@ export class MenuScene extends Phaser.Scene {
 
     hline(g, x + 12, y + 148, CARD_W - 24);
 
-    // Gating (wave D): scenario-completion prereqs hard-lock the card with
-    // an explicit reason (§4.5 — never a silent stall); rank and drill/lesson
-    // requirements render as advisories until those systems ship (see
-    // ui/engine/gating.ts for the softlock rationale).
+    // Gating: scenario, shipped drill, and shipped lesson prereqs hard-lock
+    // with explicit reasons (§4.5 — never a silent stall); rank stays advisory.
     const lockState = scenarioLockState(
       manifest,
       currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId,
       ProgressStore.completedScenarioIds(),
       undefined,
-      ProgressStore.completedDrillIds()
+      ProgressStore.completedDrillIds(),
+      ProgressStore.completedLessonIds()
     );
 
     const bw = CARD_W - 24;
