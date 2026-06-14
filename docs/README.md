@@ -29,11 +29,13 @@ Start here. One line per doc; read on demand. Owner actions live in
 | [SIGNALS_LANDSCAPE.md](SIGNALS_LANDSCAPE.md) | **Never publish.** Names-only registry of third-party signal channels |
 | [YOUTUBE_PLAN.md](YOUTUBE_PLAN.md) | Channel plan + 4 recordable scripts (publishing entity-gated) |
 | [WEBSITE_ONEPAGER.md](WEBSITE_ONEPAGER.md) → [../site/](../site/) | Landing copy → static HTML prototype (deploy-gated, noindex) |
+| [PITCH.md](PITCH.md) | **Not outbound.** Positioning & pitch package (players / publishers / B2B) — entity- + attorney-gated |
 
 ## Game
 | Doc | What it is |
 |---|---|
 | [GDD.md](GDD.md) | Game design canon — appendix indexes everything below |
+| game/[EXPERIENCE_DESIGN.md](game/EXPERIENCE_DESIGN.md) | Game-first experience & campaign design — tone, world, mentor, 120-hour arc (companion to GDD) |
 | game/[FICTIONAL_CANON.md](game/FICTIONAL_CANON.md) | **Instrument registry** — all content uses ONLY these names |
 | game/[SCENARIOS_V0.md](game/SCENARIOS_V0.md) · [SCENARIOS_V1.md](game/SCENARIOS_V1.md) | 6 specced scenarios + authoring template |
 | game/[SIM_ENGINE_SPEC.md](game/SIM_ENGINE_SPEC.md) · [TEST_PLAN.md](game/TEST_PLAN.md) | Engine spec + golden-replay test suite (Phase 2 build) |
