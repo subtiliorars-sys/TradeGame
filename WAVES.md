@@ -176,9 +176,11 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W6 — Crypto beginner track (C-B01–C-B05)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/lessons/PILLAR_INTROS.md`, `docs/lessons/BEGINNER_COMPLETIONS.md`  
-**Branch slug:** `automation/wave-less-w6-crypto-beginner-cb01-cb05`
+**Branch slug:** `automation/wave-less-w6-crypto-beginner-cb01-cb05`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/58  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] Port C-B01–C-B05 into lesson modules with process checks and drill/scenario CTAs
@@ -186,6 +188,25 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 - [x] `prereqGraph.ts` — C-B chain; C-I01 parent → C-B05 per brief §7.4
 - [x] `tests/lessons.test.ts` — 30 lessons, 720 XP
 - [x] `npm run verify` green
+
+---
+
+### Wave LESS-W7 — Stocks beginner track (S-B01–S-B04)
+
+**Status:** `in_review`  
+**Spec:** `docs/lessons/PILLAR_INTROS.md`, `docs/lessons/BEGINNER_COMPLETIONS.md`  
+**Branch slug:** `automation/wave-less-w7-stocks-beginner-sb01-sb04`
+
+**Acceptance criteria:**
+- [x] Port S-B01–S-B04 with process checks and drill/scenario CTAs
+- [x] `catalog.ts` — insert S-B chain before S-I01; 34-lesson catalog
+- [x] `prereqGraph.ts` — S-B chain; S-I01 parent → S-B04 per brief §7.4
+- [x] `tests/lessons.test.ts` — 34 lessons, 820 XP
+- [ ] `npm run verify` green
+
+**Deferred (not in this wave):**
+- Dedicated DCA/rebalance sim CTAs from source docs — no shipped DCA drill yet; lessons use `drill:position-sizing-stocks` / SCN-005 stand-ins
+- Lesson prereq **hard-flip** gating — still advisory until full beginner tracks ship (Forex X-B01/X-B02 remain)
 
 ---
 
