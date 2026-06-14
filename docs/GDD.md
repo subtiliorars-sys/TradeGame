@@ -354,6 +354,7 @@ Supporting documents that expand on sections of this GDD. Read on demand, not up
 
 | Document | What it covers |
 |----------|---------------|
+| `docs/game/EXPERIENCE_DESIGN.md` | The game-first *feel* layer: tone, world (the Quarter), mentor & crew, six-act campaign mapped to the rank ladder, ~120-hour progression budget, mastery arc, social layer (gated). Companion to this GDD. |
 | `docs/game/SCENARIOS_V0.md` | Full authored spec for the three v0 scenarios: SCN-001 HarborUSD Depegging, SCN-002 Northgate Systems Earnings Gap, SCN-003 London Open Sweep on ANDU |
 | `docs/game/SCENARIOS_V1.md` | Full authored spec for the three v1 scenarios: SCN-004 GLIMMER Pool (impermanent loss), SCN-005 NMX 100 Index Inclusion Day, SCN-006 Employment Report on ANDU |
 | `docs/game/SIM_ENGINE_SPEC.md` | Sim engine technical specification: tick-data format, scenario file schema, replay determinism, market adapters |
