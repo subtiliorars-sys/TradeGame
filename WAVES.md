@@ -110,10 +110,11 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W2 — Lessons wave 2 (intermediate tier)
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §4.4  
 **Branch slug:** `automation/wave-less-w2`  
-**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/50
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/50  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] Ship next lesson set per brief (C-I02, C-I04, S-I03, S-I04, X-I03, X-I04)
@@ -160,14 +161,33 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave LESS-W5 — Lesson prereq DAG validation
 
-**Status:** `in_review`  
+**Status:** `done`  
 **Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §7.4  
-**Branch slug:** `automation/wave-less-w5-prereq-dag`
+**Branch slug:** `automation/wave-less-w5-prereq-dag`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/56  
+**Completed:** 2026-06-13
 
 **Acceptance criteria:**
 - [x] `sim/src/lessons/prereqGraph.ts` — shipped curriculum edges + cycle detector
 - [x] `sim/tests/lesson-prereq-dag.test.ts` — no cycles; foundation F-01..F-10 chain locked
 - [x] `npm run verify` green
+
+---
+
+### Wave LESS-W6 — Beginner pillar tracks (C-B01–C-B05, S-B01–S-B04, X-B01–X-B02)
+
+**Status:** `in_review`  
+**Spec:** `docs/game/LESSON_SYSTEM_BRIEF.md` §2.2–§2.6, §4.4  
+**Branch slug:** `automation/wave-less-w6-beginner`
+
+**Acceptance criteria:**
+- [x] Port eleven beginner lessons from `PILLAR_INTROS.md` + `BEGINNER_COMPLETIONS.md`
+- [x] Each lesson: provenance tag, no directive buy/sell language, drill/scenario CTA
+- [x] `prereqGraph.ts` — full pillar chains (C/S/X beginner → intermediate)
+- [x] `tests/lessons.test.ts` updated for 36-lesson catalog and XP totals
+- [x] `npm run verify` green
+
+**Note:** Prereqs remain advisory until owner approves hard-flip (brief §7.3).
 
 ---
 
@@ -274,4 +294,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-13 — LESS-W2 rebase onto main (LESS-W3 merged).*
+*Last updated: 2026-06-14 — LESS-W6 beginner tracks (eleven lessons); LESS-W2/#50 and LESS-W5/#56 merged.*

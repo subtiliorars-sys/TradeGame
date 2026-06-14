@@ -1,7 +1,8 @@
 /**
  * Shipped-lesson prereq edges by curriculum ID (LESSON_SYSTEM_BRIEF §7.4).
- * Foundation track is linear F-01 → … → F-10. Beginner/intermediate edges
- * expand as those waves ship; hard-flip gating must not run until full chains exist.
+ * Foundation track is linear F-01 → … → F-10. Pillar beginner and
+ * intermediate chains expand as waves ship; hard-flip gating waits until
+ * full chains exist (brief §7.3).
  */
 
 /** Parent curriculum ID, or null if none. */
@@ -16,17 +17,27 @@ export const PREREQ_BY_CURRICULUM: Readonly<Record<string, string | null>> = {
   "F-08": "F-07",
   "F-09": "F-08",
   "F-10": "F-09",
-  // Pillar lessons (shipped wave 1 + 2) — parent is prior lesson in same pillar chain
-  "C-I01": "F-03",
+  "C-B01": "F-03",
+  "C-B02": "C-B01",
+  "C-B03": "C-B02",
+  "C-B04": "C-B03",
+  "C-B05": "C-B04",
+  "C-I01": "C-B05",
   "C-I02": "C-I01",
   "C-I03": "C-I02",
   "C-I04": "C-I03",
-  "S-I01": "F-02",
+  "S-B01": "F-02",
+  "S-B02": "S-B01",
+  "S-B03": "S-B02",
+  "S-B04": "S-B03",
+  "S-I01": "S-B04",
   "S-I02": "S-I01",
   "S-I03": "S-I02",
   "S-I04": "S-I03",
   "S-I05": "S-I04",
-  "X-B03": "F-03",
+  "X-B01": "F-03",
+  "X-B02": "X-B01",
+  "X-B03": "X-B02",
   "X-B04": "X-B03",
   "X-I01": "X-B04",
   "X-I02": "X-I01",
