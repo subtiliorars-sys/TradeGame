@@ -24,6 +24,7 @@ import {
 } from "../engine/draw.js";
 import { LESSON_CATALOG, awardLesson, type LessonDef } from "../../lessons/catalog.js";
 import * as ProgressStore from "../../engine/progress.js";
+import { lessonLockState } from "../engine/gating.js";
 
 const PAD = 20;
 const HEADER_H = 48;
@@ -112,6 +113,7 @@ export class LessonScene extends Phaser.Scene {
 
     for (const l of LESSON_CATALOG) {
       const isDone = done.has(l.content.id);
+      const lock = lessonLockState(l, ProgressStore.completedLessonIds());
       panel(g, PAD, y, 1240, 56, 4);
       label(this, PAD + 14, y + 9, `${l.content.title}  ·  ${l.content.curriculumId}`, {
         fontSize: "13px",
@@ -122,18 +124,34 @@ export class LessonScene extends Phaser.Scene {
         this,
         PAD + 14,
         y + 30,
-        `${l.content.track}  ·  ${l.content.pages.length} pages  ·  ${l.xp} XP` +
-          `${isDone ? "  ·  ✓ read (re-reads free)" : ""}`,
-        { fontSize: "11px", color: isDone ? CSS.AMBER : CSS.DIM }
+        lock.locked
+          ? lock.reasons[0] ?? "Prerequisite lesson not complete"
+          : `${l.content.track}  ·  ${l.content.pages.length} pages  ·  ${l.xp} XP` +
+              `${isDone ? "  ·  ✓ read (re-reads free)" : ""}`,
+        {
+          fontSize: "11px",
+          color: lock.locked ? CSS.DIM : isDone ? CSS.AMBER : CSS.DIM,
+          wordWrap: { width: 900 },
+        }
       );
-      button(this, PAD + 1110, y + 11, 110, 32, isDone ? "RE-READ" : "READ", () => {
-        this.active = l;
-        this.view = "read";
-        this.page = 0;
-        this.completedThisVisit = false;
-        this.grantedXp = null;
-        this.redraw();
-      });
+      if (lock.locked) {
+        fillRect(g, PAD + 1090, y + 11, 130, 32, C.SURFACE, 4);
+        strokeRect(g, PAD + 1090, y + 11, 130, 32, C.BORDER, 1, 4);
+        label(this, PAD + 1155, y + 27, "LOCKED", {
+          fontSize: "11px",
+          color: CSS.DIM,
+          fontStyle: "bold",
+        }).setOrigin(0.5, 0.5);
+      } else {
+        button(this, PAD + 1110, y + 11, 110, 32, isDone ? "RE-READ" : "READ", () => {
+          this.active = l;
+          this.view = "read";
+          this.page = 0;
+          this.completedThisVisit = false;
+          this.grantedXp = null;
+          this.redraw();
+        });
+      }
       y += 66;
     }
   }

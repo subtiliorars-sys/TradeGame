@@ -1,7 +1,7 @@
 /**
  * Shipped-lesson prereq edges by curriculum ID (LESSON_SYSTEM_BRIEF §7.4).
  * Foundation track is linear F-01 → … → F-10. Beginner/intermediate edges
- * expand as those waves ship; hard-flip gating must not run until full chains exist.
+ * expand as those waves ship; hard-flip gating is active (GOV-W1).
  */
 
 /** Parent curriculum ID, or null if none. */

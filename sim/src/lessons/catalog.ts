@@ -4,8 +4,7 @@
  * S-I03/S-I04, X-I03/X-I04; LESS-W6 crypto beginner C-B01–C-B05;
  * LESS-W7 stocks beginner S-B01–S-B04; LESS-W8 forex beginner X-B01–X-B02.
  *
- * Lesson prereqs remain ADVISORY until owner flips hard gates (brief §7.3);
- * all three beginner tracks are now shipped in catalog.
+ * Lesson prereqs are hard-gated per the shipped curriculum DAG (GOV-W1).
  *
  * Honest-XP: awardLesson pays once per lesson ID (re-reading is free,
  * always — re-reading is the point).
