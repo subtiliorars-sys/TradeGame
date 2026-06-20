@@ -89,6 +89,7 @@ export function markDrillCompleted(id: string): void {
  * marker never fired on the primary on-ramp path).
  */
 export function completeDrill(id: string, xp: number): void {
+  if (_completedDrillIds.has(id)) return;
   const before = currentRank(_xpTotal, completedDrillIds()).rank;
   _completedDrillIds.add(id);
   if (Number.isFinite(xp) && xp > 0) {
@@ -106,6 +107,7 @@ export function completeDrill(id: string, xp: number): void {
  * enforced by the caller checking completedLessonIds first).
  */
 export function completeLesson(id: string, xp: number): void {
+  if (_completedLessonIds.has(id)) return;
   const before = currentRank(_xpTotal, completedDrillIds()).rank;
   _completedLessonIds.add(id);
   if (Number.isFinite(xp) && xp > 0) {

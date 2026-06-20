@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { currentRank, CANONICAL_LADDER, type RankThreshold } from "../src/engine/rank.js";
-import { addXp, xpTotal, completedDrillIds, markDrillCompleted, reset } from "../src/engine/progress.js";
+import { addXp, xpTotal, completedDrillIds, markDrillCompleted, reset, completeDrill, completeLesson, completedLessonIds } from "../src/engine/progress.js";
 import { DRILL_CATALOG } from "../src/drills/catalog.js";
 
 // Trainee's shipped drill gate (wave C) — boundary tests that probe XP
@@ -281,6 +281,20 @@ describe("ProgressStore", () => {
     expect(completedDrillIds().filter((id) => id === "drill-X")).toHaveLength(1);
   });
 
+  it("completeDrill and completeLesson prevent duplicate XP awards on repeat completion", () => {
+    reset();
+    completeDrill("drill-A", 100);
+    expect(xpTotal()).toBe(100);
+    completeDrill("drill-A", 100); // duplicate
+    expect(xpTotal()).toBe(100);
+
+    completeLesson("lesson-B", 50);
+    expect(xpTotal()).toBe(150);
+    expect(completedLessonIds()).toContain("lesson-B");
+    completeLesson("lesson-B", 50); // duplicate
+    expect(xpTotal()).toBe(150);
+  });
+
   it("reset clears drill completions", () => {
     markDrillCompleted("drill-X");
     reset();
@@ -299,6 +313,18 @@ describe("ProgressStore", () => {
   it("XP alone never ranks past a drill gate (GDD §7, live ladder)", () => {
     addXp(5000);
     expect(currentRank(xpTotal(), completedDrillIds()).rank.rankId).toBe("observer");
+  });
+
+  it("handles unsorted ladders by sorting them by xpRequired ascending", () => {
+    const unsortedLadder: readonly RankThreshold[] = [
+      { rankId: "gamma", displayLabel: "Gamma", xpRequired: 300, drillsRequired: [] },
+      { rankId: "alpha", displayLabel: "Alpha", xpRequired:   0, drillsRequired: [] },
+      { rankId: "beta",  displayLabel: "Beta",  xpRequired: 100, drillsRequired: [] },
+    ];
+    // Under 300 XP (e.g. 150 XP), it should resolve to Beta (100 XP threshold)
+    const r1 = currentRank(150, [], unsortedLadder);
+    expect(r1.rank.rankId).toBe("beta");
+    expect(r1.nextRank?.rankId).toBe("gamma");
   });
 });
 
