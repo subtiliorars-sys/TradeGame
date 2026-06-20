@@ -651,4 +651,35 @@ describe("X-B02: liquidation walk", () => {
     account.updatePrices(1.2500 - 126 * PIP_SIZE);
     expect(account.marginSummary.isStopOut).toBe(true);
   });
+
+  describe("computeForexRisk input validation & fallbacks", () => {
+    it("handles zero, negative, or invalid leverage gracefully", () => {
+      const risk = computeForexRisk({
+        balance: 500,
+        existingUsedMargin: 0,
+        lotUnits: LOT_UNITS.mini,
+        lots: 2,
+        currentPrice: 1.2500,
+        leverage: 0, // invalid
+        existingUnrealizedPnl: 0,
+      });
+      expect(risk.requiredMargin).toBe(20000 * 1.2500); // fallback leverage 1
+      expect(risk.freeMargin).toBeLessThan(0);
+      expect(risk.insufficientMargin).toBe(true);
+    });
+
+    it("handles negative lots and units gracefully", () => {
+      const risk = computeForexRisk({
+        balance: 500,
+        existingUsedMargin: 0,
+        lotUnits: -1000,
+        lots: -2,
+        currentPrice: 1.2500,
+        leverage: 50,
+        existingUnrealizedPnl: 0,
+      });
+      expect(risk.requiredMargin).toBe(0);
+      expect(risk.pipValueTotal).toBe(0);
+    });
+  });
 });
