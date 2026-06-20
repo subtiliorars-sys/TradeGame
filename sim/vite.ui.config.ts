@@ -5,6 +5,9 @@ import path from "path";
 // The engine library config (vite.config.ts) is separate and stays untouched.
 export default defineConfig({
   root: ".",
+  // Relative base so the built bundle works when served from a GitHub Pages
+  // sub-path (e.g. /TradeGame---Preview/play/). Absolute "/assets/" 404s there.
+  base: "./",
   resolve: {
     alias: {
       // node:crypto is used by events.ts for sha256 digest (test/server only).
