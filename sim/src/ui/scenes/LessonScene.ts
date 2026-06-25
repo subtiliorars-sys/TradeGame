@@ -23,6 +23,7 @@ import {
   hline,
 } from "../engine/draw.js";
 import { LESSON_CATALOG, awardLesson, type LessonDef } from "../../lessons/catalog.js";
+import type { LessonDrillCard } from "../../lessons/types.js";
 import * as ProgressStore from "../../engine/progress.js";
 import { lessonLockState } from "../engine/gating.js";
 
@@ -36,6 +37,7 @@ export class LessonScene extends Phaser.Scene {
   private page = 0;
   private completedThisVisit = false;
   private grantedXp: number | null = null;
+  private selectedDrillCardOptionId: string | null = null;
 
   constructor() {
     super({ key: "LessonScene" });
@@ -47,6 +49,7 @@ export class LessonScene extends Phaser.Scene {
     this.page = 0;
     this.completedThisVisit = false;
     this.grantedXp = null;
+    this.selectedDrillCardOptionId = null;
   }
 
   create(): void {
@@ -79,6 +82,7 @@ export class LessonScene extends Phaser.Scene {
         else {
           this.view = "select";
           this.active = null;
+          this.selectedDrillCardOptionId = null;
           this.redraw();
         }
       },
@@ -149,6 +153,7 @@ export class LessonScene extends Phaser.Scene {
           this.page = 0;
           this.completedThisVisit = false;
           this.grantedXp = null;
+          this.selectedDrillCardOptionId = null;
           this.redraw();
         });
       }
@@ -185,7 +190,7 @@ export class LessonScene extends Phaser.Scene {
         });
       });
     } else {
-      // Final page: Process Check + the do-it-now CTA.
+      // Final page: Process Check + optional ungated drill card + do-it-now CTA.
       label(this, PAD + 22, bodyY + 18, "PROCESS CHECK", {
         fontSize: "11px",
         color: CSS.AMBER,
@@ -197,13 +202,25 @@ export class LessonScene extends Phaser.Scene {
         wordWrap: { width: 1190 },
         lineSpacing: 4,
       });
-      hline(g, PAD + 16, bodyY + 130, 1208);
-      label(this, PAD + 22, bodyY + 146, "PUT IT INTO PRACTICE NOW", {
+
+      let y = bodyY + 112;
+      const card = l.content.drillCards?.[0];
+      if (card !== undefined) {
+        hline(g, PAD + 16, y, 1208);
+        y = this.drawLessonDrillCard(g, card, PAD + 22, y + 16);
+        hline(g, PAD + 16, y, 1208);
+        y += 14;
+      } else {
+        hline(g, PAD + 16, bodyY + 130, 1208);
+        y = bodyY + 146;
+      }
+
+      label(this, PAD + 22, y, "PUT IT INTO PRACTICE NOW", {
         fontSize: "11px",
         color: CSS.AMBER,
         fontStyle: "bold",
       });
-      label(this, PAD + 22, bodyY + 168, l.content.cta.line, {
+      label(this, PAD + 22, y + 22, l.content.cta.line, {
         fontSize: "13px",
         color: CSS.TEXT,
         wordWrap: { width: 1190 },
@@ -213,7 +230,7 @@ export class LessonScene extends Phaser.Scene {
         label(
           this,
           PAD + 22,
-          bodyY + 210,
+          y + 62,
           this.grantedXp > 0
             ? `+${this.grantedXp} XP — lesson complete.`
             : "Re-read complete — no additional XP (re-reading is free, always).",
@@ -221,7 +238,7 @@ export class LessonScene extends Phaser.Scene {
         );
       }
 
-      const by = bodyY + 250;
+      const by = y + 92;
       button(this, PAD + 22, by, 300, 38, "MARK COMPLETE + GO PRACTICE", () => {
         this.complete();
         if (this.active?.content.cta.kind === "scenario") {
@@ -250,6 +267,73 @@ export class LessonScene extends Phaser.Scene {
         this.redraw();
       }, { fontSize: "11px" });
     }
+  }
+
+  private drawLessonDrillCard(
+    g: Phaser.GameObjects.Graphics,
+    card: LessonDrillCard,
+    x: number,
+    y: number
+  ): number {
+    label(this, x, y, "LESSON DRILL CARD — choose one; feedback is coaching, not a gate", {
+      fontSize: "11px",
+      color: CSS.AMBER,
+      fontStyle: "bold",
+    });
+    label(this, x, y + 22, card.question, {
+      fontSize: "12px",
+      color: CSS.TEXT,
+      wordWrap: { width: 780 },
+      lineSpacing: 3,
+    });
+
+    const optionX = x;
+    const optionW = 780;
+    const optionH = 38;
+    const optionStartY = y + 62;
+    card.options.forEach((opt, i) => {
+      const oy = optionStartY + i * 44;
+      const selected = this.selectedDrillCardOptionId === opt.id;
+      const border = selected ? (opt.correct ? C.GREEN : C.AMBER) : C.BORDER;
+      fillRect(g, optionX, oy, optionW, optionH, selected ? C.BORDER : C.SURFACE, 4);
+      strokeRect(g, optionX, oy, optionW, optionH, border, selected ? 2 : 1, 4);
+      label(this, optionX + 12, oy + optionH / 2, `${String.fromCharCode(65 + i)}. ${opt.label}`, {
+        fontSize: "11px",
+        color: selected ? CSS.TEXT : CSS.DIM,
+        wordWrap: { width: optionW - 24 },
+        lineSpacing: 2,
+      }).setOrigin(0, 0.5);
+      this.add
+        .zone(optionX, oy, optionW, optionH)
+        .setOrigin(0, 0)
+        .setInteractive({ useHandCursor: true })
+        .on("pointerup", () => {
+          this.selectedDrillCardOptionId = opt.id;
+          this.redraw();
+        });
+    });
+
+    const selected = card.options.find((opt) => opt.id === this.selectedDrillCardOptionId);
+    const feedbackY = optionStartY + card.options.length * 44 + 6;
+    label(this, x, feedbackY, "COACHING FEEDBACK", {
+      fontSize: "10px",
+      color: CSS.AMBER,
+      fontStyle: "bold",
+    });
+    label(
+      this,
+      x,
+      feedbackY + 18,
+      selected?.feedback ?? "Select an option above to see the coaching note.",
+      {
+        fontSize: "11px",
+        color: selected === undefined ? CSS.DIM : selected.correct ? CSS.GREEN : CSS.TEXT,
+        wordWrap: { width: 780 },
+        lineSpacing: 3,
+      }
+    );
+
+    return feedbackY + 52;
   }
 
   private complete(): void {
