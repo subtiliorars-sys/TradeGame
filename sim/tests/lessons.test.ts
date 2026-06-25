@@ -165,6 +165,21 @@ describe("catalog invariants", () => {
       expect(l.content.processCheck.length).toBeGreaterThan(10);
     }
   });
+
+  it("C-I03 ships one ungated lesson drill card with three coached options", () => {
+    const lesson = getLesson("lesson:liquidity-pools-impermanent-loss")!;
+    const cards = lesson.content.drillCards ?? [];
+    expect(cards).toHaveLength(1);
+
+    const card = cards[0];
+    expect(card.question).toContain("GLIMMER");
+    expect(card.options).toHaveLength(3);
+    expect(card.options.filter((o) => o.correct)).toHaveLength(1);
+    for (const option of card.options) {
+      expect(option.label.length, option.id).toBeGreaterThan(10);
+      expect(option.feedback.length, option.id).toBeGreaterThan(30);
+    }
+  });
 });
 
 describe("posture sweep — lesson copy carries no directives", () => {
@@ -175,6 +190,21 @@ describe("posture sweep — lesson copy carries no directives", () => {
       // not guaranteed") — the posture rule targets guaranteed-PROFIT claims.
       for (const banned of ["you should buy", "you should sell", "buy now", "sell now", "guaranteed return", "guaranteed profit", "guaranteed gain", "time to buy", "signal to enter"]) {
         expect(text, `${l.content.id} contains "${banned}"`).not.toContain(banned);
+      }
+    }
+  });
+
+  it("lesson drill cards avoid dollar-PnL framing and directive language", () => {
+    for (const l of LESSON_CATALOG) {
+      for (const card of l.content.drillCards ?? []) {
+        const text = [
+          card.question,
+          ...card.options.flatMap((o) => [o.label, o.feedback]),
+        ].join(" ").toLowerCase();
+        expect(text, `${l.content.id} card ${card.id} uses dollar framing`).not.toContain("$");
+        for (const banned of ["you should buy", "you should sell", "buy now", "sell now", "signal to enter", "signal to exit"]) {
+          expect(text, `${l.content.id} card ${card.id} contains "${banned}"`).not.toContain(banned);
+        }
       }
     }
   });
