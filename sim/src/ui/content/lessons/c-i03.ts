@@ -111,7 +111,7 @@ export const LESSON_C_I03: LessonContent = {
           label: "Compare fee pace with price divergence before deciding if the LP still fits the plan.",
           correct: true,
           feedback:
-            "Correct. The process read is fee income versus divergence from deposit price. The card teaches structure, not a signal to enter or exit.",
+            "Correct. The process read is fee income versus divergence from deposit price. The card teaches structure, not an entry or exit instruction.",
         },
       ],
     },
