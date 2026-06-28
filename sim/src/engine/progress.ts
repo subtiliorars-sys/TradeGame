@@ -1,29 +1,46 @@
 /**
- * ProgressStore — in-memory XP and drill-completion store.
+ * ProgressStore — process XP and drill-completion store with Tier-B local persistence.
  *
- * IN-MEMORY ONLY this pass. Tier B (GOVERNANCE.md) gates any real storage.
- * No localStorage, no server writes, no persistence across page reloads.
+ * Persists to localStorage when age gate is acknowledged (PERS-W2). Gated writes
+ * only — under-13 path stores nothing. Server sync deferred until governance gate.
  *
  * This singleton accumulates process XP from session debriefs and tracks
  * completed drill IDs. It feeds RankService.currentRank() so the Main Menu
- * rank display reflects progress across sessions within a single browser session.
+ * rank display reflects progress across browser sessions.
  *
  * ETHICS RAIL: store holds process XP and drill completions only.
  * Trade outcomes must never be written here (SIM_ENGINE_SPEC §4.4).
  */
 
 import { currentRank, type RankThreshold } from "./rank.js";
+import {
+  saveProgress,
+  loadProgress,
+  clearProgressStorage,
+} from "./persistence.js";
 
 // ---------------------------------------------------------------------------
 // Module-private state
 // ---------------------------------------------------------------------------
 
-let _xpTotal = 0;
-const _completedDrillIds = new Set<string>();
-const _bonusAwardedDrillIds = new Set<string>();
-const _completedScenarioIds = new Set<string>();
-const _completedLessonIds = new Set<string>();
+const saved = loadProgress();
+
+let _xpTotal = saved?.xpTotal ?? 0;
+const _completedDrillIds = new Set<string>(saved?.completedDrillIds ?? []);
+const _bonusAwardedDrillIds = new Set<string>(saved?.bonusAwardedDrillIds ?? []);
+const _completedScenarioIds = new Set<string>(saved?.completedScenarioIds ?? []);
+const _completedLessonIds = new Set<string>(saved?.completedLessonIds ?? []);
 let _lastRankUp: { from: RankThreshold; to: RankThreshold } | null = null;
+
+function snapshot(): void {
+  saveProgress({
+    xpTotal: _xpTotal,
+    completedDrillIds: Array.from(_completedDrillIds),
+    bonusAwardedDrillIds: Array.from(_bonusAwardedDrillIds),
+    completedScenarioIds: Array.from(_completedScenarioIds),
+    completedLessonIds: Array.from(_completedLessonIds),
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -41,6 +58,7 @@ export function addXp(n: number): void {
   if (!Number.isFinite(n) || n < 0) return;
   const before = currentRank(_xpTotal, completedDrillIds()).rank;
   _xpTotal += n;
+  snapshot();
   const after = currentRank(_xpTotal, completedDrillIds()).rank;
   if (after.rankId !== before.rankId) {
     _lastRankUp = { from: before, to: after };
@@ -80,6 +98,7 @@ export function completedDrillIds(): string[] {
  */
 export function markDrillCompleted(id: string): void {
   _completedDrillIds.add(id);
+  snapshot();
 }
 
 /**
@@ -96,6 +115,7 @@ export function completeDrill(id: string, xp: number): void {
   if (!already && Number.isFinite(xp) && xp > 0) {
     _xpTotal += xp;
   }
+  snapshot();
   const after = currentRank(_xpTotal, completedDrillIds()).rank;
   if (after.rankId !== before.rankId) {
     _lastRankUp = { from: before, to: after };
@@ -127,6 +147,7 @@ export function completeLesson(id: string, xp: number): void {
   if (!already && Number.isFinite(xp) && xp > 0) {
     _xpTotal += xp;
   }
+  snapshot();
   const after = currentRank(_xpTotal, completedDrillIds()).rank;
   if (after.rankId !== before.rankId) {
     _lastRankUp = { from: before, to: after };
@@ -155,14 +176,15 @@ export function awardScenarioDebriefXp(
   let granted = 0;
   if (firstClear) {
     granted = xpTotal;
-    if (granted > 0) addXp(granted);
+    if (granted > 0) _xpTotal += granted;
   } else {
     granted = rubricRows
       .filter((r) => REPLAY_AWARD_METRICS.has(r.metricId))
       .reduce((sum, r) => sum + r.xpEarned, 0);
-    if (granted > 0) addXp(granted);
+    if (granted > 0) _xpTotal += granted;
   }
   _completedScenarioIds.add(scenarioId);
+  snapshot();
   return granted;
 }
 
@@ -177,11 +199,12 @@ export function completedScenarioIds(): string[] {
  */
 export function markScenarioCompleted(id: string): void {
   _completedScenarioIds.add(id);
+  snapshot();
 }
 
 /**
  * Reset all state — used between test runs and on hard session restart.
- * Not called automatically; the UI must explicitly invoke this.
+ * Clears in-memory state and the progress blob (age gate untouched).
  */
 export function reset(): void {
   _xpTotal = 0;
@@ -190,4 +213,5 @@ export function reset(): void {
   _completedScenarioIds.clear();
   _completedLessonIds.clear();
   _lastRankUp = null;
+  clearProgressStorage();
 }
