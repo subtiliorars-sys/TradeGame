@@ -267,7 +267,7 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 **Owner gate:** G-2 COPPA analysis staged in `docs/legal/COPPA_G2_ANALYSIS.md`  
 **Spec:** `docs/GDD.md` §9; `GOVERNANCE.md` Tier B trigger  
 **Branch slug:** `automation/wave-pers-w2-persistence`  
-**PR:** (pending — wave worker)  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/65  
 **Completed:** 2026-06-28
 
 **Acceptance criteria:**
