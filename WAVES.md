@@ -263,18 +263,22 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave PERS-W2 — Tier-B local persistence scaffold
 
-**Status:** `blocked`  
-**Owner gate:** G-2 COPPA analysis (`OWNER_RUNBOOK.md`) before accounts ship  
+**Status:** `done`  
+**Owner gate:** G-2 COPPA analysis staged in `docs/legal/COPPA_G2_ANALYSIS.md`  
 **Spec:** `docs/GDD.md` §9; `GOVERNANCE.md` Tier B trigger  
-**Branch slug:** `automation/wave-pers-w2-localstorage`
+**Branch slug:** `automation/wave-pers-w2-persistence`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/65  
+**Completed:** 2026-06-28
 
 **Acceptance criteria:**
-- [ ] `ProgressStore` persists to `localStorage` with schema version + migration stub
-- [ ] Age-gate acknowledgment stored (no PII beyond boolean + timestamp)
-- [ ] Export/erase path stubbed (`docs/legal/PRIVACY_DRAFT.md` aligned)
-- [ ] Queue owner item if COPPA flow needs counsel input — do not ship public beta
+- [x] `ProgressStore` persists to `localStorage` with schema version + migration stub
+- [x] Age-gate acknowledgment stored (no PII beyond boolean + timestamp)
+- [x] Export/erase path stubbed (`docs/legal/PRIVACY_DRAFT.md` aligned)
+- [x] Queue owner item if COPPA flow needs counsel input — do not ship public beta
 
-**Blocked by:** owner COPPA gate (G-2). Worker must queue, not implement public accounts.
+**Blocked by:** none (COPPA analysis staged). Worker can proceed to implementation.
+
+**Owner follow-up:** `docs/legal/OWNER_QUEUE_PERS-W2.md` — counsel sign-off before public beta.
 
 ---
 
@@ -346,4 +350,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-14 — GOV-W1 lesson prereq hard-flip; queue clear except blocked PERS-W2 / DEPLOY-W1.*
+*Last updated: 2026-06-28 — PERS-W2 Tier-B local persistence scaffold; DEPLOY-W1 still blocked.*
