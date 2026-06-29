@@ -308,6 +308,41 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ---
 
+### Wave IDE-W1 — Ideation backlog hygiene
+
+**Status:** `done`  
+**Spec:** `docs/game/IDEATION_BACKLOG.md` (derived from LESSON_SYSTEM_BRIEF + LIVE_DRILL_ENGINE_BRIEF)  
+**Branch slug:** `automation/wave-ide-w1-backlog-docs`  
+**Completed:** 2026-06-28
+
+**Scope:** Docs-only registry of the next five safe lesson/drill ideas. Does **not**
+duplicate open PR #63 (12-to-4 ideation sweep code improvements).
+
+**Acceptance criteria:**
+- [x] `docs/game/IDEATION_BACKLOG.md` — five ranked ideas with sources, safety notes, suggested waves
+- [x] Cross-link from WAVES.md "Future queue" section (below)
+- [x] Education-not-advice posture preserved; no implementation in this wave
+- [x] `npm run verify` green
+
+**Blocked by:** none
+
+---
+
+## Future queue
+
+Ordered ideation backlog for owner prioritization — **not** an implementation queue.
+Workers pick waves from **Active queue** above; use this section to avoid re-litigating
+the same ideas across sessions.
+
+| Doc | Contents |
+|-----|----------|
+| [docs/game/IDEATION_BACKLOG.md](docs/game/IDEATION_BACKLOG.md) | Next 5 safe lesson/drill ideas (IDE-W1, 2026-06-28) |
+
+When a future wave is chartered from this backlog, add it to **Active queue** with a
+wave ID, branch slug, and acceptance criteria — then link back to the backlog row.
+
+---
+
 ## Worker safety rails
 
 **Safe to implement without asking:**
@@ -346,4 +381,4 @@ cd sim && npm ci && npm run verify
 
 ---
 
-*Last updated: 2026-06-14 — GOV-W1 lesson prereq hard-flip; queue clear except blocked PERS-W2 / DEPLOY-W1.*
+*Last updated: 2026-06-28 — IDE-W1 ideation backlog registry; DEPLOY-W1 still blocked.*
