@@ -313,6 +313,7 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 **Status:** `done`  
 **Spec:** `docs/game/IDEATION_BACKLOG.md` (derived from LESSON_SYSTEM_BRIEF + LIVE_DRILL_ENGINE_BRIEF)  
 **Branch slug:** `automation/wave-ide-w1-backlog-docs`  
+**PR:** https://github.com/subtiliorars-sys/TradeGame/pull/66  
 **Completed:** 2026-06-28
 
 **Scope:** Docs-only registry of the next five safe lesson/drill ideas. Does **not**
