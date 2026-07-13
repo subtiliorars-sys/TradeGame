@@ -37,3 +37,9 @@ This is the private HQ. The sanitized public face is
 Read `CLAUDE.md` (repo specifics) — doctrine is inherited from `~/CLAUDE.md`.
 Branch per task (`work/<topic>`), hooks live in `.githooks/`
 (`git config core.hooksPath .githooks` after cloning).
+
+
+## Shared asset libraries
+
+**Agents:** do not invent colored-box placeholders when free art exists.
+See [docs/ASSETS.md](docs/ASSETS.md) → `game-visual-assets`, `game-audio-assets`, `game-3d-assets`.
