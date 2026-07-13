@@ -13,6 +13,10 @@ not advice. Run `npm run lint-pnl` before opening a PR.
 
 **Status legend:** `done` | `active` | `pending` | `blocked`
 
+> **Fleet Kanban note (2026-07-13):** Live-drill waves **LD-W1–LD-W6** are complete.
+> No pending `LD-W*` implementation remains. Next lesson/drill work is **owner-prioritized**
+> from [docs/game/IDEATION_BACKLOG.md](docs/game/IDEATION_BACKLOG.md) — do not spawn duplicate LD waves.
+
 ---
 
 ## How workers use this file
