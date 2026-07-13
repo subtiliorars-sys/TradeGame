@@ -110,15 +110,23 @@ export function computeForexRisk(input: ForexRiskInput): ForexRiskOutput {
     existingUnrealizedPnl,
   } = input;
 
-  const quantity = lots * lotUnits;
+  const safeLeverage = Number.isFinite(leverage) && leverage > 0 ? leverage : 1;
+  const safeLots = Number.isFinite(lots) && lots > 0 ? lots : 0;
+  const safeLotUnits = Number.isFinite(lotUnits) && lotUnits > 0 ? lotUnits : 0;
+  const safePrice = Number.isFinite(currentPrice) && currentPrice > 0 ? currentPrice : 0;
+  const safeBalance = Number.isFinite(balance) ? balance : 0;
+  const safeExistingUsedMargin = Number.isFinite(existingUsedMargin) && existingUsedMargin > 0 ? existingUsedMargin : 0;
+  const safeExistingUnrealizedPnl = Number.isFinite(existingUnrealizedPnl) ? existingUnrealizedPnl : 0;
+
+  const quantity = safeLots * safeLotUnits;
 
   // Margin for the new position (static at open — not marked-to-market).
-  const requiredMargin = (quantity * currentPrice) / leverage;
+  const requiredMargin = (quantity * safePrice) / safeLeverage;
 
-  const totalUsedMargin = existingUsedMargin + requiredMargin;
+  const totalUsedMargin = safeExistingUsedMargin + requiredMargin;
 
   // Current equity before opening this position.
-  const equity = balance + existingUnrealizedPnl;
+  const equity = safeBalance + safeExistingUnrealizedPnl;
 
   const freeMargin = equity - totalUsedMargin;
 

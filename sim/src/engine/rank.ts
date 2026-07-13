@@ -116,6 +116,9 @@ export function currentRank(
     throw new Error("rank ladder must not be empty");
   }
 
+  // Ensure the ladder is sorted by xpRequired ascending to prevent out-of-order traversal bugs.
+  const sortedLadder = [...ladder].sort((a, b) => a.xpRequired - b.xpRequired);
+
   const drillSet = new Set(completedDrillIds);
 
   // Walk the ladder from the bottom up, stopping at the FIRST unmet gate.
@@ -124,8 +127,8 @@ export function currentRank(
   // would let high XP vault an intermediate rank's unmet drill gate
   // (red-team finding R2-4; GDD §7: XP alone is insufficient).
   let earnedIndex = 0;
-  for (let i = 1; i < ladder.length; i++) {
-    const candidate = ladder[i]!;
+  for (let i = 1; i < sortedLadder.length; i++) {
+    const candidate = sortedLadder[i]!;
     if (
       xpTotal >= candidate.xpRequired &&
       candidate.drillsRequired.every((id) => drillSet.has(id))
@@ -136,8 +139,8 @@ export function currentRank(
     }
   }
 
-  const rank = ladder[earnedIndex]!;
-  const nextRank = earnedIndex < ladder.length - 1 ? (ladder[earnedIndex + 1] ?? null) : null;
+  const rank = sortedLadder[earnedIndex]!;
+  const nextRank = earnedIndex < sortedLadder.length - 1 ? (sortedLadder[earnedIndex + 1] ?? null) : null;
 
   // Compute drillsMissing: drills required by nextRank that are not yet done,
   // but only when XP already meets nextRank's threshold (the drill gate is the
