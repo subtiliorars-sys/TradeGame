@@ -32,4 +32,13 @@ describe("UI object-churn guards (UX-W1)", () => {
     expect(destroyBlock).toBeGreaterThan(-1);
     expect(markerLoop).toBeGreaterThan(destroyBlock);
   });
+
+  it("ReplayScene registers playback keyboard shortcuts once and cleans up on shutdown", () => {
+    const src = readFileSync(join(ROOT, "ReplayScene.ts"), "utf8");
+    expect(src).toContain("bindKeyboardShortcuts");
+    expect(src).toContain('case " "');
+    expect(src).toContain('case "ArrowLeft"');
+    expect(src).toContain("shutdown(): void");
+    expect(src).toContain('off("keydown", this.onReplayKey');
+  });
 });
