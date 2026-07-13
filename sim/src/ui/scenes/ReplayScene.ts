@@ -82,6 +82,7 @@ export class ReplayScene extends Phaser.Scene {
   private laneTexts: Phaser.GameObjects.Text[] = [];
   private speedBtns: Array<{ bg: Phaser.GameObjects.Graphics; lbl: Phaser.GameObjects.Text; key: "1x" | "4x" | "16x" }> = [];
   private playLbl: Phaser.GameObjects.Text | null = null;
+  private onReplayKey: ((e: KeyboardEvent) => void) | null = null;
 
   constructor() {
     super({ key: "ReplayScene" });
@@ -96,6 +97,7 @@ export class ReplayScene extends Phaser.Scene {
     this.laneTexts = [];
     this.speedBtns = [];
     this.playLbl = null;
+    this.onReplayKey = null;
   }
 
   create(): void {
@@ -188,12 +190,50 @@ export class ReplayScene extends Phaser.Scene {
       this,
       width / 2,
       height - FOOTER_H / 2,
-      "Replay — view only. Education, not financial advice. Simulated markets only.",
+      "Replay — view only. Space play/pause · ←/→ step · Home/End jump · Esc back. Education, not financial advice.",
       { fontSize: "11px", color: CSS.DIM, fontStyle: "italic" }
     ).setOrigin(0.5, 0.5);
 
+    this.bindKeyboardShortcuts();
     this.drawAnnotationLane();
     this.seek(this.model.ticks.length - 1); // open at session end per debrief context
+  }
+
+  shutdown(): void {
+    if (this.onReplayKey) {
+      this.input.keyboard?.off("keydown", this.onReplayKey, this);
+      this.onReplayKey = null;
+    }
+  }
+
+  /** Playback shortcuts — registered once per create; removed on shutdown. */
+  private bindKeyboardShortcuts(): void {
+    this.onReplayKey = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          this.togglePlay();
+          break;
+        case "ArrowLeft":
+          this.seek(this.cursor - 1);
+          break;
+        case "ArrowRight":
+          this.seek(this.cursor + 1);
+          break;
+        case "Home":
+          this.seek(0);
+          break;
+        case "End":
+          this.seek(this.model.ticks.length - 1);
+          break;
+        case "Escape":
+          this.backToDebrief();
+          break;
+        default:
+          break;
+      }
+    };
+    this.input.keyboard?.on("keydown", this.onReplayKey, this);
   }
 
   override update(_t: number, deltaMs: number): void {
