@@ -16,6 +16,20 @@ export interface LessonCta {
   line: string;
 }
 
+export interface LessonDrillCardOption {
+  id: string;
+  label: string;
+  correct: boolean;
+  /** Coaching feedback shown after selection; not a gated quiz result. */
+  feedback: string;
+}
+
+export interface LessonDrillCard {
+  id: string;
+  question: string;
+  options: [LessonDrillCardOption, LessonDrillCardOption, LessonDrillCardOption];
+}
+
 export interface LessonContent {
   /** The live prereq ID used by scenario manifests ("lesson:..."). */
   id: string;
@@ -30,6 +44,8 @@ export interface LessonContent {
    * is collected or graded; it primes the practice the CTA points at.
    */
   processCheck: string;
+  /** Optional ungated check-for-understanding cards (no XP, no completion gate). */
+  drillCards?: LessonDrillCard[];
   cta: LessonCta;
 }
 

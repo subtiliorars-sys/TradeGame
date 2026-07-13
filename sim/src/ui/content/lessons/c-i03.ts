@@ -86,5 +86,35 @@ export const LESSON_C_I03: LessonContent = {
   ],
   processCheck:
     "Can you calculate approximate impermanent loss for a 2× price move from your deposit price without looking up the formula? If not, trust the LP Position Panel but know you cannot verify it.",
+  drillCards: [
+    {
+      id: "c-i03-il-vs-fees",
+      question:
+        "GLIMMER has moved far from your LP deposit price, and the pool has quiet volume. Which read best matches the lesson?",
+      options: [
+        {
+          id: "apy-only",
+          label: "The displayed APY is enough to judge the LP position.",
+          correct: false,
+          feedback:
+            "Not quite. The APY is based on recent fee activity. When price divergence grows and volume is quiet, fees may not keep pace with IL.",
+        },
+        {
+          id: "position-up",
+          label: "If the LP position is above its deposit value, IL no longer matters.",
+          correct: false,
+          feedback:
+            "Not quite. IL is the gap versus holding the deposited assets outright. The LP can grow while still lagging that baseline.",
+        },
+        {
+          id: "compare-fees-divergence",
+          label: "Compare fee pace with price divergence before deciding if the LP still fits the plan.",
+          correct: true,
+          feedback:
+            "Correct. The process read is fee income versus divergence from deposit price. The card teaches structure, not an entry or exit instruction.",
+        },
+      ],
+    },
+  ],
   cta: { kind: "scenario", id: "SCN-004", line: "Practice this now: the GLIMMER Pool scenario." },
 };
