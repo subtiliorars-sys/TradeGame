@@ -1,5 +1,7 @@
 # TradeGame — HQ (private)
 
+**[Play the sim →](https://subtiliorars-sys.github.io/TradeGame/)** — Educational trading simulator for paper trading, scenario replay, and grid-bot practice. *Not financial advice.*
+
 Private headquarters repo for **TradeGame**: a community-run coaching + gaming
 organization for video gamers who trade — crypto, stocks, and forex as fully
 first-class markets — plus an education video game (a trading-practice
