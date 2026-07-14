@@ -10,6 +10,10 @@ simulator: paper trading, scenario replay, grid-bot sandbox).
 **Education, not financial advice.** No signals, no managed money, no
 performance promises. See `docs/RISK_REGISTER.md`.
 
+
+### First-run tip
+
+Hit **[Play the sim](https://subtiliorars-sys.github.io/TradeGame/)** for paper trading only — scenario replay and the grid-bot sandbox. This is education, not financial advice: no signals, no managed money, no performance promises (see `docs/RISK_REGISTER.md`).
 ## Layout
 - `docs/CONCEPT.md` — org concept: who it's for, markets, surfaces, model
 - `docs/GDD.md` — game design document for the trading-sim education game
