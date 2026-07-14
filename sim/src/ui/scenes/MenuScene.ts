@@ -93,6 +93,7 @@ export class MenuScene extends Phaser.Scene {
     this.drawProgressBar(g, width, height);
     this.drawRankLadder(g, width);
     this.drawFooter(g, width, height);
+    this.wireKeyboardShortcuts();
   }
 
   // -------------------------------------------------------------------------
@@ -141,6 +142,13 @@ export class MenuScene extends Phaser.Scene {
     });
 
     hline(g, PAD, PAD + 74, width - PAD * 2);
+
+    const n = allScenarios().length;
+    label(this, PAD, PAD + 80, `Keys 1–${n} start unlocked scenario · D drills · L lessons`, {
+      fontSize: "10px",
+      color: CSS.DIM,
+      fontStyle: "italic",
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -456,5 +464,38 @@ export class MenuScene extends Phaser.Scene {
 
   private startScenario(id: string): void {
     this.scene.start("TradingScene", { scenarioId: id });
+  }
+
+  private scenarioUnlocked(id: string): boolean {
+    const manifest = allScenarios().find((s) => s.manifest.id === id)?.manifest;
+    if (!manifest) return false;
+    const lockState = scenarioLockState(
+      manifest,
+      currentRank(ProgressStore.xpTotal(), ProgressStore.completedDrillIds()).rank.rankId,
+      ProgressStore.completedScenarioIds(),
+      undefined,
+      ProgressStore.completedDrillIds(),
+      ProgressStore.completedLessonIds()
+    );
+    return !lockState.locked;
+  }
+
+  private wireKeyboardShortcuts(): void {
+    const scenarios = allScenarios();
+    this.input.keyboard?.on("keydown", (e: KeyboardEvent) => {
+      const digit = Number.parseInt(e.key, 10);
+      if (digit >= 1 && digit <= scenarios.length) {
+        const id = scenarios[digit - 1]!.manifest.id;
+        if (this.scenarioUnlocked(id)) this.startScenario(id);
+        return;
+      }
+      if (e.key === "d" || e.key === "D") {
+        this.scene.start("DrillScene");
+        return;
+      }
+      if (e.key === "l" || e.key === "L") {
+        this.scene.start("LessonScene");
+      }
+    });
   }
 }
