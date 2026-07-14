@@ -94,6 +94,43 @@ export class MenuScene extends Phaser.Scene {
     this.drawRankLadder(g, width);
     this.drawFooter(g, width, height);
     this.wireKeyboardShortcuts();
+    this.maybeShowFirstRunTip(width, height);
+  }
+
+  /** One-time menu tip: drills/lessons + education footer. */
+  private maybeShowFirstRunTip(width: number, height: number): void {
+    const key = "tradegame-menu-first-tip-v1";
+    try {
+      if (typeof localStorage !== "undefined" && localStorage.getItem(key)) {
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    const tipY = height - FOOTER_H - 22;
+    const tip = label(
+      this,
+      width / 2,
+      tipY,
+      "Tip: Risk Drills / Lessons unlock scenarios · Esc pauses in a run",
+      {
+        fontSize: "11px",
+        color: CSS.AMBER,
+        fontStyle: "italic",
+      }
+    );
+    tip.setOrigin(0.5, 0.5);
+    tip.setAlpha(0.95);
+
+    this.time.delayedCall(7000, () => {
+      tip.destroy();
+      try {
+        localStorage.setItem(key, "1");
+      } catch {
+        /* ignore quota / private mode */
+      }
+    });
   }
 
   // -------------------------------------------------------------------------
