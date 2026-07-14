@@ -40,6 +40,17 @@ Start here. One line per doc; read on demand. Owner actions live in
 | game/[SCENARIOS_V0.md](game/SCENARIOS_V0.md) · [SCENARIOS_V1.md](game/SCENARIOS_V1.md) | 6 specced scenarios + authoring template |
 | game/[SIM_ENGINE_SPEC.md](game/SIM_ENGINE_SPEC.md) · [TEST_PLAN.md](game/TEST_PLAN.md) | Engine spec + golden-replay test suite (Phase 2 build) |
 | game/[UI_WIREFRAMES.md](game/UI_WIREFRAMES.md) · [ADVANCED_TIER_BRIEF.md](game/ADVANCED_TIER_BRIEF.md) | Vertical-slice screens; advanced-tier direction |
+| game/[LESSON_SYSTEM_BRIEF.md](game/LESSON_SYSTEM_BRIEF.md) · [LIVE_DRILL_ENGINE_BRIEF.md](game/LIVE_DRILL_ENGINE_BRIEF.md) · [DRILL_SYSTEM_BRIEF.md](game/DRILL_SYSTEM_BRIEF.md) | Lesson + live-drill specs (LD-W1–W6 shipped) |
+| game/[IDEATION_BACKLOG.md](game/IDEATION_BACKLOG.md) | **Next safe lesson/drill ideas** — owner-prioritized; see [`../WAVES.md`](../WAVES.md) |
+| game/[COMPETITOR_RESEARCH.md](game/COMPETITOR_RESEARCH.md) | Market scan (private) |
+
+## Sim-lessons lane (fleet)
+| Doc | What it is |
+|---|---|
+| [`../WAVES.md`](../WAVES.md) | Wave registry — workers take first incomplete wave only |
+| [COACHING_LADDER_RANK_MAP.md](COACHING_LADDER_RANK_MAP.md) | Discord ladder ↔ in-game rank alignment (not 1:1) |
+| [`../sim/README.md`](../sim/README.md) | Run `npm run verify` before any sim-lessons PR |
+| assets/[OWNER_QUICKSTART.md](assets/OWNER_QUICKSTART.md) · [EA_TASK_BRIEF.md](assets/EA_TASK_BRIEF.md) | Owner/EA ops (deploy-gated) |
 
 ## Education
 | Doc | What it is |
