@@ -99,7 +99,7 @@ export class MenuScene extends Phaser.Scene {
 
   /** One-time menu tip: drills/lessons + education footer. */
   private maybeShowFirstRunTip(width: number, height: number): void {
-    const key = "tradegame-menu-first-tip-v1";
+    const key = "tradegame-menu-first-tip-v2";
     try {
       if (typeof localStorage !== "undefined" && localStorage.getItem(key)) {
         return;
@@ -113,7 +113,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       width / 2,
       tipY,
-      "Tip: Risk Drills / Lessons unlock scenarios · Esc pauses in a run",
+      "Tip: Risk Drills / Lessons unlock scenarios · Esc/tab-hide pauses a run",
       {
         fontSize: "11px",
         color: CSS.AMBER,
