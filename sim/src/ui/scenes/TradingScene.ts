@@ -48,6 +48,11 @@ import {
 import type { CompressionMode } from "../../engine/clock.js";
 import type { EventLog, OrderFillEvent } from "../../engine/events.js";
 import type { ScenarioDef } from "../../scenarios/types.js";
+import {
+  shouldAutoPauseOnTabHide,
+  shouldAutoResumeOnTabShow,
+  shouldBlockResumeWhileHidden,
+} from "../tabVisibility.js";
 import { scn001 } from "../../scenarios/scn001.js";
 import { getScenario } from "../../scenarios/registry.js";
 import type { RiskModalData } from "./RiskModalScene.js";
@@ -226,6 +231,29 @@ export class TradingScene extends Phaser.Scene {
   // Whether the END SESSION transition has already fired (prevent double-fire).
   private sessionEndFired = false;
 
+  /** True when we paused solely because the browser tab hid. */
+  private tabAutoPaused = false;
+  /** Compression to restore after a tab auto-pause (never "paused"). */
+  private compressionBeforeTabHide: CompressionMode = "1x";
+  private onVisibilityChange = (): void => {
+    if (this.sessionEndFired) return;
+    const compression = this.adapter.compression;
+    if (shouldAutoPauseOnTabHide(document.hidden, compression)) {
+      this.compressionBeforeTabHide = compression;
+      if (this.adapter.setCompression("paused")) {
+        this.tabAutoPaused = true;
+        this.updateSpeedButtonHighlight("paused");
+      }
+      return;
+    }
+    if (shouldAutoResumeOnTabShow(document.hidden, this.tabAutoPaused)) {
+      const restored = this.compressionBeforeTabHide;
+      if (this.adapter.setCompression(restored)) {
+        this.tabAutoPaused = false;
+        this.updateSpeedButtonHighlight(restored);
+      }
+    }
+  };
 
   constructor() {
     super({ key: "TradingScene" });
@@ -312,6 +340,8 @@ export class TradingScene extends Phaser.Scene {
     this.fillOverlay = null;
     this.fillTimer = null;
     this.sessionEndFired = false;
+    this.tabAutoPaused = false;
+    this.compressionBeforeTabHide = "1x";
     // isDrillMode is set in init() before resetSessionState() is called from
     // create(); reset it here so a second scene.start() from a non-drill path
     // doesn't carry over a previous session's drill flag.
@@ -374,6 +404,11 @@ export class TradingScene extends Phaser.Scene {
     this.adapter.setCompression("paused");
     this.updateSpeedButtonHighlight("paused");
 
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
+    this.events.once("shutdown", () => {
+      document.removeEventListener("visibilitychange", this.onVisibilityChange);
+    });
+
     // Live-drill mode: drawdown drills seed position UI; all live drills
     // show a blocking briefing card before START.
     if (this.liveDrill !== null) {
@@ -413,6 +448,7 @@ export class TradingScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    document.removeEventListener("visibilitychange", this.onVisibilityChange);
     this.adapter.offTick(this.onSimTick.bind(this));
     this.adapter.offFill(this.onEngineFill.bind(this));
   }
@@ -699,8 +735,15 @@ export class TradingScene extends Phaser.Scene {
 
       lbl.setInteractive({ useHandCursor: true });
       lbl.on("pointerup", () => {
-        if (!this.adapter.clock.state.orderConfirmPending) {
-          this.adapter.setCompression(capturedMode);
+        if (this.adapter.clock.state.orderConfirmPending) return;
+        if (
+          shouldBlockResumeWhileHidden(document.hidden) &&
+          capturedMode !== "paused"
+        ) {
+          return;
+        }
+        if (this.adapter.setCompression(capturedMode)) {
+          this.tabAutoPaused = false;
           this.updateSpeedButtonHighlight(capturedMode);
         }
       });
