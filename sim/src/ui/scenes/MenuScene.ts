@@ -402,13 +402,12 @@ export class MenuScene extends Phaser.Scene {
       );
     });
 
-    // Drill-gate slots are authored-but-empty until the drill system ships —
-    // say so explicitly rather than implying ranks are XP-only.
+    // Drill gates are live (Risk Drills) — XP alone cannot advance past them.
     label(
       this,
       PAD,
       stripY + segH + 6,
-      "Drill gates per rank arrive with the drill system — XP alone will not advance past them (GDD §7).",
+      "Some ranks require Risk Drills — XP alone will not advance past a drill gate (GDD §7).",
       { fontSize: "9px", color: CSS.DIM, fontStyle: "italic" }
     );
 
