@@ -41,4 +41,10 @@ describe("UI object-churn guards (UX-W1)", () => {
     expect(src).toContain("shutdown(): void");
     expect(src).toContain('off("keydown", this.onReplayKey');
   });
+
+  it("MenuScene rank ladder copy reflects live Risk Drills (not a future drill system)", () => {
+    const src = readFileSync(join(ROOT, "MenuScene.ts"), "utf8");
+    expect(src).not.toContain("arrive with the drill system");
+    expect(src).toContain("Some ranks require Risk Drills");
+  });
 });
