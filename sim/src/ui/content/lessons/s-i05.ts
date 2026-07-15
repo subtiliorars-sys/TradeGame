@@ -102,5 +102,35 @@ export const LESSON_S_I05: LessonContent = {
   ],
   processCheck:
     "Can you state the difference between 'this stock is being added to an index' (a factual observation) and 'I have a process-correct entry in this stock' (a defined position with a driver label, stop, and favorable risk-to-target)?",
+  drillCards: [
+    {
+      id: "s-i05-inclusion-vs-plan",
+      question:
+        "VLDI has been added to the NMX 100, and the closing auction is still ahead. Which read best matches the lesson?",
+      options: [
+        {
+          id: "passive-demand-is-plan",
+          label: "The passive-fund demand alone makes any late entry a complete plan.",
+          correct: false,
+          feedback:
+            "Not quite. The lesson separates a public mechanical event from a complete process plan. Driver label, timing, and risk definition still matter.",
+        },
+        {
+          id: "auction-changes-business",
+          label: "The auction spike proves VLDI's business value has changed.",
+          correct: false,
+          feedback:
+            "Not quite. The lesson frames the auction spike as one-time mechanical demand from index trackers, not a new business-value claim.",
+        },
+        {
+          id: "separate-fact-from-plan",
+          label: "Treat index inclusion as a fact, then ask whether timing and risk are defined.",
+          correct: true,
+          feedback:
+            "Correct. The coaching read is process-first: identify the mechanical flow, then separate that observation from a defined practice plan. It is not a signal.",
+        },
+      ],
+    },
+  ],
   cta: { kind: "scenario", id: "SCN-005", line: "Practice this now: the NMX 100 inclusion scenario." },
 };

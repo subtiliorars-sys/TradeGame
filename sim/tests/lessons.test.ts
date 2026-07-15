@@ -180,6 +180,23 @@ describe("catalog invariants", () => {
       expect(option.feedback.length, option.id).toBeGreaterThan(30);
     }
   });
+
+  it("S-I05 ships an ungated index-inclusion lesson drill card", () => {
+    const lesson = getLesson("lesson:index-rebalancing-mechanics")!;
+    const cards = lesson.content.drillCards ?? [];
+    expect(cards).toHaveLength(1);
+
+    const card = cards[0];
+    expect(card.id).toBe("s-i05-inclusion-vs-plan");
+    expect(card.question).toContain("NMX 100");
+    expect(card.options).toHaveLength(3);
+    expect(card.options.filter((o) => o.correct)).toHaveLength(1);
+    expect(card.options.find((o) => o.correct)?.id).toBe("separate-fact-from-plan");
+    for (const option of card.options) {
+      expect(option.label.length, option.id).toBeGreaterThan(10);
+      expect(option.feedback.length, option.id).toBeGreaterThan(30);
+    }
+  });
 });
 
 describe("posture sweep — lesson copy carries no directives", () => {
