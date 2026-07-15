@@ -96,7 +96,7 @@ export const LESSON_C_I04: LessonContent = {
           label: "Pause and check whether the current regime still matches the strategy before acting.",
           correct: true,
           feedback:
-            "Correct. The lesson is matching tool to structure first. It is not a signal to enter; it is a process check before any practice decision.",
+            "Correct. The lesson is matching tool to structure first. Treat the card as a process check before any practice decision.",
         },
       ],
     },
