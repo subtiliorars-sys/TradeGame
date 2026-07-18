@@ -166,18 +166,19 @@ describe("catalog invariants", () => {
     }
   });
 
-  it("C-I03 ships one ungated lesson drill card with three coached options", () => {
+  it("C-I03 ships two ungated lesson drill cards with three coached options each", () => {
     const lesson = getLesson("lesson:liquidity-pools-impermanent-loss")!;
     const cards = lesson.content.drillCards ?? [];
-    expect(cards).toHaveLength(1);
+    expect(cards).toHaveLength(2);
 
-    const card = cards[0];
-    expect(card.question).toContain("GLIMMER");
-    expect(card.options).toHaveLength(3);
-    expect(card.options.filter((o) => o.correct)).toHaveLength(1);
-    for (const option of card.options) {
-      expect(option.label.length, option.id).toBeGreaterThan(10);
-      expect(option.feedback.length, option.id).toBeGreaterThan(30);
+    for (const card of cards) {
+      expect(card.question).toContain("GLIMMER");
+      expect(card.options).toHaveLength(3);
+      expect(card.options.filter((o) => o.correct)).toHaveLength(1);
+      for (const option of card.options) {
+        expect(option.label.length, option.id).toBeGreaterThan(10);
+        expect(option.feedback.length, option.id).toBeGreaterThan(30);
+      }
     }
   });
 

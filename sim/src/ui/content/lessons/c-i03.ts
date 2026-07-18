@@ -115,6 +115,34 @@ export const LESSON_C_I03: LessonContent = {
         },
       ],
     },
+    {
+      id: "c-i03-decision-point-c",
+      question:
+        "At Decision Point C, GLIMMER is far above the LP deposit price and your written trigger says to reassess at large divergence. What is the strongest process step?",
+      options: [
+        {
+          id: "apy-display",
+          label: "Use the high APY display as the main reason to keep the LP unchanged.",
+          correct: false,
+          feedback:
+            "Not quite. APY reflects recent fee activity and assumes similar conditions. It does not replace the divergence check or the trigger you wrote before the practice scenario.",
+        },
+        {
+          id: "automatic-failure",
+          label: "Treat impermanent loss as an automatic failure whenever price moves away.",
+          correct: false,
+          feedback:
+            "Not quite. IL is the gap versus holding outright, not proof that the LP is wrong by itself. The process question is whether the position still matches the original rationale.",
+        },
+        {
+          id: "compare-trigger",
+          label: "Compare your IL estimate, fee pace, and written trigger before changing the LP plan.",
+          correct: true,
+          feedback:
+            "Correct. The lesson asks for planned reassessment: estimate divergence, check whether fees are compensating, and compare that read to the trigger you wrote before the move. This is review discipline, not a recommendation.",
+        },
+      ],
+    },
   ],
   cta: { kind: "scenario", id: "SCN-004", line: "Practice this now: the GLIMMER Pool scenario." },
 };
