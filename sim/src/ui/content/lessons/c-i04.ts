@@ -71,5 +71,35 @@ export const LESSON_C_I04: LessonContent = {
   ],
   processCheck:
     "Are you identifying the current regime from chart structure at session start, or entering based on what worked last week?",
+  drillCards: [
+    {
+      id: "c-i04-regime-tool-fit",
+      question:
+        "GLIMMER just left a clean range and is making higher highs and higher lows. Which read keeps the lesson's process intact?",
+      options: [
+        {
+          id: "reuse-range-tool",
+          label: "Keep using the range tool because it worked during the last sessions.",
+          correct: false,
+          feedback:
+            "Not quite. A tool that fit the prior range can become mismatched after structure changes. Start with the current chart read.",
+        },
+        {
+          id: "switch-after-loss",
+          label: "Rename the losing range trade as a trend hold after it moves against you.",
+          correct: false,
+          feedback:
+            "Not quite. That is rationalization after the fact. Adaptation happens from a fresh regime read, not from protecting an old decision.",
+        },
+        {
+          id: "recheck-regime-fit",
+          label: "Pause and check whether the current regime still matches the strategy before acting.",
+          correct: true,
+          feedback:
+            "Correct. The lesson is matching tool to structure first. Treat the card as a process check before any practice decision.",
+        },
+      ],
+    },
+  ],
   cta: { kind: "scenario", id: "SCN-004", line: "Practice this now: observe GLIMMER regime shifts in the pool scenario." },
 };
