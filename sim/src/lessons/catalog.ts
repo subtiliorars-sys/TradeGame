@@ -51,6 +51,15 @@ import { LESSON_X_I01 } from "../ui/content/lessons/x-i01.js";
 import { LESSON_X_I02 } from "../ui/content/lessons/x-i02.js";
 import { LESSON_X_I03 } from "../ui/content/lessons/x-i03.js";
 import { LESSON_X_I04 } from "../ui/content/lessons/x-i04.js";
+import { LESSON_C_A01 } from "../ui/content/lessons/c-a01.js";
+import { LESSON_C_A02 } from "../ui/content/lessons/c-a02.js";
+import { LESSON_C_A03 } from "../ui/content/lessons/c-a03.js";
+import { LESSON_S_A01 } from "../ui/content/lessons/s-a01.js";
+import { LESSON_S_A02 } from "../ui/content/lessons/s-a02.js";
+import { LESSON_S_A03 } from "../ui/content/lessons/s-a03.js";
+import { LESSON_X_A01 } from "../ui/content/lessons/x-a01.js";
+import { LESSON_X_A02 } from "../ui/content/lessons/x-a02.js";
+import { LESSON_X_A03 } from "../ui/content/lessons/x-a03.js";
 
 /** XP by length tier (GDD §7 'fixed by lesson length'). TUNABLE. */
 export const LESSON_XP: Record<LessonDef["tier"], number> = {
@@ -99,6 +108,15 @@ export const LESSON_CATALOG: LessonDef[] = [
   def(LESSON_X_I02),
   def(LESSON_X_I03),
   def(LESSON_X_I04),
+  def(LESSON_C_A01),
+  def(LESSON_C_A02),
+  def(LESSON_C_A03),
+  def(LESSON_S_A01),
+  def(LESSON_S_A02),
+  def(LESSON_S_A03),
+  def(LESSON_X_A01),
+  def(LESSON_X_A02),
+  def(LESSON_X_A03),
 ];
 
 export function getLesson(id: string): LessonDef | undefined {
