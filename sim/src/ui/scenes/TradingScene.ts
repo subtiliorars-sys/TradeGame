@@ -56,6 +56,8 @@ import { depositFromFill, lpPanelView, type LpDeposit } from "../engine/lp.js";
 import type { IlCheckpointData } from "./IlCheckpointScene.js";
 import type { LpExplainerData } from "./LpExplainerScene.js";
 import { getLiveDrill, type LiveDrillDef } from "../../drills/liveCatalog.js";
+import { applyDrillSeed } from "../../drills/wave2Seed.js";
+import type { DrillSeedConfig } from "../../scenarios/types.js";
 import type { DrillDebriefData } from "./DrillDebriefScene.js";
 
 // ---------------------------------------------------------------------------
@@ -325,21 +327,51 @@ export class TradingScene extends Phaser.Scene {
     const maybeRoute = (this.def.manifest as { completionRoute?: string }).completionRoute;
     this.isDrillMode = this.liveDrill !== null || maybeRoute === "drill_debrief";
 
-    const drawdownSeed =
-      this.liveDrill !== null && this.liveDrill.kind === "drawdown-survival"
-        ? {
-            entryOrderId: this.liveDrill.seed.entryOrderId,
-            stopOrderId: this.liveDrill.seed.stopOrderId,
-            side: this.liveDrill.seed.side,
-            quantity: this.liveDrill.seed.quantity,
-            fillPrice: this.liveDrill.seed.fillPrice,
-            stopPrice: this.liveDrill.seed.stopPrice,
-          }
-        : undefined;
+    const manifest = this.def.manifest;
+
+    // W2-3: resolve drill seed config from either (a) a DrillScenarioDef manifest
+    // carrying seedConfig, or (b) a liveDrill drawdown-survival seed.
+    // Both paths route through applyDrillSeed so the W2-2 seed-prefix guard
+    // (assertSeedOrderId) fires on every authored ID, and byte-stable output
+    // is guaranteed for golden fixtures.
+    const maybeSeedConfig = (manifest as { seedConfig?: DrillSeedConfig | null }).seedConfig;
+
+    let drillSeedArg:
+      | {
+          entryOrderId: string;
+          stopOrderId: string;
+          side: "buy" | "sell";
+          quantity: number;
+          fillPrice: number;
+          stopPrice: number;
+        }
+      | undefined;
+
+    if (maybeSeedConfig !== undefined && maybeSeedConfig !== null) {
+      // DrillScenarioDef path: seedConfig present in the manifest.
+      drillSeedArg = applyDrillSeed({ seedConfig: maybeSeedConfig });
+    } else if (
+      this.liveDrill !== null &&
+      this.liveDrill.kind === "drawdown-survival"
+    ) {
+      // LiveDrillDef path: convert the live-drill seed into a DrillSeedConfig
+      // so the same guard + mapping runs for consistency.
+      const liveSeedConfig: DrillSeedConfig = {
+        seedMethod: "scripted_fill",
+        positionSide: this.liveDrill.seed.side,
+        quantity: this.liveDrill.seed.quantity,
+        entryTickIndex: 0,
+        fillPrice: this.liveDrill.seed.fillPrice,
+        stopPrice: this.liveDrill.seed.stopPrice,
+        entryOrderId: this.liveDrill.seed.entryOrderId,
+        stopOrderId: this.liveDrill.seed.stopOrderId,
+      };
+      drillSeedArg = applyDrillSeed({ seedConfig: liveSeedConfig });
+    }
 
     this.adapter =
-      drawdownSeed !== undefined
-        ? new SessionAdapter(this.def, undefined, drawdownSeed)
+      drillSeedArg !== undefined
+        ? new SessionAdapter(this.def, undefined, drillSeedArg)
         : new SessionAdapter(this.def);
     this.adapter.onTick((tick) => this.onSimTick(tick));
     this.adapter.onFill((fill) => this.onEngineFill(fill));

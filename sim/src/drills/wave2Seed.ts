@@ -1,16 +1,15 @@
 /**
  * Wave 2 — Seeding surface stubs (LIVE_DRILL_ENGINE_BRIEF §5, Wave 2).
  *
- * This file contains typed stubs for the three Wave 2 items that are
- * independent of each other and can be built in parallel.
- *
- * STATUS: typed stubs — interfaces and empty implementations with TODOs.
- *         No logic is implemented here. Types compile; impl is deferred.
+ * STATUS: INTEGRATED — all three Wave 2 items are wired into their target sites.
+ *         This file provides the canonical types + helper functions consumed by
+ *         the engine, harness, and UI layers.
  *
  * Build ordering (from the brief §5):
- *   W2-1  SeedPositionBeat  — new beat kind in the ScenarioBeat union (feed.ts)
- *   W2-2  OrderBook.forceFill  — already implemented; guard stub lives here
- *   W2-3  applyDrillSeed()  — TradingScene init helper
+ *   W2-1  SeedPositionBeat   — wired: ScenarioBeat union (feed.ts), adapters, harness dispatch
+ *   W2-2  OrderBook.forceFill — wired: assertSeedOrderId guard called at forceFill entry (book.ts)
+ *   W2-3  applyDrillSeed()   — wired: TradingScene.create() routes both liveDrill and
+ *                                DrillScenarioDef paths through applyDrillSeed()
  *   W2-4/5  golden fixtures  — in tests/ (not in this file)
  *
  * Red-team requirement (W2-2): verify slippage=0 on seed fills does not
@@ -28,15 +27,15 @@ import type { DrillSeedConfig } from "../scenarios/types.js";
  * W2-1 — SeedPositionBeat (LIVE_DRILL_ENGINE_BRIEF §2.3 "case 'seed_position'").
  *
  * A ScenarioBeat that fires at simTimeMs=0, before any PRNG-driven tick.
- * When the EventInjector processes this beat it calls OrderBook.forceFill()
- * with the authored entryOrderId/fillPrice and places a companion stop order.
+ * The harness (run.ts:dispatchSeedPositionBeat) processes it by calling
+ * OrderBook.forceFill() with the authored entryOrderId/fillPrice and placing
+ * a companion stop order.
  *
- * TODO (W2-1):
- *   1. Add SeedPositionBeat to the ScenarioBeat discriminated union in feed.ts.
- *   2. Add `case 'seed_position':` to the EventInjector's beat-dispatch switch.
- *      The case calls orderBook.forceFill(...) + orderBook.submitOrder(stop)
- *      using the authored IDs — byte-stable (no PRNG, no UUID generation).
- *   3. Add the new beat kind to the ScenarioScript type doc comment.
+ * Integration sites:
+ *   1. feed.ts ScenarioBeat union — SeedPositionBeat is a discriminated member.
+ *   2. All three adapters (crypto/stocks/forex) have `case "seed_position":` stubs
+ *      (no price-feed effect — handled by harness).
+ *   3. run.ts iterates scenario.script, dispatches via dispatchSeedPositionBeat().
  */
 export interface SeedPositionBeat {
   kind: "seed_position";
@@ -66,17 +65,18 @@ export interface SeedPositionBeat {
  *
  * The seeding mechanism relies on authored order IDs (e.g. "seed-entry-001")
  * to guarantee byte-stable golden fixtures. These must never collide with the
- * live UUID namespace. The OrderBook.forceFill implementation should call this
- * guard at entry; here it is defined as a pure exported function so callers
- * outside the OrderBook (e.g. tests, the EventInjector) can call it too.
+ * live UUID namespace. OrderBook.forceFill calls assertSeedOrderId() at entry;
+ * dispatchSeedPositionBeat in run.ts and applyDrillSeed in this file also call
+ * it so authoring errors surface early.
  *
- * OPEN-LDED-4: should this be a hard validation (throws) or a documentation-
- * only convention? Stub throws for safety; tune after red-team.
+ * OPEN-LDED-4: hard validation (throws) — chosen for fail-fast safety.
  *
- * TODO (W2-2):
- *   1. Import and call isSeedOrderId() inside OrderBook.forceFill.
- *   2. Wire the same check into the golden-fixture tests (W2-4 / W2-5).
- *   3. Red-team: submit a forceFill with a UUID to confirm the guard fires.
+ * Integration sites:
+ *   1. OrderBook.forceFill (book.ts:362) — calls assertSeedOrderId(seed.orderId).
+ *   2. Harness dispatchSeedPositionBeat (run.ts:716-718) — calls on both IDs.
+ *   3. applyDrillSeed (this file:158-159) — calls on both IDs.
+ *   4. Golden-fixture tests (W2-4 / W2-5 in wave2-seed.test.ts) — assert the
+ *      guard throws on UUID-like orderId.
  */
 export function isSeedOrderId(orderId: string): boolean {
   return orderId.startsWith("seed-");
@@ -135,20 +135,18 @@ export interface DrillSeedAdapterArg {
  * Converts a `DrillSeedConfig` (from the DrillScenarioDef manifest) into the
  * `drillSeed` argument shape that SessionAdapter's constructor accepts.
  *
- * Called by TradingScene.init() when `manifest.seedConfig !== null`.
+ * Called by TradingScene.create() for both paths:
+ *   1. DrillScenarioDef manifests carrying seedConfig (primary W2-3 target).
+ *   2. LiveDrillDef drawdown-survival seeds (converted to DrillSeedConfig inline
+ *      in TradingScene, then passed here for guard + mapping consistency).
+ *
  * The returned object is passed as the third argument to `new SessionAdapter()`.
+ * W2-2 guard (assertSeedOrderId) fires on both authored IDs before the mapping.
  *
- * Design note: TradingScene currently inlines this conversion when constructing
- * SessionAdapter for LiveDrillDef sessions (create(), the `this.liveDrill !== null`
- * branch). W2-3 generalises that path to accept any DrillSeedConfig from a
- * DrillScenarioDef manifest — not just the LiveDrillDef.seed shape.
- *
- * TODO (W2-3):
- *   1. Implement the mapping below (trivial: field names are 1:1 after W1-4).
- *   2. Update TradingScene.create() to call applyDrillSeed(manifest.seedConfig)
- *      when isDrillMode && manifest.seedConfig !== null, replacing the inline
- *      SessionAdapter construction in the liveDrill branch.
- *   3. Add a unit test: applyDrillSeed round-trips all fields unchanged.
+ * Integration sites:
+ *   1. TradingScene.create() — routes both drill types through this function.
+ *   2. wave2-seed.test.ts — unit tests for round-trip, positionSide→side mapping,
+ *      and seed-prefix rejection (W2-3a through W2-3e).
  */
 export function applyDrillSeed(
   params: ApplyDrillSeedParams
