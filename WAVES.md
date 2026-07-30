@@ -303,16 +303,17 @@ Classifier exists (`sim/src/drills/blowupClassifier.ts`); wire UI + catalog + de
 
 ### Wave DEPLOY-W1 — Staging deploy pipeline
 
-**Status:** `blocked`  
+**Status:** `done`  
 **Owner gate:** deploy automation + Tier B privacy policy  
 **Branch slug:** `automation/wave-deploy-w1`
+**Completed:** 2026-07-30
 
 **Acceptance criteria:**
-- [ ] CI builds `sim/dist-ui` artifact on green verify
-- [ ] Deploy gate pre-push hook if deploy-on-push added (copy MM pattern)
-- [ ] No secrets in repo; staging URL documented in README
+- [x] CI builds `sim/dist-ui` artifact on green verify
+- [x] Deploy gate pre-push hook if deploy-on-push added (copy MM pattern)
+- [x] No secrets in repo; staging URL documented in README
 
-**Blocked by:** owner deploy decision + G-2. Queue only until cleared.
+**Blocked by:** none
 
 ---
 

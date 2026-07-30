@@ -39,6 +39,8 @@ After you merge, the **next wave starts automatically** — no manual restart.
 This is the private HQ. The sanitized public face is
 `TradeGame---Preview` — nothing confidential ever lands there.
 
+**Staging URL:** https://subtiliorars-sys.github.io/TradeGame/
+
 ## Working here
 Read `CLAUDE.md` (repo specifics) — doctrine is inherited from `~/CLAUDE.md`.
 Branch per task (`work/<topic>`), hooks live in `.githooks/`
